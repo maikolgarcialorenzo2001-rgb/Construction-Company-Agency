@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
+import { services } from './services';
 import { site } from './site';
 import { contentImages } from './lookup';
 
@@ -12,7 +13,7 @@ import { contentImages } from './lookup';
  */
 
 /** Every module that may hold content. Imported lazily so the suite stays extensible. */
-const CONTENT_MODULES = ['./site'] as const;
+const CONTENT_MODULES = ['./site', './services'] as const;
 
 interface Slugged {
   readonly slug: string;
@@ -24,8 +25,13 @@ const expectUniqueSlugs = (label: string, entries: readonly Slugged[]): void => 
   expect(slugs, `${label} has duplicated slugs`).toEqual([...new Set(slugs)]);
 };
 
+const nonEmpty = (value: string, label: string): void => {
+  expect(typeof value, `${label} must be a string`).toBe('string');
+  expect(value.trim().length, `${label} must not be empty`).toBeGreaterThan(0);
+};
+
 describe('content graph: image asset contract', () => {
-  const images = contentImages({ site });
+  const images = contentImages({ site, services });
 
   it('finds image assets in the graph', () => {
     expect(images.length).toBeGreaterThan(0);
@@ -54,6 +60,61 @@ describe('content graph: image asset contract', () => {
 describe('content graph: slug integrity', () => {
   it('keeps every slug unique within its collection', () => {
     expectUniqueSlugs('site.nav', site.nav);
+    expectUniqueSlugs('services', services);
+  });
+
+  it('keeps every content slug kebab-case so it can be a router segment', () => {
+    for (const service of services) {
+      expect(service.slug, `${service.slug} must be kebab-case`).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+    }
+  });
+});
+
+describe('content graph: services catalog (T5.6)', () => {
+  it('holds between 5 and 7 services, the range the spec allows', () => {
+    expect(services.length).toBeGreaterThanOrEqual(5);
+    expect(services.length).toBeLessThanOrEqual(7);
+  });
+
+  it('gives every service a complete payload', () => {
+    for (const service of services) {
+      nonEmpty(service.slug, `${service.slug}.slug`);
+      nonEmpty(service.name, `${service.slug}.name`);
+      nonEmpty(service.summary, `${service.slug}.summary`);
+      nonEmpty(service.typicalDuration, `${service.slug}.typicalDuration`);
+      expect(service.includes.length, `${service.slug} must list what it includes`).toBeGreaterThan(
+        0
+      );
+
+      for (const item of service.includes) {
+        nonEmpty(item, `${service.slug}.includes entry`);
+      }
+    }
+  });
+
+  it('anchors every service with a plausible, ordered money range', () => {
+    for (const service of services) {
+      const { min, max, currency } = service.budgetRange;
+
+      expect(currency, `${service.slug} must declare its currency`).toMatch(/^(ARS|USD)$/);
+      expect(min, `${service.slug}.budgetRange.min must be positive`).toBeGreaterThan(0);
+      expect(max, `${service.slug}.budgetRange.max must cover min`).toBeGreaterThanOrEqual(min);
+    }
+  });
+
+  it('points every service at at least one related project', () => {
+    for (const service of services) {
+      expect(
+        service.relatedProjectSlugs.length,
+        `${service.slug} must reference a project to prove it does the work`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it('flags every catalog entry as placeholder until real client data lands', () => {
+    for (const service of services) {
+      expect(service.isPlaceholder, `${service.slug} must be flagged as placeholder`).toBe(true);
+    }
   });
 });
 

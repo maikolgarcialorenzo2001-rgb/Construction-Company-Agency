@@ -1,0 +1,15 @@
+<a
+  [routerLink]="['/servicios', service().slug]"
+  class="surface-card flex h-full flex-col gap-4 hover:border-brand-600"
+>
+  <img
+    [ngSrc]="service().image.src"
+    [alt]="service().image.alt"
+    [width]="service().image.width"
+    [height]="service().image.height"
+    class="aspect-[4/3] w-full rounded-lg object-cover"
+  />
+  <h3 class="text-xl font-semibold text-ink-900">{{ service().name }}</h3>
+  <p class="text-ink-600">{{ service().summary }}</p>
+  <span class="mt-auto font-semibold text-brand-800">Ver el servicio</span>
+</a>
