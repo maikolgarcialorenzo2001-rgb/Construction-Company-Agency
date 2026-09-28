@@ -50,9 +50,9 @@ export interface Nap {
   readonly region: string;
   readonly postalCode: string;
   readonly country: 'AR';
-  /** Human-readable phone, e.g. `+54 9 11 0000-0000`. Display only. */
+  /** Human-readable phone, with `+` and grouping. Display only. */
   readonly phoneDisplay: string;
-  /** Same phone as bare digits, e.g. `5491100000000`. Source for `wa.me`, `tel:` and JSON-LD. */
+  /** Same phone as bare digits: no `+`, no separators. Source for `wa.me`, `tel:` and JSON-LD. */
   readonly phoneE164: string;
   readonly email: string;
   /** True until the client supplies real NAP data. Release gate, never a build gate. */

@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import { site } from './site';
@@ -52,6 +54,51 @@ describe('content graph: image asset contract', () => {
 describe('content graph: slug integrity', () => {
   it('keeps every slug unique within its collection', () => {
     expectUniqueSlugs('site.nav', site.nav);
+  });
+});
+
+describe('content graph: NAP single source', () => {
+  const sourceFiles = (): { file: string; source: string }[] => {
+    const root = join(process.cwd(), 'src');
+    const files: { file: string; source: string }[] = [];
+
+    const walk = (directory: string): void => {
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const path = join(directory, entry.name);
+        if (entry.isDirectory()) {
+          walk(path);
+        } else if (/\.(ts|html)$/.test(entry.name) && !entry.name.endsWith('.spec.ts')) {
+          files.push({
+            file: relative(root, path).split(sep).join('/'),
+            source: readFileSync(path, 'utf8')
+          });
+        }
+      }
+    };
+
+    walk(root);
+
+    return files;
+  };
+
+  it('declares the NAP values in a single module', () => {
+    const { nap } = site;
+    const literals = new Set([nap.phoneE164, nap.phoneDisplay.replace(/\D/g, ''), nap.email]);
+    const offenders: string[] = [];
+
+    for (const { file, source } of sourceFiles()) {
+      // The NAP module declares its own values; everything else must read them.
+      if (file === 'content/site.ts') {
+        continue;
+      }
+      for (const literal of literals) {
+        if (source.includes(literal)) {
+          offenders.push(`${file} repeats the NAP literal "${literal}"`);
+        }
+      }
+    }
+
+    expect(offenders, offenders.join('\n')).toEqual([]);
   });
 });
 

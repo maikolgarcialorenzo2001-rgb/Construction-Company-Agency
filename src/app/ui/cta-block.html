@@ -1,0 +1,8 @@
+<section class="surface-card border-l-4 border-l-accent-600">
+  <h2 class="text-section font-semibold text-ink-900">{{ heading() }}</h2>
+  <p class="mt-3 text-ink-600">{{ body() }}</p>
+  <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+    <a routerLink="/presupuesto" class="btn-primary">{{ actionLabel() }}</a>
+    <app-phone-link variant="button" label="O llamanos" />
+  </div>
+</section>
