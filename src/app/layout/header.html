@@ -1,0 +1,29 @@
+<header class="header-shell">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+    <a routerLink="/" class="text-lg font-semibold tracking-tight text-ink-900">{{
+      site.nap.name
+    }}</a>
+
+    <nav aria-label="Navegación principal" class="hidden lg:block">
+      <ul class="flex items-center gap-6">
+        @for (item of site.nav; track item.slug) {
+          <li>
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="text-brand-800"
+              [routerLinkActiveOptions]="{ exact: true }"
+              ariaCurrentWhenActive="page"
+              class="font-medium text-ink-600 hover:text-ink-900"
+              >{{ item.label }}</a
+            >
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <a routerLink="/presupuesto" class="btn-primary">Pedir presupuesto</a>
+      <app-phone-link variant="button" label="Llamanos" class="hidden sm:block" />
+    </div>
+  </div>
+</header>

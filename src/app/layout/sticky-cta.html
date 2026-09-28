@@ -1,0 +1,12 @@
+@if (!isQuoteRoute()) {
+  <div
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-ink-900/10 bg-white pb-[env(safe-area-inset-bottom)] sm:hidden"
+  >
+    <!-- `contents` promotes each anchor to a flex item, so the shared `flex-1` button
+         variants size the two halves of the bar instead of the host elements. -->
+    <div class="flex gap-2 p-3">
+      <app-whatsapp-link class="contents" variant="button" label="WhatsApp" />
+      <app-phone-link class="contents" variant="button" label="Llamanos" />
+    </div>
+  </div>
+}
