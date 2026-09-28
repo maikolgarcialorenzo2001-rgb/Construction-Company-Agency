@@ -32,8 +32,8 @@ describe('ServicesList', () => {
 
   it('renders the names the content declares and no other', async () => {
     const element = await render();
-    const titles = [...element.querySelectorAll('app-service-card h3')].map(
-      (h) => h.textContent?.trim()
+    const titles = [...element.querySelectorAll('app-service-card h3')].map((h) =>
+      h.textContent?.trim()
     );
 
     expect(titles).toEqual(services.map((service) => service.name));

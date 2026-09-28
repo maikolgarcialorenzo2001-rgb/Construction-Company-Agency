@@ -65,7 +65,9 @@ describe('content graph: slug integrity', () => {
 
   it('keeps every content slug kebab-case so it can be a router segment', () => {
     for (const service of services) {
-      expect(service.slug, `${service.slug} must be kebab-case`).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+      expect(service.slug, `${service.slug} must be kebab-case`).toMatch(
+        /^[a-z0-9]+(-[a-z0-9]+)*$/
+      );
     }
   });
 });

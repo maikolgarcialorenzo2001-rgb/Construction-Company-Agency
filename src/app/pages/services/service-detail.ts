@@ -17,13 +17,7 @@ import { SectionHeading } from '../../ui/section-heading';
 @Component({
   selector: 'app-service-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    RouterLink,
-    NgOptimizedImage,
-    NotFound,
-    CtaBlock,
-    SectionHeading
-  ],
+  imports: [RouterLink, NgOptimizedImage, NotFound, CtaBlock, SectionHeading],
   templateUrl: './service-detail.html'
 })
 export class ServiceDetail {
