@@ -1,0 +1,20 @@
+<section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+  <h1 class="text-display font-semibold text-ink-900">Servicios</h1>
+
+  <div class="mt-6">
+    <app-section-heading
+      title="Qué hacemos y qué incluye cada trabajo"
+      lead="Cada servicio declara qué está incluido, cuánto tarda y en qué rango de inversión se mueve. Los proyectos de la casa muestran el resultado."
+    />
+  </div>
+
+  <ul class="mt-10 grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-3">
+    @for (service of services; track service.slug) {
+      <li class="flex">
+        <app-service-card [service]="service" class="w-full" />
+      </li>
+    }
+  </ul>
+
+  <app-cta-block class="mt-16 block" [heading]="ctaHeading" [body]="ctaBody" />
+</section>

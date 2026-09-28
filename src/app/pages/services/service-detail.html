@@ -1,0 +1,71 @@
+@if (service(); as detail) {
+  <section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+    <a routerLink="/servicios" class="font-semibold text-brand-800 hover:underline"
+      >← Volver a servicios</a
+    >
+
+    <div class="mt-6 grid gap-10 lg:grid-cols-2 lg:items-start">
+      <div>
+        <h1 class="text-display font-semibold text-ink-900">{{ detail.name }}</h1>
+        <p class="mt-4 text-lg text-ink-600">{{ detail.summary }}</p>
+
+        <dl class="surface-card mt-8 grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt class="text-sm uppercase tracking-wide text-ink-400">Plazo habitual</dt>
+            <dd class="font-semibold text-ink-900">{{ formatDuration(detail.typicalDuration) }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm uppercase tracking-wide text-ink-400">Inversión</dt>
+            <dd class="font-semibold text-ink-900">
+              {{ formatMoneyRange(detail.budgetRange) }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <img
+        [ngSrc]="detail.image.src"
+        [alt]="detail.image.alt"
+        [width]="detail.image.width"
+        [height]="detail.image.height"
+        priority
+        sizes="(min-width: 1024px) 45vw, 100vw"
+        class="aspect-[4/3] w-full rounded-xl object-cover"
+      />
+    </div>
+
+    <div class="mt-16 max-w-2xl">
+      <app-section-heading title="Qué incluye" />
+      <ul data-testid="includes" class="mt-6 list-disc space-y-3 pl-6 text-ink-600">
+        @for (item of detail.includes; track item) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+    </div>
+
+    <div class="mt-16">
+      <app-section-heading
+        title="Proyectos donde hicimos este trabajo"
+        lead="Obras reales de este tipo de trabajo, con fotos y plazos."
+      />
+      <ul class="mt-6 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-3">
+        @for (projectSlug of detail.relatedProjectSlugs; track projectSlug) {
+          <li>
+            <!-- S5 links the declared slugs; S6 (T6.6) resolves them and shows the project title. -->
+            <a
+              data-testid="related-project"
+              [routerLink]="['/proyectos', projectSlug]"
+              class="btn-secondary block text-center"
+            >
+              Ver el proyecto
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <app-cta-block class="mt-16 block" [heading]="ctaHeading" [body]="ctaBody" />
+  </section>
+} @else {
+  <app-not-found />
+}

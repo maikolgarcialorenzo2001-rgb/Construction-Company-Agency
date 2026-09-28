@@ -1,13 +1,24 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-/** Placeholder page: replaced by S5 (service catalog driven by `content/services.ts`). */
+import { services } from '../../../content/services';
+import { CtaBlock } from '../../ui/cta-block';
+import { SectionHeading } from '../../ui/section-heading';
+import { ServiceCard } from '../../ui/service-card';
+
+/**
+ * The service catalog. The whole page is driven by `content/services.ts`: the array order
+ * is the display order and no service name is written here, so publishing or reordering
+ * the catalog is a content change and the page cannot drift from it.
+ */
 @Component({
   selector: 'app-services-list',
-  template: `
-    <section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
-      <h1 class="text-section font-semibold text-ink-900">Servicios</h1>
-      <p class="mt-4 text-ink-600">Contenido en preparación.</p>
-    </section>
-  `
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SectionHeading, ServiceCard, CtaBlock],
+  templateUrl: './services-list.html'
 })
-export class ServicesList {}
+export class ServicesList {
+  protected readonly services = services;
+  protected readonly ctaHeading = '¿Tenés un proyecto en mente?';
+  protected readonly ctaBody =
+    'Contanos qué necesitás y te mandamos un presupuesto orientativo en 24 horas.';
+}
