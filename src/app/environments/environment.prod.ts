@@ -1,0 +1,11 @@
+import type { Environment } from './environment.model';
+
+/**
+ * Production variant. Swapped in for `environment.ts` by the `fileReplacements`
+ * entry under the `production` build configuration.
+ */
+export const environment: Environment = {
+  production: true,
+  // PROVISIONAL: no backend exists yet. See environment.ts.
+  apiUrl: 'https://api.example.com'
+};
