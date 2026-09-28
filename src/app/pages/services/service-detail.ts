@@ -2,7 +2,8 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { findService } from '../../../content/lookup';
+import { findService, resolveProjectSlugs } from '../../../content/lookup';
+import { projects } from '../../../content/projects';
 import { services } from '../../../content/services';
 import { formatDuration, formatMoneyRange } from '../../core/format';
 import { NotFound } from '../not-found/not-found';
@@ -27,6 +28,15 @@ export class ServiceDetail {
   protected readonly service = computed(() => {
     const value = this.slug();
     return value === undefined ? undefined : findService(value, services);
+  });
+
+  /**
+   * Resolved from the declared slugs, so a link can carry the project title the buyer
+   * recognises and a slug that leaves the content never becomes a dead link.
+   */
+  protected readonly relatedProjects = computed(() => {
+    const detail = this.service();
+    return detail === undefined ? [] : resolveProjectSlugs(detail.relatedProjectSlugs, projects);
   });
 
   protected readonly formatDuration = formatDuration;

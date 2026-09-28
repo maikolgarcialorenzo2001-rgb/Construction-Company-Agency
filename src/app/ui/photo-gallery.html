@@ -1,0 +1,33 @@
+<section class="flex flex-col gap-6">
+  <h2 class="text-section font-semibold text-ink-900">La obra en fotos</h2>
+  @defer (on viewport) {
+    <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      @for (photo of photos(); track photo.image.src) {
+        <li class="flex flex-col gap-2">
+          <img
+            [ngSrc]="photo.image.src"
+            [alt]="photo.image.alt"
+            [width]="photo.image.width"
+            [height]="photo.image.height"
+            sizes="(min-width: 640px) 50vw, 100vw"
+            class="aspect-[3/2] w-full rounded-lg object-cover"
+          />
+          @if (photo.caption) {
+            <figcaption class="text-sm text-ink-600">{{ photo.caption }}</figcaption>
+          }
+        </li>
+      }
+    </ul>
+  } @placeholder {
+    <!-- Same grid and same aspect ratios: the block below the fold never shifts the page. -->
+    <ul
+      data-testid="photo-gallery-placeholder"
+      class="grid grid-cols-1 gap-6 sm:grid-cols-2"
+      aria-hidden="true"
+    >
+      @for (photo of photos(); track photo.image.src) {
+        <li class="aspect-[3/2] w-full rounded-lg bg-ink-900/5"></li>
+      }
+    </ul>
+  }
+</section>

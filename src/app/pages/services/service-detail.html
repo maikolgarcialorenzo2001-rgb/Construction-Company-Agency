@@ -49,15 +49,14 @@
         lead="Obras reales de este tipo de trabajo, con fotos y plazos."
       />
       <ul class="mt-6 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-3">
-        @for (projectSlug of detail.relatedProjectSlugs; track projectSlug) {
+        @for (project of relatedProjects(); track project.slug) {
           <li>
-            <!-- S5 links the declared slugs; S6 (T6.6) resolves them and shows the project title. -->
             <a
               data-testid="related-project"
-              [routerLink]="['/proyectos', projectSlug]"
+              [routerLink]="['/proyectos', project.slug]"
               class="btn-secondary block text-center"
             >
-              Ver el proyecto
+              {{ project.title }}
             </a>
           </li>
         }

@@ -1,0 +1,111 @@
+@if (project(); as detail) {
+  <section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+    <a routerLink="/proyectos" class="font-semibold text-brand-800 hover:underline"
+      >← Volver a proyectos</a
+    >
+
+    <div class="mt-6 grid gap-10 lg:grid-cols-2 lg:items-start">
+      <div>
+        <h1 class="text-display font-semibold text-ink-900">{{ detail.title }}</h1>
+        <p class="mt-2 text-ink-400">{{ detail.category }} · {{ detail.location }}</p>
+        <p class="mt-4 text-lg text-ink-600">{{ detail.brief }}</p>
+
+        <dl class="surface-card mt-8 grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt class="text-sm uppercase tracking-wide text-ink-400">Superficie</dt>
+            <dd class="font-semibold text-ink-900">{{ formatArea(detail.surfaceAreaM2) }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm uppercase tracking-wide text-ink-400">Plazo</dt>
+            <dd class="font-semibold text-ink-900">{{ formatDuration(detail.duration) }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm uppercase tracking-wide text-ink-400">Inversión</dt>
+            <dd class="font-semibold text-ink-900">{{ formatMoneyRange(detail.budgetRange) }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm uppercase tracking-wide text-ink-400">Ubicación</dt>
+            <dd class="font-semibold text-ink-900">{{ detail.location }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <img
+        data-testid="project-hero"
+        [ngSrc]="detail.photos[0].image.src"
+        [alt]="detail.photos[0].image.alt"
+        [width]="detail.photos[0].image.width"
+        [height]="detail.photos[0].image.height"
+        priority
+        sizes="(min-width: 1024px) 45vw, 100vw"
+        class="aspect-[3/2] w-full rounded-xl object-cover"
+      />
+    </div>
+
+    <div class="mt-16">
+      <app-section-heading
+        title="Antes y después"
+        lead="El mismo lugar, con el trabajo terminado. Sin retoques de foto."
+      />
+      <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+        @if (beforePhoto(); as before) {
+          <figure class="flex flex-col gap-2">
+            <img
+              data-testid="before-photo"
+              [ngSrc]="before.image.src"
+              [alt]="before.image.alt"
+              [width]="before.image.width"
+              [height]="before.image.height"
+              sizes="(min-width: 640px) 50vw, 100vw"
+              class="aspect-[3/2] w-full rounded-lg object-cover"
+            />
+            @if (before.caption) {
+              <figcaption class="text-sm text-ink-600">Antes: {{ before.caption }}</figcaption>
+            }
+          </figure>
+        }
+        @if (afterPhoto(); as after) {
+          <figure class="flex flex-col gap-2">
+            <img
+              data-testid="after-photo"
+              [ngSrc]="after.image.src"
+              [alt]="after.image.alt"
+              [width]="after.image.width"
+              [height]="after.image.height"
+              sizes="(min-width: 640px) 50vw, 100vw"
+              class="aspect-[3/2] w-full rounded-lg object-cover"
+            />
+            @if (after.caption) {
+              <figcaption class="text-sm text-ink-600">Después: {{ after.caption }}</figcaption>
+            }
+          </figure>
+        }
+      </div>
+    </div>
+
+    <div class="mt-16">
+      <app-photo-gallery [photos]="galleryPhotos()" />
+    </div>
+
+    <div class="mt-16">
+      <app-section-heading title="Qué servicios usamos" />
+      <ul class="mt-6 flex list-none flex-wrap gap-4 p-0">
+        @for (service of relatedServices(); track service.slug) {
+          <li>
+            <a
+              data-testid="related-service"
+              [routerLink]="['/servicios', service.slug]"
+              class="btn-secondary block text-center"
+            >
+              {{ service.name }}
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <app-cta-block class="mt-16 block" [heading]="ctaHeading" [body]="ctaBody" />
+  </section>
+} @else {
+  <app-not-found />
+}

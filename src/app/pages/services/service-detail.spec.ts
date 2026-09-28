@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { projects } from '../../../content/projects';
 import { services } from '../../../content/services';
 import { formatMoneyRange } from '../../core/format';
 import { ServiceDetail } from './service-detail';
@@ -64,6 +65,30 @@ describe('ServiceDetail', () => {
     );
 
     expect(hrefs).toEqual(REFORMAS.relatedProjectSlugs.map((slug) => `/proyectos/${slug}`));
+  });
+
+  it('names every related project, so the buyer sees what the work produced', async () => {
+    const element = await render(REFORMAS.slug);
+    const labels = [...element.querySelectorAll('a[data-testid="related-project"]')].map((a) =>
+      a.textContent?.trim()
+    );
+
+    expect(labels).toEqual(
+      REFORMAS.relatedProjectSlugs.map(
+        (slug) => projects.find((project) => project.slug === slug)?.title
+      )
+    );
+  });
+
+  it('never links a project slug that the content does not declare', async () => {
+    const element = await render(REFORMAS.slug);
+    const hrefs = [...element.querySelectorAll('a[data-testid="related-project"]')].map((a) =>
+      a.getAttribute('href')
+    );
+
+    for (const href of hrefs) {
+      expect(projects.some((project) => `/proyectos/${project.slug}` === href)).toBe(true);
+    }
   });
 
   it('closes the page with the quote CTA block', async () => {
