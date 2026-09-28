@@ -2,9 +2,10 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
+import { projects } from './projects';
 import { services } from './services';
 import { site } from './site';
-import { contentImages } from './lookup';
+import { contentImages, findProject, findService } from './lookup';
 
 /**
  * Contract suite over the whole content graph. Slice S2 covers the shared rules
@@ -13,7 +14,7 @@ import { contentImages } from './lookup';
  */
 
 /** Every module that may hold content. Imported lazily so the suite stays extensible. */
-const CONTENT_MODULES = ['./site', './services'] as const;
+const CONTENT_MODULES = ['./site', './services', './projects'] as const;
 
 interface Slugged {
   readonly slug: string;
@@ -31,7 +32,7 @@ const nonEmpty = (value: string, label: string): void => {
 };
 
 describe('content graph: image asset contract', () => {
-  const images = contentImages({ site, services });
+  const images = contentImages({ site, services, projects });
 
   it('finds image assets in the graph', () => {
     expect(images.length).toBeGreaterThan(0);
@@ -61,11 +62,18 @@ describe('content graph: slug integrity', () => {
   it('keeps every slug unique within its collection', () => {
     expectUniqueSlugs('site.nav', site.nav);
     expectUniqueSlugs('services', services);
+    expectUniqueSlugs('projects', projects);
   });
 
   it('keeps every content slug kebab-case so it can be a router segment', () => {
     for (const service of services) {
       expect(service.slug, `${service.slug} must be kebab-case`).toMatch(
+        /^[a-z0-9]+(-[a-z0-9]+)*$/
+      );
+    }
+
+    for (const project of projects) {
+      expect(project.slug, `${project.slug} must be kebab-case`).toMatch(
         /^[a-z0-9]+(-[a-z0-9]+)*$/
       );
     }
@@ -117,6 +125,124 @@ describe('content graph: services catalog (T5.6)', () => {
     for (const service of services) {
       expect(service.isPlaceholder, `${service.slug} must be flagged as placeholder`).toBe(true);
     }
+  });
+});
+
+describe('content graph: projects showcase (T6.6)', () => {
+  it('holds a real showcase, not a single sample entry', () => {
+    expect(projects.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('gives every project a complete evidence payload', () => {
+    for (const project of projects) {
+      nonEmpty(project.slug, `${project.slug}.slug`);
+      nonEmpty(project.title, `${project.slug}.title`);
+      nonEmpty(project.brief, `${project.slug}.brief`);
+      nonEmpty(project.duration, `${project.slug}.duration`);
+      nonEmpty(project.location, `${project.slug}.location`);
+      nonEmpty(project.category, `${project.slug}.category`);
+      nonEmpty(project.testimonialSlug, `${project.slug}.testimonialSlug`);
+
+      expect(
+        project.surfaceAreaM2,
+        `${project.slug}.surfaceAreaM2 must be a real surface`
+      ).toBeGreaterThan(0);
+      expect(
+        project.budgetRange.min,
+        `${project.slug}.budgetRange.min must be positive`
+      ).toBeGreaterThan(0);
+      expect(
+        project.budgetRange.max,
+        `${project.slug}.budgetRange.max must cover min`
+      ).toBeGreaterThanOrEqual(project.budgetRange.min);
+    }
+  });
+
+  it('ships between 8 and 15 photos per project, as the spec demands', () => {
+    for (const project of projects) {
+      expect(
+        project.photos.length,
+        `${project.slug} must show a full photo set`
+      ).toBeGreaterThanOrEqual(8);
+      expect(
+        project.photos.length,
+        `${project.slug} must not turn into a wall of images`
+      ).toBeLessThanOrEqual(15);
+    }
+  });
+
+  it('proves the change with at least one before and one after photo', () => {
+    for (const project of projects) {
+      const kinds = project.photos.map((photo) => photo.kind);
+
+      expect(kinds, `${project.slug} needs a before photo`).toContain('before');
+      expect(kinds, `${project.slug} needs an after photo`).toContain('after');
+    }
+  });
+
+  it('keeps the finished work as photos[0], the hero every card and detail shows', () => {
+    for (const project of projects) {
+      expect(project.photos[0].kind, `${project.slug} hero must show the finished work`).toBe(
+        'after'
+      );
+    }
+  });
+
+  it('points every project at at least one related service', () => {
+    for (const project of projects) {
+      expect(
+        project.relatedServiceSlugs.length,
+        `${project.slug} must link back to the services that did the work`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it('flags every project as placeholder until real client data lands', () => {
+    for (const project of projects) {
+      expect(project.isPlaceholder, `${project.slug} must be flagged as placeholder`).toBe(true);
+    }
+  });
+});
+
+describe('content graph: cross-collection integrity (T6.6)', () => {
+  it('resolves every relatedServiceSlugs entry to a real service', () => {
+    const dangling: string[] = [];
+
+    for (const project of projects) {
+      for (const slug of project.relatedServiceSlugs) {
+        if (findService(slug, services) === undefined) {
+          dangling.push(`${project.slug} -> service "${slug}"`);
+        }
+      }
+    }
+
+    expect(dangling, `dangling service references:\n${dangling.join('\n')}`).toEqual([]);
+  });
+
+  it('resolves every relatedProjectSlugs entry to a real project', () => {
+    const dangling: string[] = [];
+
+    for (const service of services) {
+      for (const slug of service.relatedProjectSlugs) {
+        if (findProject(slug, projects) === undefined) {
+          dangling.push(`${service.slug} -> project "${slug}"`);
+        }
+      }
+    }
+
+    expect(dangling, `dangling project references:\n${dangling.join('\n')}`).toEqual([]);
+  });
+
+  it('keeps every service reachable from at least one project', () => {
+    const referenced = new Set(projects.flatMap((project) => project.relatedServiceSlugs));
+    const unreachable = services
+      .filter((service) => !referenced.has(service.slug))
+      .map((service) => service.slug);
+
+    expect(
+      unreachable,
+      `services no project points back to: ${unreachable.join(', ')}`
+    ).toEqual([]);
   });
 });
 
