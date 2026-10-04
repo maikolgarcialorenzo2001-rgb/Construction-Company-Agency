@@ -75,12 +75,12 @@ Chain strategy: stacked-to-main
 
 ## S6 — Projects showcase [B]+[C] (~380 + ~560 data)
 
-- [ ] **T6.1 [C]** `projects.ts`: 3–4 projects, each 8–15 photos incl. ≥1 `before` + ≥1 `after`, `testimonialSlug`, `relatedServiceSlugs`. *AC:* build green (`size:exception`). *Files:* `content/projects.ts`. *Deps:* T2.1
-- [ ] **T6.2 [B]** `ui/project-card`: title, category, location, thumb = `photos[0]`. *AC:* spec — one link `/proyectos/{slug}` per project. *Files:* `ui/project-card.ts|.html|.spec.ts`. *Deps:* T2.1
-- [ ] **T6.3 [B]** `ui/photo-gallery`: `@defer (on viewport)` + `@placeholder` reserving `aspect-[4/3]`. *AC:* spec asserts placeholder/content blocks, no hydration wait. *Files:* `ui/photo-gallery.ts|.html|.spec.ts`. *Deps:* T6.2
-- [ ] **T6.4 [B]** `/proyectos` list: N cards, order, lazy thumbs, `cta-block`. *AC:* exactly N ordered links. *Files:* `pages/projects/projects-list.ts|.html|.spec.ts`. *Deps:* T6.1, T6.2
-- [ ] **T6.5 [B]** `/proyectos/:slug` detail: brief, m², duration, budget, before/after pair, related services, back-link, one priority hero, `cta-block`, unknown → `app-not-found`. *AC:* all evidence visible; unknown slug 404s. *Files:* `pages/projects/project-detail.ts|.html|.spec.ts`. *Deps:* T6.3
-- [ ] **T6.6 [B]** Cross-collection integrity: every `relatedServiceSlugs` and `relatedProjectSlugs` resolves; photos 8–15 with before/after. *AC:* suite green. *Files:* `content/content.spec.ts`, `pages/services/service-detail.spec.ts`. *Deps:* T6.1, T5.1
+- [x] **T6.1 [C]** `projects.ts`: 3–4 projects, each 8–15 photos incl. ≥1 `before` + ≥1 `after`, `testimonialSlug`, `relatedServiceSlugs`. *AC:* build green (`size:exception`). *Files:* `content/projects.ts`. *Deps:* T2.1
+- [x] **T6.2 [B]** `ui/project-card`: title, category, location, thumb = `photos[0]`. *AC:* spec — one link `/proyectos/{slug}` per project. *Files:* `ui/project-card.ts|.html|.spec.ts`. *Deps:* T2.1
+- [x] **T6.3 [B]** `ui/photo-gallery`: `@defer (on viewport)` + `@placeholder` reserving `aspect-[4/3]`. *AC:* spec asserts placeholder/content blocks, no hydration wait. *Files:* `ui/photo-gallery.ts|.html|.spec.ts`. *Deps:* T6.2
+- [x] **T6.4 [B]** `/proyectos` list: N cards, order, lazy thumbs, `cta-block`. *AC:* exactly N ordered links. *Files:* `pages/projects/projects-list.ts|.html|.spec.ts`. *Deps:* T6.1, T6.2
+- [x] **T6.5 [B]** `/proyectos/:slug` detail: brief, m², duration, budget, before/after pair, related services, back-link, one priority hero, `cta-block`, unknown → `app-not-found`. *AC:* all evidence visible; unknown slug 404s. *Files:* `pages/projects/project-detail.ts|.html|.spec.ts`. *Deps:* T6.3
+- [x] **T6.6 [B]** Cross-collection integrity: every `relatedServiceSlugs` and `relatedProjectSlugs` resolves; photos 8–15 with before/after. *AC:* suite green. *Files:* `content/content.spec.ts`, `pages/services/service-detail.spec.ts`. *Deps:* T6.1, T5.1
 
 ## S7 — Proceso + testimonios [B]+[C] (~380)
 
