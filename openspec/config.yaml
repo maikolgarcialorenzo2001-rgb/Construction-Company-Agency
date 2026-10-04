@@ -1,0 +1,46 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Stack: Angular 22.2.0 standalone + zoneless (zone.js absent), TypeScript 6.0.3, RxJS 7.8
+  Styling: Tailwind CSS v4 via @tailwindcss/postcss (.postcssrc.json), src/styles.css @import 'tailwindcss'
+  Package manager: BUN ONLY — bunx ng ... / bun add; never npm/npx/yarn; never edit bun.lock by hand
+  Testing: vitest 4.1.11 via @angular/build:unit-test builder (jsdom, vitest/globals in tsconfig.spec.json)
+  Canonical one-shot test: bunx ng test --watch=false; serve: bunx ng serve; build: bunx ng build
+  Lint: angular-eslint 22.5.0 flat config (bunx ng lint). Format: prettier 3.8.1 (.prettierrc)
+  Conventions: DI-based config via ENVIRONMENT InjectionToken (environments/) + fileReplacements per env
+
+testing:
+  strict_tdd: true
+  test_command: bunx ng test --watch=false
+  build_command: bunx ng build
+  runner: vitest 4.1.11 (@angular/build:unit-test)
+  environment: jsdom
+  coverage: false
+  linter: bunx ng lint (angular-eslint 22.5.0)
+  type_checker: tsc via ng build (strict + strictTemplates)
+  formatter: prettier (config: .prettierrc)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns (standalone components, DI-first config, zoneless)
+    - Red-Green-Refactor: write failing test first, then implement
+    tdd: true
+    test_command: bunx ng test --watch=false
+  verify:
+    test_command: bunx ng test --watch=false
+    build_command: bunx ng build
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
