@@ -86,8 +86,38 @@ describe('PhotoGallery', () => {
   it('reserves the aspect ratio of the pending gallery, so the page does not jump', async () => {
     const fixture = await render();
     const element = fixture.nativeElement as HTMLElement;
+    const slots = element.querySelectorAll(
+      '[data-testid="photo-gallery-placeholder"] > li'
+    );
 
     expect(element.querySelector('[data-testid="photo-gallery-placeholder"]')).not.toBeNull();
+    // One reserved slot per photo: the block below the fold is as tall as it will be.
+    expect(slots.length).toBe(photos.length);
+    for (const slot of slots) {
+      expect(slot.className).toContain('aspect-');
+    }
+  });
+
+  it('reserves exactly the box the pictures will take, so nothing shifts on arrival', async () => {
+    const fixture = await render();
+    const element = fixture.nativeElement as HTMLElement;
+    // Layout classes only: the box must match, the paint is allowed to differ.
+    const box = (className: string | undefined): string =>
+      (className ?? '')
+        .split(' ')
+        .filter((name) => name.startsWith('aspect-') || name === 'w-full')
+        .join(' ');
+
+    const reserved = box(
+      element.querySelector('[data-testid="photo-gallery-placeholder"] > li')?.className
+    );
+
+    scrollIntoView();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(reserved).not.toBe('');
+    expect(box(element.querySelector('img')?.className)).toBe(reserved);
   });
 
   it('renders one lazy image per photo once the gallery enters the viewport', async () => {

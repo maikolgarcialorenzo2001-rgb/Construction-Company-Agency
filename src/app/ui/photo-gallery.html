@@ -10,7 +10,7 @@
             [width]="photo.image.width"
             [height]="photo.image.height"
             sizes="(min-width: 640px) 50vw, 100vw"
-            class="aspect-[3/2] w-full rounded-lg object-cover"
+            class="aspect-[4/3] w-full rounded-lg object-cover"
           />
           @if (photo.caption) {
             <figcaption class="text-sm text-ink-600">{{ photo.caption }}</figcaption>
@@ -26,7 +26,7 @@
       aria-hidden="true"
     >
       @for (photo of photos(); track photo.image.src) {
-        <li class="aspect-[3/2] w-full rounded-lg bg-ink-900/5"></li>
+        <li class="aspect-[4/3] w-full rounded-lg bg-ink-900/5"></li>
       }
     </ul>
   }

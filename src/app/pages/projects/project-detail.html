@@ -38,7 +38,7 @@
         [height]="detail.photos[0].image.height"
         priority
         sizes="(min-width: 1024px) 45vw, 100vw"
-        class="aspect-[3/2] w-full rounded-xl object-cover"
+        class="aspect-[4/3] w-full rounded-xl object-cover"
       />
     </div>
 
@@ -57,7 +57,7 @@
               [width]="before.image.width"
               [height]="before.image.height"
               sizes="(min-width: 640px) 50vw, 100vw"
-              class="aspect-[3/2] w-full rounded-lg object-cover"
+              class="aspect-[4/3] w-full rounded-lg object-cover"
             />
             @if (before.caption) {
               <figcaption class="text-sm text-ink-600">Antes: {{ before.caption }}</figcaption>
@@ -73,7 +73,7 @@
               [width]="after.image.width"
               [height]="after.image.height"
               sizes="(min-width: 640px) 50vw, 100vw"
-              class="aspect-[3/2] w-full rounded-lg object-cover"
+              class="aspect-[4/3] w-full rounded-lg object-cover"
             />
             @if (after.caption) {
               <figcaption class="text-sm text-ink-600">Después: {{ after.caption }}</figcaption>

@@ -239,10 +239,9 @@ describe('content graph: cross-collection integrity (T6.6)', () => {
       .filter((service) => !referenced.has(service.slug))
       .map((service) => service.slug);
 
-    expect(
-      unreachable,
-      `services no project points back to: ${unreachable.join(', ')}`
-    ).toEqual([]);
+    expect(unreachable, `services no project points back to: ${unreachable.join(', ')}`).toEqual(
+      []
+    );
   });
 });
 
