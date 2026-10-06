@@ -8,29 +8,33 @@ import { routes } from './app.routes';
 
 /**
  * One row per reachable route: the perf/a11y contract the whole site must honour.
- * `priority` is the number of `fetchpriority="high"` images the route is allowed: the
- * single LCP image where a hero exists, none where the page has no above-the-fold photo.
- * `cta` says whether the shared CTA block closes the page; the quote page owns its own
- * form, so it is the only route that ends without one. Every other route closes with it,
- * the wildcard route included.
+ * `images` is the exact number of `<img>` elements the route renders inside `<main>`
+ * (the shell around it renders none), so a page that must stay photo-free is asserted
+ * to render zero images, not skipped. `priority` is the number of
+ * `fetchpriority="high"` images the route is allowed: the single LCP image where a hero
+ * exists, none where the page has no above-the-fold photo, which makes the lazy count
+ * `images - priority`. `cta` says whether the shared CTA block closes the page; the
+ * quote page owns its own form, so it is the only route that ends without one. Every
+ * other route closes with it, the wildcard route included.
  */
 interface RouteContract {
   readonly path: string;
+  readonly images: number;
   readonly priority: number;
   readonly cta: boolean;
 }
 
 const ROUTE_CONTRACTS: readonly RouteContract[] = [
-  { path: '/', priority: 1, cta: true },
-  { path: '/servicios', priority: 0, cta: true },
-  { path: '/servicios/reformas-integrales', priority: 1, cta: true },
-  { path: '/proyectos', priority: 0, cta: true },
-  { path: '/proyectos/casa-timber-pilar', priority: 1, cta: true },
-  { path: '/proceso', priority: 0, cta: true },
-  { path: '/testimonios', priority: 0, cta: true },
-  { path: '/nosotros', priority: 0, cta: true },
-  { path: '/presupuesto', priority: 0, cta: false },
-  { path: '/pagina-que-no-existe', priority: 0, cta: true }
+  { path: '/', images: 7, priority: 1, cta: true },
+  { path: '/servicios', images: 6, priority: 0, cta: true },
+  { path: '/servicios/reformas-integrales', images: 1, priority: 1, cta: true },
+  { path: '/proyectos', images: 8, priority: 0, cta: true },
+  { path: '/proyectos/casa-timber-pilar', images: 3, priority: 1, cta: true },
+  { path: '/proceso', images: 0, priority: 0, cta: true },
+  { path: '/testimonios', images: 0, priority: 0, cta: true },
+  { path: '/nosotros', images: 0, priority: 0, cta: true },
+  { path: '/presupuesto', images: 0, priority: 0, cta: false },
+  { path: '/pagina-que-no-existe', images: 0, priority: 0, cta: true }
 ];
 
 describe('release matrix', () => {
@@ -96,12 +100,20 @@ describe('release matrix', () => {
     }
   });
 
-  it('loads every non-priority image lazily', async () => {
-    for (const { path } of ROUTE_CONTRACTS) {
+  it('ships the exact image budget the route declares: total, lazy and priority', async () => {
+    for (const { path, images, priority } of ROUTE_CONTRACTS) {
       const element = await goto(path);
-      const images = Array.from(main(element).querySelectorAll('img'));
+      const rendered = Array.from(main(element).querySelectorAll('img'));
+      const lazy = rendered.filter((image) => image.getAttribute('loading') === 'lazy');
+      const promoted = rendered.filter((image) => image.getAttribute('fetchpriority') === 'high');
 
-      for (const image of images) {
+      expect(rendered, `${path} total images`).toHaveLength(images);
+      expect(lazy, `${path} lazy images`).toHaveLength(images - priority);
+      expect(promoted, `${path} priority images`).toHaveLength(priority);
+
+      // The count above is the aggregate form of the rule below: no non-priority image
+      // may load eagerly, on any route, including the ones that render no image at all.
+      for (const image of rendered) {
         if (image.getAttribute('fetchpriority') === 'high') {
           continue;
         }

@@ -26,6 +26,13 @@ const CONTENT_MODULES = [
   './testimonials'
 ] as const;
 
+/**
+ * The modules the release gate walks. This is `CONTENT_MODULES` reshaped for the walker:
+ * a top-level `isPlaceholder` on the landing payload (`home.ts:39`) must surface exactly
+ * like a nested one on `site.nap`, so the landing page is walked like any other module.
+ */
+const CONTENT_GRAPH = { site, home, services, projects, processSteps, testimonials } as const;
+
 interface Slugged {
   readonly slug: string;
 }
@@ -447,6 +454,24 @@ describe('content graph: import purity', () => {
 });
 
 describe('content graph: placeholder release gate', () => {
+  it('walks every module that carries placeholder data, the landing payload included', () => {
+    const report = placeholderReport();
+
+    // A content module the gate does not walk is a blind spot, whatever it holds.
+    expect(Object.keys(CONTENT_GRAPH).length, 'the gate must cover every writable module').toBe(
+      CONTENT_MODULES.length
+    );
+    for (const { module, flags } of report) {
+      expect(flags.length, `${module} must be walked by the release gate`).toBeGreaterThan(0);
+    }
+
+    // `home.isPlaceholder` (home.ts:39) is a top-level flag: the report must name the
+    // landing payload, not silently drop it.
+    const homeReport = report.find(({ module }) => module === 'home');
+    expect(homeReport, 'the release gate must walk the landing payload').toBeDefined();
+    expect(homeReport?.flags).toContain('home');
+  });
+
   it('flags every non-client entry so a single search finds them', () => {
     const flags = collectPlaceholderFlags(site);
 
@@ -455,7 +480,7 @@ describe('content graph: placeholder release gate', () => {
   });
 
   it('reports placeholders without failing the suite', () => {
-    const flags = collectPlaceholderFlags(site);
+    const flags = placeholderReport().flatMap(({ flags }) => flags);
 
     // Release gate, not a build gate: the owner replaces these before going live.
     console.info(
@@ -465,6 +490,17 @@ describe('content graph: placeholder release gate', () => {
     expect(Array.isArray(flags)).toBe(true);
   });
 });
+
+/**
+ * The release gate's coverage report: every walked module with its flagged entries
+ * resolved to readable paths (`home` for a top-level flag, `site.nap` for a nested one).
+ */
+function placeholderReport(): { module: string; flags: string[] }[] {
+  return Object.entries(CONTENT_GRAPH).map(([module, node]) => ({
+    module,
+    flags: collectPlaceholderFlags(node).map((path) => (path === '' ? module : `${module}.${path}`))
+  }));
+}
 
 /** Paths of every `isPlaceholder: true` marker inside the given node, in walk order. */
 function collectPlaceholderFlags(node: unknown, path: string[] = []): string[] {
