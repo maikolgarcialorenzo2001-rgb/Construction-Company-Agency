@@ -3,4 +3,9 @@ export interface Environment {
   production: boolean;
   /** Base URL of the backend API, without a trailing slash. */
   apiUrl: string;
+  /**
+   * GA4 measurement id (`G-XXXXXXXXXX`). Empty means "no property yet": analytics
+   * treats it as absent and stays completely silent until the client fills it in.
+   */
+  gaMeasurementId: string;
 }

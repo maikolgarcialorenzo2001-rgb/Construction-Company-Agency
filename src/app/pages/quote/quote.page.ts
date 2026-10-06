@@ -11,6 +11,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import type { Option } from '../../../content/content.types';
 import { BUDGET_OPTIONS, JOB_TYPE_OPTIONS, STAGE_OPTIONS } from '../../../content/quote-options';
 import { site } from '../../../content/site';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import {
   LEAD_MAIL_SUBJECT,
   buildLeadMessage,
@@ -68,6 +69,7 @@ const RANGE_ERROR = 'Ingresá una superficie entre 1 y 10000 m².';
 export class QuotePage {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly analytics = inject(AnalyticsService);
 
   /**
    * Values are the kebab-case slugs from `quote-options.ts`; the labels are resolved
@@ -158,6 +160,15 @@ export class QuotePage {
     const message = buildLeadMessage(fields);
 
     window.open(buildWhatsAppUrl(toWaDigits(site.nap.phoneE164), message), '_blank');
+
+    // PII-free by construction: the enum labels, the area and nothing else. The
+    // location and the free comment stay on the visitor's device.
+    this.analytics.track('generate_lead', {
+      work_type: fields.workTypeLabel,
+      area_m2: fields.areaM2,
+      budget: fields.budgetLabel ?? '',
+      stage: fields.stageLabel ?? ''
+    });
 
     this.message.set(message);
     this.sent.set(true);

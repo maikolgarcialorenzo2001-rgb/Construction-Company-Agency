@@ -7,5 +7,7 @@ import type { Environment } from './environment.model';
 export const environment: Environment = {
   production: true,
   // PROVISIONAL: no backend exists yet. See environment.ts.
-  apiUrl: 'https://api.example.com'
+  apiUrl: 'https://api.example.com',
+  // PROVISIONAL: no GA4 property yet. See environment.ts.
+  gaMeasurementId: ''
 };

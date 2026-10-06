@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { site } from '../../../content/site';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { toWaDigits } from '../../core/lead/lead-links';
 import { PhoneLinkComponent } from './phone-link.component';
 
@@ -49,5 +51,33 @@ describe('PhoneLinkComponent', () => {
       inline.querySelector('a')?.getAttribute('href')
     );
     expect(button.querySelector('a')?.className).not.toBe(inline.querySelector('a')?.className);
+  });
+
+  describe('analytics', () => {
+    it('reports exactly one call_click, carrying the placement', async () => {
+      const element = await render({ placement: 'header' });
+      const track = vi.spyOn(TestBed.inject(AnalyticsService), 'track');
+
+      element.querySelector('a')?.click();
+
+      expect(track).toHaveBeenCalledTimes(1);
+      const [event, params] = track.mock.calls[0];
+      expect(event).toBe('call_click');
+      expect(params).toEqual({ placement: 'header' });
+
+      const payload = JSON.stringify(params);
+      expect(payload).not.toMatch(/\d{6,}/);
+      expect(payload).not.toContain('text=');
+    });
+
+    it('falls back to an empty placement instead of guessing one', async () => {
+      const element = await render();
+      const track = vi.spyOn(TestBed.inject(AnalyticsService), 'track');
+
+      element.querySelector('a')?.click();
+
+      expect(track).toHaveBeenCalledTimes(1);
+      expect(track).toHaveBeenCalledWith('call_click', { placement: '' });
+    });
   });
 });

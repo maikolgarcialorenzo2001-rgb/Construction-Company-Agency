@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Option } from '../../../content/content.types';
 import { BUDGET_OPTIONS, JOB_TYPE_OPTIONS, STAGE_OPTIONS } from '../../../content/quote-options';
 import { site } from '../../../content/site';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import {
   LEAD_MAIL_SUBJECT,
   LEAD_PHOTO_INVITE,
@@ -385,6 +386,58 @@ describe('QuotePage', () => {
         expect(spy).not.toHaveBeenCalled();
       }
       expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('analytics', () => {
+    const trackSpy = () => vi.spyOn(TestBed.inject(AnalyticsService), 'track');
+
+    it('reports generate_lead exactly once on a successful handoff, PII-free', async () => {
+      const element = await render();
+      vi.spyOn(window, 'open').mockReturnValue(null);
+      const track = trackSpy();
+      fillAll();
+
+      await submit(element);
+
+      const leads = track.mock.calls.filter(([event]) => event === 'generate_lead');
+      expect(leads).toHaveLength(1);
+
+      const params = leads[0][1];
+      expect(params).toEqual({
+        work_type: labelOf(JOB_TYPE_OPTIONS, SUBMISSION.workType),
+        area_m2: SUBMISSION.areaM2,
+        budget: labelOf(BUDGET_OPTIONS, SUBMISSION.budget),
+        stage: labelOf(STAGE_OPTIONS, SUBMISSION.stage)
+      });
+
+      const payload = JSON.stringify(params);
+      expect(payload).not.toMatch(/\d{6,}/);
+      expect(payload).not.toContain('text=');
+      // The location and the free comment are PII: they must never travel.
+      expect(payload).not.toContain(SUBMISSION.location);
+      expect(payload).not.toContain(SUBMISSION.comment);
+    });
+
+    it('stays silent on the honeypot path', async () => {
+      const element = await render();
+      vi.spyOn(window, 'open').mockReturnValue(null);
+      const track = trackSpy();
+      fixture.componentInstance.form.controls.website.setValue('https://ejemplo.com');
+
+      await submit(element);
+
+      expect(track.mock.calls.filter(([event]) => event === 'generate_lead')).toHaveLength(0);
+    });
+
+    it('stays silent when the form is rejected', async () => {
+      const element = await render();
+      vi.spyOn(window, 'open').mockReturnValue(null);
+      const track = trackSpy();
+
+      await submit(element);
+
+      expect(track).not.toHaveBeenCalledWith('generate_lead', expect.anything());
     });
   });
 });

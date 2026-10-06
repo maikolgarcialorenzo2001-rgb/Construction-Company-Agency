@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { site } from '../../../content/site';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { toWaDigits } from '../../core/lead/lead-links';
 import { WhatsappLinkComponent } from './whatsapp-link.component';
 
@@ -55,5 +57,33 @@ describe('WhatsappLinkComponent', () => {
     const button = await render({ variant: 'button' });
 
     expect(button.querySelector('a')?.className).not.toBe(inline.querySelector('a')?.className);
+  });
+
+  describe('analytics', () => {
+    it('reports exactly one whatsapp_click, carrying the placement and never the message', async () => {
+      const element = await render({ placement: 'footer', message: 'Hola, quiero un presupuesto' });
+      const track = vi.spyOn(TestBed.inject(AnalyticsService), 'track');
+
+      element.querySelector('a')?.click();
+
+      expect(track).toHaveBeenCalledTimes(1);
+      const [event, params] = track.mock.calls[0];
+      expect(event).toBe('whatsapp_click');
+      expect(params).toEqual({ placement: 'footer' });
+
+      const payload = JSON.stringify(params);
+      expect(payload).not.toMatch(/\d{6,}/);
+      expect(payload).not.toContain('text=');
+      expect(payload).not.toContain('presupuesto');
+    });
+
+    it('falls back to an empty placement instead of guessing one', async () => {
+      const element = await render();
+      const track = vi.spyOn(TestBed.inject(AnalyticsService), 'track');
+
+      element.querySelector('a')?.click();
+
+      expect(track).toHaveBeenCalledWith('whatsapp_click', { placement: '' });
+    });
   });
 });

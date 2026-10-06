@@ -1,59 +1,66 @@
-# ConstructionCompanyAgency
+# Constructora Ejemplo — sitio de obra y reformas
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.8.
+Marketing site for a construction and renovation company (CABA and Greater Buenos Aires).
+Angular standalone app, Tailwind CSS, no component styles, all copy in Argentine Spanish.
 
-## Development server
+## Stack
 
-To start a local development server, run:
+- **Angular** 22, standalone components, zoneless change detection, lazy routes.
+- **Tailwind CSS** via PostCSS; all styling lives in `src/styles.css` utilities and
+  `@utility` helpers. Components ship **zero** `styles` on purpose (see `openspec`).
+- **Vitest** + Angular TestBed for unit tests, `jsdom` environment.
+- **Bun** as package manager and script runner.
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Commands
 
 ```bash
-ng generate component component-name
+bun install                 # install dependencies
+bunx ng serve               # dev server on http://localhost:4200
+bunx ng build               # production build into dist/
+bunx ng test --watch=false  # run the whole test suite once
+bunx ng lint                # ESLint + Angular template rules
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Run a single spec with `--include=`:
 
 ```bash
-ng generate --help
+bunx ng test --watch=false --include="src/app/pages/quote/quote.page.spec.ts"
 ```
 
-## Building
+## Project layout
 
-To build the project run:
+```
+src/
+  app/
+    components/    presentational + layout pieces (header, footer, cta-block, ...)
+    core/          cross-cutting services (seo, analytics, consent)
+    pages/         one folder per route, lazily loaded
+    environments/  Environment model + per-build values (token: ENVIRONMENT)
+    app.config.ts  providers and app initializers (SEO, then analytics)
+    app.routes.ts  route table
+  content/         single source of truth for copy, NAP and images
+  styles.css       Tailwind layers, design tokens and @utility helpers
+```
+
+## Content and environment
+
+- All copy, NAP data, services, projects and testimonials live in `src/content/`.
+  Edit there; pages only read from the collections through `src/content/lookup.ts`.
+- `gaMeasurementId` is set per environment under `src/app/environments/`. The analytics
+  layer installs a GA4 tag **only** when the id is a real `G-XXXXXXXXXX` and the visitor
+  has granted consent. Empty ids and placeholders are ignored.
+
+## Release gate
+
+Before shipping, the build must stay under the initial-bundle budget (450 kB warning,
+500 kB error) and **no placeholder may reach the machine-readable layer**:
 
 ```bash
-ng build
+bunx ng lint                # green
+bunx ng test --watch=false  # green
+bunx ng build               # initial bundle under 450 kB
+grep -rn "isPlaceholder" src/content/   # no `true` left: real client data shipped
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Every content entry that is not real client data carries `isPlaceholder: true`, so the
+last command lists whatever still has to be replaced before launch.
