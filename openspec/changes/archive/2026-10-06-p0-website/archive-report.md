@@ -108,13 +108,34 @@ Every item below was left open by the verify run with the instruction to fix it 
 
 One deliverable per commit, conventional format, no AI attribution. Nothing pushed.
 
-## Open follow-ups (known, deliberately not closed here)
+## Open follow-ups (closed by the post-archive hardening)
 
-- **W4**: the release-matrix lazy-image loop never executes on the 5 image-less routes (ghost loop). Companion specs cover the real images; severity stays WARNING.
-- **W6**: `home.isPlaceholder` (`home.ts:39`) has no automated assertion; the README grep still finds it, so discoverability holds.
-- **Req 7 PARTIAL**: focus indicator, contrast and focus order have no automated test. The README manual gate documents this honestly and has **not been run yet**.
-- **content-model Req 1 PARTIAL**: no persistent negative test for a bad content shape (proven once with a temporary probe at verify time).
-- **Release blockers**: real NAP/credentials/GBP URL, real `gaMeasurementId`, image host decision, and the first manual a11y-gate run.
+Closed after archive (commits `2d316b7`, `4fcefbe`, `1ab7bb5`):
+
+- **W4 resolved**: the release-matrix lazy-image loop now declares an `images` budget per
+  route and asserts total, lazy (`images - priority`) and priority counts on all 10
+  routes; the 5 image-less routes assert zero images instead of silently skipping the
+  loop body.
+- **W6 resolved**: the placeholder walker now covers the full content graph (`site`,
+  `home`, `services`, `projects`, `processSteps`, `testimonials`), and a top-level
+  `home.isPlaceholder` is reported as `home` by the release gate.
+- **content-model Req 1 now COMPLIANT**: the persistent negative test lives at
+  `src/type-tests/content-shape.typetest.ts`. It is type-checked by the app program
+  (tsconfig.app.json) but unreachable from `main.ts`, so never bundled; removing the
+  `@ts-expect-error` makes `ng build` fail with TS1360, and a looser schema would trip
+  TS2578. Previously proven only with a throwaway probe.
+- **seo-analytics-performance Req 7 stays PARTIAL, by design**: the automated layer now
+  scans every route with axe-core (`app.a11y.spec.ts`, 10 jsdom-capable rules) plus the
+  release matrix, and the one real violation found (sticky-cta outside any landmark) was
+  fixed with `role="complementary"`. WCAG 2.4.7 focus visibility and 1.4.3 body-text
+  contrast are not automatable under jsdom and remain on the README manual gate; 2.4.3
+  reading-order tab flow is proven structurally (no positive `tabindex`) but a real
+  keyboard pass is still required.
+
+Still open (owned by the release itself, not by the SDD cycle):
+
+- **Release blockers**: real NAP/credentials/GBP URL, real `gaMeasurementId`, image host
+  decision, and the first manual a11y-gate run.
 - **Not pushed**: 24 local commits on `main`; remote untouched by design.
 
 ## Checklist
