@@ -82,13 +82,19 @@ A sticky CTA MUST be visible on every route EXCEPT `/presupuesto`, where the for
 
 ### Requirement: 6. [B] End-of-page CTA block
 
-Every route MUST end its main content with a CTA block linking to `/presupuesto` and offering `tel:`.
+Every route EXCEPT `/presupuesto` MUST end its main content with a CTA block linking to `/presupuesto` and offering `tel:` — the quote form is already the primary action there.
 
 #### Scenario: CTA closes every page
 
-- GIVEN any top-level route
+- GIVEN any top-level route other than `/presupuesto`
 - WHEN the page finishes rendering
 - THEN the last main-content section is the CTA block
+
+#### Scenario: No self-referential CTA on the quote route
+
+- GIVEN the user is on `/presupuesto`
+- WHEN the page finishes rendering
+- THEN no CTA block linking to the current page is present
 
 ## Out of Scope
 
@@ -101,6 +107,7 @@ Every route MUST end its main content with a CTA block linking to `/presupuesto`
 |---|---|---|
 | 1 | All 10 routes resolve; unknown path renders 404 | `bunx ng test --watch=false` |
 | 2 | No sticky CTA on `/presupuesto`, present on the rest | `bunx ng test --watch=false` |
+| 2a | CTA closes every route except `/presupuesto` (404 included) | `bunx ng test --watch=false` |
 | 3 | `lang="es-AR"` present | `bunx ng test --watch=false` |
 | 4 | No NAP literals outside the NAP source | `bunx ng lint` + grep guard |
 | 5 | Build green, initial bundle < 500 kB | `bunx ng build` |

@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
+import { home } from './home';
 import { processSteps } from './process-steps';
 import { projects } from './projects';
 import { services } from './services';
@@ -41,10 +42,14 @@ const nonEmpty = (value: string, label: string): void => {
 };
 
 describe('content graph: image asset contract', () => {
-  const images = contentImages({ site, services, projects });
+  const images = contentImages({ site, home, services, projects });
 
   it('finds image assets in the graph', () => {
     expect(images.length).toBeGreaterThan(0);
+  });
+
+  it('walks the home hero image, the first photo the site shows', () => {
+    expect(images).toContain(home.hero.image);
   });
 
   it('never leaves alt text empty', () => {

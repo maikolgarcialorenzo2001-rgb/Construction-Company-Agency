@@ -78,8 +78,9 @@ src/app/components/section-heading/section-heading.component.ts|.html  C  input:
 src/app/components/photo-gallery/photo-gallery.component.ts|.html  C  @defer (on viewport) grid of ProjectPhoto
 src/app/core/lead/lead-links.ts|.spec.ts   C  pure: toWaDigits, buildLeadMessage, buildWhatsAppUrl,
                                                  buildMailtoUrl, buildTelHref, LEAD_PHOTO_INVITE
+src/app/core/lead/validators.ts|.spec.ts   C  pure: m2Range(1–10000) bound validator (added at S9 apply)
 src/app/core/format.ts|.spec.ts            C  formatMoneyRange, formatArea, formatDuration
-src/app/core/seo/json-ld.ts|.spec.ts       C  pure: buildBusinessJsonLd(nap, extras) — key whitelist
+src/app/core/seo/json-ld.ts|.spec.ts       C  pure: buildJsonLd(site, pageUrl) — key whitelist
 src/app/core/seo/seo.service.ts|.spec.ts   C  Title/Meta/canonical/robots + script tag lifecycle
 src/app/core/analytics/analytics.service.ts|.spec.ts   C  isRealGa4Id, init, track, page views
 src/app/core/consent/consent.service.ts|.spec.ts        C  denied default, grant(), isGranted()
@@ -92,7 +93,7 @@ src/app/pages/process/process.page.ts|.page.html|.page.spec.ts  C
 src/app/pages/testimonials/testimonials.page.ts|.page.html|.page.spec.ts  C
 src/app/pages/about/about.page.ts|.page.html|.page.spec.ts  C
 src/app/pages/quote/quote.page.ts|.page.html|.page.spec.ts  C  the form
-src/app/pages/not-found/not-found.page.ts|.page.html|.page.spec.ts  C  wildcard route + slug-miss reuse
+src/app/pages/not-found/not-found.page.ts  C  wildcard route + slug-miss reuse (inline template; no own spec — checked by app.routes.spec.ts + release matrix)
 src/content/content.types.ts                C  every interface (schema)
 src/content/site.ts                          C  NAP, hours, credentials, warranty, story, areasServed,
                                                   googleBusinessProfileUrl, logo, ogImage, nav   [EAGER]
@@ -189,7 +190,7 @@ Lookups (`src/content/lookup.ts`, pure, returns `| undefined`): `findService`, `
 | `consent` | `checkbox` | `requiredTrue` | not in message |
 | `website` | `text` honeypot | — | never in message |
 
-No `input[type=file]`, no upload affordance. Honeypot: `class="absolute h-0 w-0 opacity-0" tabindex="-1" autocomplete="off" aria-hidden="true"`. Options come from `quote-options.ts` (`readonly JOB_TYPE_OPTIONS: readonly Option<JobType>[]`), so `<option [value]="o.value">{{ o.label }}</option>` and the message label come from the same object. Errors: `<p [id]="id+'-error'" role="alert">{{ msg }}</p>` + `aria-invalid` + `aria-describedby`. Submit state is a `signal<'idle'|'sent'>('idle')`; success block carries `tel:` and `mailto:` from the built message.
+No `input[type=file]`, no upload affordance. Honeypot: `class="absolute h-0 w-0 opacity-0" tabindex="-1" autocomplete="off" aria-hidden="true"`. Options come from `quote-options.ts` (`readonly JOB_TYPE_OPTIONS: readonly Option<JobType>[]`), so `<option [value]="o.value">{{ o.label }}</option>` and the message label come from the same object. Errors: `<p [id]="id+'-error'" role="alert">{{ msg }}</p>` + `aria-invalid` + `aria-describedby`. Submit state is a `signal(false)`; success block carries `tel:` and `mailto:` from the built message.
 
 ```ts
 export const toWaDigits = (phoneE164: string): string => phoneE164.replace(/\D/g, '');
@@ -261,7 +262,8 @@ Contrast: CTA text is white on `brand-800` (≈9:1). `accent-600` on white is �
 | `core/analytics/analytics.service.spec.ts` | `isRealGa4Id` truth table; placeholder/empty ID ⇒ **no script tag, no gtag, zero requests**; pre-consent silence; exactly one `generate_lead`, one `call_click`, one `whatsapp_click`; payload PII-free (no digit run ≥6, no `text=`); `page_view` on `NavigationEnd` |
 | `core/consent/consent.service.spec.ts` | denied by default, `grant()` flips + flushes queue |
 | `core/format.spec.ts` | money range / m² / duration formatting |
-| `pages/**/*.spec.ts` (`RouterTestingHarness` + `provideRouter(routes)`) | per route: renders one `h1`, skip link first, ends with `cta-block`; services/projects render exactly N links in order; unknown slug renders `app-not-found`; single `priority` image; `lazy` on the rest; `noinput[type=file]` + exact 8 controls on `/presupuesto`; invalid submit opens nothing; honeypot silent; `wa.me` href exact; success state `tel:` + `mailto:`; zero HTTP (spy `HttpClient` + `fetch`) |
+| `pages/**/*.spec.ts` (`RouterTestingHarness` + `provideRouter(routes)`) | per page: renders one `h1`, ends with the `cta-block` (except `/presupuesto` — the form is the CTA); services/projects render exactly N links in order; unknown slug renders `app-not-found`; `noinput[type=file]` + exact 8 controls on `/presupuesto`; invalid submit opens nothing; honeypot silent; `wa.me` href exact; success state `tel:` + `mailto:`; zero HTTP (spy `HttpClient` + `fetch`) |
+| `app.release-matrix.spec.ts` (real shell + routes) | per route: skip link first, exactly one `h1` in routed content, at most one `priority` image, every other image `loading="lazy"`, CTA block closes every page except `/presupuesto` (the 404 included) |
 | `components/layout/sticky-cta.component.spec.ts` | absent on `/presupuesto`, present elsewhere |
 | `app.spec.ts` (extend) | shell renders header/footer/sticky CTA around `router-outlet` |
 
@@ -277,7 +279,7 @@ Zoneless tests: assert after `await fixture.whenStable()` (no `zone.js` flush). 
 | `initial` error | 1 MB | **500 kB** | spec's hard ceiling |
 | `anyComponentStyle` | 4 kB / 8 kB | unchanged | intentionally unused (D5) |
 
-Images: absolute external URLs only (no binaries in git), `NgOptimizedImage` with `ngSrc` + explicit `width`/`height` (CLS 0), `sizes="(min-width: 768px) 33vw, 100vw"`, WebP/AVIF via the host's transform params encoded in `ImageAsset.src`. `priority` **only** on the single above-the-fold hero (home, service detail, project detail); every other image lazy. Below-fold relief: lazy `loading`, responsive `sizes`, and `@defer (on viewport)` for the project gallery. `content.ts` is imported only by lazy routes; `site.ts` is the only eager content module.
+Images: absolute external URLs only (no binaries in git), `NgOptimizedImage` with `ngSrc` + explicit `width`/`height` (CLS 0), `sizes` tuned per slot (heroes `(min-width: 1024px) 45vw, 100vw`; cards/gallery `(min-width: 640px) 50vw, 100vw`), WebP/AVIF via the host's transform params encoded in `ImageAsset.src`. `priority` **only** on the single above-the-fold hero (home, service detail, project detail); every other image lazy. Below-fold relief: lazy `loading`, responsive `sizes`, and `@defer (on viewport)` for the project gallery. `content.ts` is imported only by lazy routes; `site.ts` is the only eager content module.
 
 ## Work-Unit Slices (stacked PRs to `main`)
 

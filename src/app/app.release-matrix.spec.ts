@@ -11,7 +11,7 @@ import { routes } from './app.routes';
  * `priority` is the number of `fetchpriority="high"` images the route is allowed: the
  * single LCP image where a hero exists, none where the page has no above-the-fold photo.
  * `cta` says whether the shared CTA block closes the page; the quote page owns its own
- * form and the wildcard page is a dead end, so both end without one.
+ * form, so it is the only route that ends without one — the wildcard route included.
  */
 interface RouteContract {
   readonly path: string;
@@ -29,7 +29,7 @@ const ROUTE_CONTRACTS: readonly RouteContract[] = [
   { path: '/testimonios', priority: 0, cta: true },
   { path: '/nosotros', priority: 0, cta: true },
   { path: '/presupuesto', priority: 0, cta: false },
-  { path: '/pagina-que-no-existe', priority: 0, cta: false }
+  { path: '/pagina-que-no-existe', priority: 0, cta: true }
 ];
 
 describe('release matrix', () => {
