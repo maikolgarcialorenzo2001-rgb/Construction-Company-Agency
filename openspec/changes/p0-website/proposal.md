@@ -75,4 +75,4 @@ External image host · client NAP/phone/credentials · `ENVIRONMENT` token for G
 - [ ] 8 routes reachable, es-AR, mobile-first
 - [ ] `bunx ng test --watch=false`, `bunx ng lint`, `bunx ng build` green; initial < 500 kB
 - [ ] LCP<2s, INP<200ms, CLS<0.05; WCAG AA basics
-- [ ] CTA block ends every page; form reaches WhatsApp/email; valid JSON-LD; GA4 key events fire under consent
+- [ ] CTA block ends every page except `/presupuesto` (the form is the primary action there); form reaches WhatsApp/email; valid JSON-LD; GA4 key events fire under consent

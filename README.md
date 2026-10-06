@@ -59,8 +59,30 @@ Before shipping, the build must stay under the initial-bundle budget (450 kB war
 bunx ng lint                # green
 bunx ng test --watch=false  # green
 bunx ng build               # initial bundle under 450 kB
-grep -rn "isPlaceholder" src/content/   # no `true` left: real client data shipped
+grep -rn "isPlaceholder" src/   # lists every flag; the src/content/ hits are the data to replace
 ```
 
 Every content entry that is not real client data carries `isPlaceholder: true`, so the
 last command lists whatever still has to be replaced before launch.
+
+## Manual accessibility gate (not run yet)
+
+Automated tests cover the structural half of the WCAG AA requirement: one `h1` per
+route, the skip link first, and image alt text (see `app.release-matrix.spec.ts` and
+`content.spec.ts`). Focus indicators, contrast, and focus order are **not** covered:
+no aXe, Lighthouse, or Playwright is installed in this repo.
+
+Until one of those tools is added, this checklist is a **manual release gate**. It has
+**not been run yet**. Run it once before launch and record the result (date, tool,
+route, findings) below:
+
+- [ ] Open the built site (`bunx ng serve` or the `dist/` output) with a keyboard only
+- [ ] First Tab lands on the skip link, and it reveals `<main id="main">` (every route)
+- [ ] Every interactive element shows a visible focus indicator while tabbing
+- [ ] Tab order follows reading order on every route
+- [ ] Run `bunx lighthouse` (accessibility + best-practices audits) or the axe DevTools
+      extension on `/`, `/servicios`, `/proyectos`, `/proceso`, `/nosotros`,
+      `/presupuesto`, and one detail page: zero critical/serious violations
+- [ ] Body text contrast is at least 4.5:1 on every route (Lighthouse contrast audit)
+
+Result: _pending — record the first run here_

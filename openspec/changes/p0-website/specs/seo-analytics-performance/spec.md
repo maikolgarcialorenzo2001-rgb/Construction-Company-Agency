@@ -118,6 +118,6 @@ Placeholder NAP (phone, address, credentials) MUST be replaced before live relea
 | 2 | JSON-LD NAP matches visible NAP; no `isPlaceholder` leak | `bunx ng test --watch=false` |
 | 3 | Empty/placeholder GA4 ID ⇒ zero requests, no script tag | `bunx ng test --watch=false` |
 | 4 | 3 key events fire once each, no PII | `bunx ng test --watch=false` |
-| 5 | Exactly one priority image per page; rest lazy | `bunx ng test --watch=false` |
+| 5 | At most one priority image per route (exactly one where a hero exists); rest lazy | `bunx ng test --watch=false` |
 | 6 | Single `h1`, skip link, visible focus on every page | `bunx ng test --watch=false` |
 | 7 | Initial bundle < 500 kB; build + lint green | `bunx ng build`, `bunx ng lint` |

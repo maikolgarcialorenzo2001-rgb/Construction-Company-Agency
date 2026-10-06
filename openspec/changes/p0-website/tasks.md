@@ -75,7 +75,7 @@ Chain strategy: stacked-to-main
 
 ## S6 — Projects showcase [B]+[C] (~380 + ~560 data)
 
-- [x] **T6.1 [C]** `projects.ts`: 3–4 projects, each 8–15 photos incl. ≥1 `before` + ≥1 `after`, `testimonialSlug`, `relatedServiceSlugs`. *AC:* build green (`size:exception`). *Files:* `content/projects.ts`. *Deps:* T2.1
+- [x] **T6.1 [C]** `projects.ts`: 8 projects, each 8–15 photos incl. ≥1 `before` + ≥1 `after`, `testimonialSlug`, `relatedServiceSlugs`. *AC:* build green (`size:exception`). *Files:* `content/projects.ts`. *Deps:* T2.1
 - [x] **T6.2 [B]** `components/project-card`: title, category, location, thumb = `photos[0]`. *AC:* spec — one link `/proyectos/{slug}` per project. *Files:* `components/project-card/project-card.component.ts|.html|.spec.ts`. *Deps:* T2.1
 - [x] **T6.3 [B]** `components/photo-gallery`: `@defer (on viewport)` + `@placeholder` reserving `aspect-[4/3]`. *AC:* spec asserts placeholder/content blocks, no hydration wait. *Files:* `components/photo-gallery/photo-gallery.component.ts|.html|.spec.ts`. *Deps:* T6.2
 - [x] **T6.4 [B]** `/proyectos` list: N cards, order, lazy thumbs, `cta-block`. *AC:* exactly N ordered links. *Files:* `pages/projects/projects-list.page.ts|.page.html|.page.spec.ts`. *Deps:* T6.1, T6.2
@@ -111,7 +111,7 @@ Chain strategy: stacked-to-main
 - [x] **T10.3** `core/consent/consent.service.ts`. *AC:* spec — denied by default, `grant()` flips + flushes queue. *Files:* `core/consent/consent.service.ts|.spec.ts`. *Deps:* —
 - [x] **T10.4** `core/analytics/analytics.service.ts`: `isRealGa4Id`, init gate, gtag injection, enumerated PII-free `track`, `page_view` on `NavigationEnd`. *AC:* spec — empty/placeholder ID ⇒ no script, no gtag, 0 requests; pre-consent silence. *Files:* `core/analytics/analytics.service.ts|.spec.ts`, `environments/*`. *Deps:* T10.3
 - [x] **T10.5** Event wiring: `phone-link`→`call_click{placement}`, `whatsapp-link`→`whatsapp_click{placement}`, quote→`generate_lead` once; `gaMeasurementId: ''`; `provideAppInitializer(seo.start, analytics.init)`. *AC:* spec — one event each, payload has no digit run ≥6 nor `text=`. *Files:* `components/{phone-link/phone-link.component,whatsapp-link/whatsapp-link.component}.ts`, `pages/quote/quote.page.ts`, `app.config.ts`, `environments/*`. *Deps:* T10.4, T9.4
-- [x] **T10.6** Perf/a11y matrix + budgets + release gate: every route one `h1`, one `priority` image, rest `loading="lazy"`, skip link first, `cta-block` last (except `/presupuesto`); budgets 450 kB warn / 500 kB error; README gate `grep -rn "isPlaceholder" src/`. *AC:* matrix spec green; `bunx ng build` under 450 kB. *Files:* `src/app/**/*.spec.ts`, `angular.json`, `README.md`. *Deps:* S1–S9
+- [x] **T10.6** Perf/a11y matrix + budgets + release gate: every route one `h1`, at most one `priority` image (exactly one where a hero exists, zero where the page has no above-the-fold photo), rest `loading="lazy"`, skip link first, `cta-block` last (except `/presupuesto`); budgets 450 kB warn / 500 kB error; README gate `grep -rn "isPlaceholder" src/`. *AC:* matrix spec green; `bunx ng build` under 450 kB. *Files:* `src/app/**/*.spec.ts`, `angular.json`, `README.md`. *Deps:* S1–S9
 
 ## Verification Independence
 

@@ -63,7 +63,7 @@ Each project detail MUST link back to `/proyectos`, to every related service, an
 
 ### Requirement: 5. [B] Imagery follows the shared image rules
 
-Project photos MUST satisfy the `ImageAsset` contract in `content-model` and the rendering rules in `seo-analytics-performance`: explicit dimensions, lazy loading for everything below the fold, and exactly one priority image per page.
+Project photos MUST satisfy the `ImageAsset` contract in `content-model` and the rendering rules in `seo-analytics-performance`: explicit dimensions, lazy loading for everything below the fold, and exactly one priority image where the page has a hero (never more than one on a page).
 
 ## Out of Scope
 

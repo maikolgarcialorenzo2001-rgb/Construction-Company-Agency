@@ -63,19 +63,25 @@ src/app/app.css                            D  zero component styles by design (D
 src/app/app.routes.ts                      M  10-route table (below)
 src/app/app.config.ts                      M  withComponentInputBinding, withInMemoryScrolling,
                                                  provideAppInitializer(() => { seo.start(); analytics.init(); })
+src/app/app.routes.spec.ts · app.document.spec.ts · app.config.spec.ts
+                                              C  route table, es-AR document, initializer wiring suites
+src/app/app.spec.ts                         M  shell order + skip-link behaviour (scaffold file extended)
+src/app/app.release-matrix.spec.ts           C  per-route h1 / priority / lazy / CTA contract
 src/app/environments/environment.model.ts  M  + gaMeasurementId: string
 src/app/environments/environment{,.prod,.development}.ts   M  gaMeasurementId: '' (placeholder)
-src/app/components/layout/header.component.ts|.html  C  nav from site.nav + <app-phone-link>
-src/app/components/layout/footer.component.ts|.html  C  NAP + hours + <app-whatsapp-link> + GBP link
-src/app/components/layout/sticky-cta.component.ts|.html  C  @if (!isQuoteRoute()) wa + tel, sm:hidden fixed
-src/app/components/phone-link/phone-link.component.ts|.html  C  tel: anchor, (click)→call_click{placement}
-src/app/components/whatsapp-link/whatsapp-link.component.ts|.html  C  wa.me anchor, (click)→whatsapp_click{placement}
-src/app/components/service-card/service-card.component.ts|.html  C  input: Service
-src/app/components/project-card/project-card.component.ts|.html  C  input: Project (thumb = photos[0])
-src/app/components/testimonial-card/testimonial-card.component.ts|.html  C  input: Testimonial (rating + author + context)
-src/app/components/cta-block/cta-block.component.ts|.html  C  input: {heading, body}; /presupuesto + <app-phone-link>
-src/app/components/section-heading/section-heading.component.ts|.html  C  input: {eyebrow?, title, lead?}
-src/app/components/photo-gallery/photo-gallery.component.ts|.html  C  @defer (on viewport) grid of ProjectPhoto
+src/app/environments/environment.token.ts  C  ENVIRONMENT InjectionToken (`providedIn: 'root'` factory)
+src/app/environments/environment.spec.ts   M  per-build values; gaMeasurementId gate
+src/app/components/layout/header.component.ts|.html|.spec.ts  C  nav from site.nav + <app-phone-link>
+src/app/components/layout/footer.component.ts|.html|.spec.ts  C  NAP + hours + <app-whatsapp-link> + GBP link
+src/app/components/layout/sticky-cta.component.ts|.html|.spec.ts  C  @if (!isQuoteRoute()) wa + tel, sm:hidden fixed
+src/app/components/phone-link/phone-link.component.ts|.html|.spec.ts  C  tel: anchor, (click)→call_click{placement}
+src/app/components/whatsapp-link/whatsapp-link.component.ts|.html|.spec.ts  C  wa.me anchor, (click)→whatsapp_click{placement}
+src/app/components/service-card/service-card.component.ts|.html|.spec.ts  C  input: Service
+src/app/components/project-card/project-card.component.ts|.html|.spec.ts  C  input: Project (thumb = photos[0])
+src/app/components/testimonial-card/testimonial-card.component.ts|.html|.spec.ts  C  input: Testimonial (rating + author + context)
+src/app/components/cta-block/cta-block.component.ts|.html|.spec.ts  C  input: {heading, body}; /presupuesto + <app-phone-link>
+src/app/components/section-heading/section-heading.component.ts|.html|.spec.ts  C  input: {eyebrow?, title, lead?}
+src/app/components/photo-gallery/photo-gallery.component.ts|.html|.spec.ts  C  @defer (on viewport) grid of ProjectPhoto
 src/app/core/lead/lead-links.ts|.spec.ts   C  pure: toWaDigits, buildLeadMessage, buildWhatsAppUrl,
                                                  buildMailtoUrl, buildTelHref, LEAD_PHOTO_INVITE
 src/app/core/lead/validators.ts|.spec.ts   C  pure: m2Range(1–10000) bound validator (added at S9 apply)
@@ -99,6 +105,7 @@ src/content/site.ts                          C  NAP, hours, credentials, warrant
                                                   googleBusinessProfileUrl, logo, ogImage, nav   [EAGER]
 src/content/home.ts · services.ts · projects.ts · process-steps.ts · testimonials.ts · quote-options.ts  C
 src/content/lookup.ts|.spec.ts              C  findService/findProject/findTestimonial
+src/content/site.spec.ts · quote-options.spec.ts  C  NAP contract + form-option suites
 src/content/content.spec.ts                 C  contract suite over the whole content graph
 ```
 
@@ -164,7 +171,8 @@ export interface ProcessStep { readonly title: string; readonly description: str
   readonly isPlaceholder?: true; }   // added at S7 apply: keeps the release-gate grep uniform across collections
 export interface HomeContent { readonly hero: { readonly headline: string; readonly subhead: string; readonly image: ImageAsset };
   readonly highlights: readonly { readonly title: string; readonly body: string }[];
-  readonly featuredServiceSlugs: readonly string[]; readonly featuredProjectSlugs: readonly string[]; }
+  readonly featuredServiceSlugs: readonly string[]; readonly featuredProjectSlugs: readonly string[];
+  readonly isPlaceholder?: true; }   // hero copy/photo still placeholder → release gate (one grep)
 
 /* shared by the form <select>s and the WhatsApp message labels (no drift possible) */
 export type JobType = 'reforma'|'obra-nueva'|'ampliacion'|'reparacion'|'comercial'|'otro';
@@ -220,7 +228,14 @@ export const LEAD_PHOTO_INVITE = 'Te adjunto algunas fotos del proyecto por acá
 `SeoService.start()` subscribes to the router: per navigation applies `data.seo` (title, description, canonical, robots), resets any detail-page override, and rewrites the single JSON-LD script through `DOCUMENT` (jsdom-testable). Detail pages call `seo.override({ title, description })` from an `effect` on the resolved entity.
 
 ```ts
-export const isRealGa4Id = (v: string): boolean => /^G-[A-Z0-9]{6,}$/.test(v.trim());   // '' , 'G-XXXXXXX', 'YOUR_GA_ID' → false
+const GA4_ID = /^G-[A-Z0-9]{10}$/;                      // 'G-' + exactly ten alphanumerics
+const PLACEHOLDER_MARKERS = ['PLACE', 'XXXX', 'TEST'];   // ids that fake that shape
+
+function isRealGa4Id(id: string | null | undefined): boolean {
+  if (!id || !GA4_ID.test(id)) { return false; }
+  return !PLACEHOLDER_MARKERS.some((marker) => id.includes(marker));
+}
+// '', null, 'G-XXXXXXX', 'YOUR_GA_ID', 'G-XXXXXXXXXX' (marker) → false
 ```
 
 `AnalyticsService.init()` (from `provideAppInitializer`) does nothing unless `isRealGa4Id(env.gaMeasurementId) && consent.isGranted()`. Only then does it create `window.dataLayer`, define `window.gtag`, and inject `googletagmanager.com/gtag/js?id=…`. `track(name: 'generate_lead'|'call_click'|'whatsapp_click', payload?)` sends only enumerated, PII-free params (`{ placement }`) — never digits, never `text=`, never free text. `NavigationEnd` → `gtag('config', id, { page_path, page_title, send_page_view: true })`. Events are buffered pre-consent and flushed on `grant()`.
