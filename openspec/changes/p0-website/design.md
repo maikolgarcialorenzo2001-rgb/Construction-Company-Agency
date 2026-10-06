@@ -159,7 +159,8 @@ export interface Project { readonly slug: string; readonly title: string; readon
   readonly isPlaceholder?: true; }
 export interface Testimonial { readonly slug: string; readonly author: string; readonly context: string;
   readonly rating: 1|2|3|4|5; readonly text: string; readonly isPlaceholder?: true; }
-export interface ProcessStep { readonly title: string; readonly description: string; readonly duration: string; }
+export interface ProcessStep { readonly title: string; readonly description: string; readonly duration: string;
+  readonly isPlaceholder?: true; }   // added at S7 apply: keeps the release-gate grep uniform across collections
 export interface HomeContent { readonly hero: { readonly headline: string; readonly subhead: string; readonly image: ImageAsset };
   readonly highlights: readonly { readonly title: string; readonly body: string }[];
   readonly featuredServiceSlugs: readonly string[]; readonly featuredProjectSlugs: readonly string[]; }

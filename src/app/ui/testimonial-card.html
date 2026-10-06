@@ -1,0 +1,17 @@
+<figure class="surface-card flex h-full flex-col gap-4 p-6">
+  <p
+    data-testid="rating"
+    class="text-lg leading-none text-accent-600"
+    [attr.aria-label]="'Puntaje ' + testimonial().rating + ' de ' + ratingScale"
+  >
+    <span aria-hidden="true">{{ stars().join('') }}</span>
+    <span class="ml-2 text-sm text-ink-600"
+      >{{ testimonial().rating }}/{{ ratingScale }}</span
+    >
+  </p>
+  <blockquote class="text-ink-700">“{{ testimonial().text }}”</blockquote>
+  <figcaption class="mt-auto">
+    <h3 class="font-semibold text-ink-900">{{ testimonial().author }}</h3>
+    <p class="mt-1 text-ink-600">{{ testimonial().context }}</p>
+  </figcaption>
+</figure>

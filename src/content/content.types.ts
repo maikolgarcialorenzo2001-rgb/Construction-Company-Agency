@@ -146,6 +146,8 @@ export interface ProcessStep {
   readonly title: string;
   readonly description: string;
   readonly duration: string;
+  /** True until the owner replaces the process copy. Release gate, not a build gate. */
+  readonly isPlaceholder?: true;
 }
 
 export interface HomeContent {

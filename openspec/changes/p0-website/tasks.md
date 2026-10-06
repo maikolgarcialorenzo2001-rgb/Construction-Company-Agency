@@ -84,12 +84,12 @@ Chain strategy: stacked-to-main
 
 ## S7 — Proceso + testimonios [B]+[C] (~380)
 
-- [ ] **T7.1 [C]** `process-steps.ts`: ordered steps with title/description/duration. *AC:* build green. *Files:* `content/process-steps.ts`. *Deps:* T2.1
-- [ ] **T7.2 [C]** `testimonials.ts`: 3–5 attributed reviews (author, context, rating 1–5, text). *AC:* build green. *Files:* `content/testimonials.ts`. *Deps:* T2.1
-- [ ] **T7.3 [B]** `ui/testimonial-card`. *AC:* spec — author, context, rating, text rendered. *Files:* `ui/testimonial-card.ts|.html|.spec.ts`. *Deps:* T2.1
-- [ ] **T7.4 [B]** `/proceso`: N steps numbered 1..N in content order + duration, `cta-block`. *AC:* exactly N numbered steps. *Files:* `pages/process/process.ts|.html|.spec.ts`. *Deps:* T7.1
-- [ ] **T7.5 [B]** `/testimonios`: every review + exactly one external GBP link (`target=_blank`), `cta-block`. *AC:* all authors present, one external link. *Files:* `pages/testimonials/testimonials.ts|.html|.spec.ts`. *Deps:* T7.2, T7.3
-- [ ] **T7.6 [B]** Extend `content.spec.ts`: steps complete/ordered, 3–5 attributed reviews. *AC:* suite green. *Files:* `content/content.spec.ts`. *Deps:* T7.1, T7.2
+- [x] **T7.1 [C]** `process-steps.ts`: ordered steps with title/description/duration. *AC:* build green. *Files:* `content/process-steps.ts`. *Deps:* T2.1
+- [x] **T7.2 [C]** `testimonials.ts`: 3–5 attributed reviews (author, context, rating 1–5, text). *AC:* build green. *Files:* `content/testimonials.ts`. *Deps:* T2.1
+- [x] **T7.3 [B]** `ui/testimonial-card`. *AC:* spec — author, context, rating, text rendered. *Files:* `ui/testimonial-card.ts|.html|.spec.ts`. *Deps:* T2.1
+- [x] **T7.4 [B]** `/proceso`: N steps numbered 1..N in content order + duration, `cta-block`. *AC:* exactly N numbered steps. *Files:* `pages/process/process.ts|.html|.spec.ts`. *Deps:* T7.1
+- [x] **T7.5 [B]** `/testimonios`: every review + exactly one external GBP link (`target=_blank`), `cta-block`. *AC:* all authors present, one external link. *Files:* `pages/testimonials/testimonials.ts|.html|.spec.ts`. *Deps:* T7.2, T7.3
+- [x] **T7.6 [B]** Extend `content.spec.ts`: steps complete/ordered, 3–5 attributed reviews. *AC:* suite green. *Files:* `content/content.spec.ts`. *Deps:* T7.1, T7.2
 
 ## S8 — Home + nosotros [B]+[C] (~300)
 

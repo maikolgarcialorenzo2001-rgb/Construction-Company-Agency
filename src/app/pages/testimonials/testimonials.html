@@ -1,0 +1,32 @@
+<section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+  <h1 class="text-display font-semibold text-ink-900">Testimonios</h1>
+
+  <div class="mt-6">
+    <app-section-heading
+      title="Lo que dicen los clientes que ya entregaron su obra"
+      lead="Cada opinión viene con nombre y con el tipo de trabajo al que se refiere. Y si querés verificarla por tu cuenta, abajo está nuestro perfil de Google."
+    />
+  </div>
+
+  <ul class="mt-10 grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-3">
+    @for (testimonial of testimonials; track testimonial.slug) {
+      <li class="flex">
+        <app-testimonial-card [testimonial]="testimonial" class="w-full" />
+      </li>
+    }
+  </ul>
+
+  <p class="mt-10 text-ink-600">
+    ¿Querés leer más opiniones?
+    <a
+      data-testid="google-profile"
+      [href]="googleBusinessProfileUrl"
+      target="_blank"
+      rel="noopener"
+      class="font-medium text-brand-800 underline"
+      >Mirá nuestro perfil en Google</a
+    >
+  </p>
+
+  <app-cta-block class="mt-16 block" [heading]="ctaHeading" [body]="ctaBody" />
+</section>

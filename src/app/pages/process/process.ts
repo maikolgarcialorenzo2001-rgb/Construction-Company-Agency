@@ -1,13 +1,26 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-/** Placeholder page: replaced by S7 (numbered process steps). */
+import { processSteps } from '../../../content/process-steps';
+import { CtaBlock } from '../../ui/cta-block';
+import { SectionHeading } from '../../ui/section-heading';
+
+/**
+ * The process timeline. The page reads `content/process-steps.ts` and nothing else: the step
+ * copy, the order and the durations all come from that array, so publishing a new step or
+ * reordering the journey is a content change and the page cannot drift from it.
+ *
+ * The step number is rendered from the loop index rather than written in the content, so the
+ * sequence can never claim a step that does not exist or repeat a number.
+ */
 @Component({
   selector: 'app-process',
-  template: `
-    <section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
-      <h1 class="text-section font-semibold text-ink-900">Cómo trabajamos</h1>
-      <p class="mt-4 text-ink-600">Contenido en preparación.</p>
-    </section>
-  `
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SectionHeading, CtaBlock],
+  templateUrl: './process.html'
 })
-export class Process {}
+export class Process {
+  protected readonly steps = processSteps;
+  protected readonly ctaHeading = '¿Arrancamos con tu obra?';
+  protected readonly ctaBody =
+    'Contanos qué querés construir y te mandamos un presupuesto desglosado por partida.';
+}

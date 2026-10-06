@@ -1,13 +1,29 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-/** Placeholder page: replaced by S7 (attributed reviews + Google link). */
+import { site } from '../../../content/site';
+import { testimonials } from '../../../content/testimonials';
+import { CtaBlock } from '../../ui/cta-block';
+import { SectionHeading } from '../../ui/section-heading';
+import { TestimonialCard } from '../../ui/testimonial-card';
+
+/**
+ * The review wall. Reviews come from `content/testimonials.ts` and the verification link from
+ * `site.googleBusinessProfileUrl`; this page declares no review copy and no URL of its own, so
+ * the owner replaces both without touching the markup.
+ *
+ * The Google link is deliberately the only outbound link on the page: one place for a
+ * suspicious buyer to check us independently, which is the whole point of the page.
+ */
 @Component({
   selector: 'app-testimonials',
-  template: `
-    <section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
-      <h1 class="text-section font-semibold text-ink-900">Testimonios</h1>
-      <p class="mt-4 text-ink-600">Contenido en preparación.</p>
-    </section>
-  `
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SectionHeading, TestimonialCard, CtaBlock],
+  templateUrl: './testimonials.html'
 })
-export class Testimonials {}
+export class Testimonials {
+  protected readonly testimonials = testimonials;
+  protected readonly googleBusinessProfileUrl = site.googleBusinessProfileUrl;
+  protected readonly ctaHeading = '¿Hablamos de tu obra?';
+  protected readonly ctaBody =
+    'Pedinos el presupuesto: te lo armamos desglosado por partida, con plazos y sin sorpresas.';
+}
