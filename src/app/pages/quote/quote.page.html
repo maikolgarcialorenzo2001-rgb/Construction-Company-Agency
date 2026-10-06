@@ -1,0 +1,177 @@
+<section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+  <h1 class="text-display font-semibold text-ink-900">Pedí tu presupuesto</h1>
+
+  <p class="mt-4 max-w-2xl text-ink-600">
+    Contanos qué necesitás y te lo mandamos por WhatsApp, con plazos y sin sorpresas. No
+    sube archivos ni guardamos tus datos: el pedido viaja dentro del mensaje.
+  </p>
+
+  @if (sent()) {
+    <div data-testid="quote-success" class="surface-card mt-8 max-w-2xl">
+      <h2 class="text-section font-semibold text-ink-900">¡Listo! Tu pedido salió por WhatsApp.</h2>
+      <p class="mt-3 text-ink-600">
+        Se abrió una conversación con el mensaje ya escrito. Si no se abrió la app, usá
+        estas otras vías: el pedido queda exactamente igual.
+      </p>
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <a [href]="telHref()" class="btn-secondary text-center">Llamanos al {{ phoneDisplay }}</a>
+        <a [href]="mailHref()" class="btn-secondary text-center">Escribinos por email</a>
+      </div>
+      <p class="mt-4 text-sm text-ink-600">{{ email }}</p>
+    </div>
+  } @else {
+    <form
+      data-testid="quote-form"
+      class="surface-card mt-8 max-w-2xl"
+      [formGroup]="form"
+      (ngSubmit)="submit($event)"
+      novalidate
+    >
+      <div>
+        <label for="workType" class="block font-semibold text-ink-900">
+          Tipo de trabajo <span aria-hidden="true">*</span>
+        </label>
+        <select
+          id="workType"
+          formControlName="workType"
+          aria-describedby="workType-error"
+          [attr.aria-invalid]="form.controls.workType.invalid ? 'true' : null"
+          class="mt-2 w-full rounded-md border border-ink-900/20 bg-white px-3 py-2 text-ink-900"
+        >
+          <option value="" disabled>Seleccioná una opción</option>
+          @for (option of jobTypeOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        <p id="workType-error" role="alert" class="mt-1 text-sm text-red-700">
+          {{ errorText('workType') }}
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <label for="location" class="block font-semibold text-ink-900">
+          Ubicación de la obra <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id="location"
+          type="text"
+          formControlName="location"
+          placeholder="Barrio, localidad o dirección"
+          aria-describedby="location-error"
+          [attr.aria-invalid]="form.controls.location.invalid ? 'true' : null"
+          class="mt-2 w-full rounded-md border border-ink-900/20 bg-white px-3 py-2 text-ink-900"
+        />
+        <p id="location-error" role="alert" class="mt-1 text-sm text-red-700">
+          {{ errorText('location') }}
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <label for="areaM2" class="block font-semibold text-ink-900">
+          Superficie (m²) <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id="areaM2"
+          type="number"
+          formControlName="areaM2"
+          placeholder="Ej.: 85"
+          aria-describedby="areaM2-error"
+          [attr.aria-invalid]="form.controls.areaM2.invalid ? 'true' : null"
+          class="mt-2 w-full rounded-md border border-ink-900/20 bg-white px-3 py-2 text-ink-900"
+        />
+        <p id="areaM2-error" role="alert" class="mt-1 text-sm text-red-700">
+          {{ errorText('areaM2') }}
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <label for="budget" class="block font-semibold text-ink-900">Presupuesto estimado</label>
+        <select
+          id="budget"
+          formControlName="budget"
+          aria-describedby="budget-error"
+          [attr.aria-invalid]="form.controls.budget.invalid ? 'true' : null"
+          class="mt-2 w-full rounded-md border border-ink-900/20 bg-white px-3 py-2 text-ink-900"
+        >
+          <option value="">Presupuesto (opcional)</option>
+          @for (option of budgetOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        <p id="budget-error" role="alert" class="mt-1 text-sm text-red-700">
+          {{ errorText('budget') }}
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <label for="stage" class="block font-semibold text-ink-900">Etapa del proyecto</label>
+        <select
+          id="stage"
+          formControlName="stage"
+          aria-describedby="stage-error"
+          [attr.aria-invalid]="form.controls.stage.invalid ? 'true' : null"
+          class="mt-2 w-full rounded-md border border-ink-900/20 bg-white px-3 py-2 text-ink-900"
+        >
+          <option value="">Etapa (opcional)</option>
+          @for (option of stageOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        <p id="stage-error" role="alert" class="mt-1 text-sm text-red-700">
+          {{ errorText('stage') }}
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <label for="comment" class="block font-semibold text-ink-900">Comentario</label>
+        <textarea
+          id="comment"
+          formControlName="comment"
+          rows="4"
+          placeholder="Estado actual, plazos, dudas. Las fotos las mandás después en el chat."
+          aria-describedby="comment-error"
+          [attr.aria-invalid]="form.controls.comment.invalid ? 'true' : null"
+          class="mt-2 w-full rounded-md border border-ink-900/20 bg-white px-3 py-2 text-ink-900"
+        ></textarea>
+        <p id="comment-error" role="alert" class="mt-1 text-sm text-red-700">
+          {{ errorText('comment') }}
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <div class="flex items-start gap-3">
+          <input
+            id="consent"
+            type="checkbox"
+            formControlName="consent"
+            aria-describedby="consent-error"
+            [attr.aria-invalid]="form.controls.consent.invalid ? 'true' : null"
+            class="mt-1 size-4 shrink-0 accent-brand-800"
+          />
+          <label for="consent" class="text-ink-600">
+            Autorizo que me contacten por WhatsApp o email con este pedido.
+          </label>
+        </div>
+        <p id="consent-error" role="alert" class="mt-1 text-sm text-red-700">
+          {{ errorText('consent') }}
+        </p>
+      </div>
+
+      <!-- Honeypot: off-screen, out of the tab order, hidden from AT. Bots fill it, humans never see it. -->
+      <input
+        id="website"
+        type="text"
+        formControlName="website"
+        class="absolute h-0 w-0 opacity-0"
+        tabindex="-1"
+        autocomplete="off"
+        aria-hidden="true"
+      />
+
+      <button type="submit" class="btn-primary mt-8 w-full sm:w-auto">Enviar por WhatsApp</button>
+      <p class="mt-3 text-sm text-ink-600">
+        Se abre WhatsApp con el mensaje ya escrito. No compartimos tus datos con nadie.
+      </p>
+    </form>
+  }
+</section>

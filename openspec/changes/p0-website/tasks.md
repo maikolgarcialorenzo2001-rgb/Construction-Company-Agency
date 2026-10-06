@@ -99,10 +99,10 @@ Chain strategy: stacked-to-main
 
 ## S9 — Quote lead capture [B] (~390)
 
-- [ ] **T9.1** RED field set: exactly 8 controls, labels + `aria-describedby`, no `input[type=file]`. *AC:* spec fails first. *Files:* `pages/quote/quote.page.spec.ts`. *Deps:* T3.3
-- [ ] **T9.2** Reactive form (`NonNullableFormBuilder`): `workType` required, `location` required+min(4), `areaM2` required+m2Range(1–10000), `consent` requiredTrue, honeypot `website`; `role="alert"` errors, `aria-invalid`. *AC:* invalid submit opens nothing, `markAllAsTouched`, first invalid focused. *Files:* `pages/quote/quote.page.ts|.page.html`. *Deps:* T9.1
-- [ ] **T9.3** Submit: honeypot → silent return; else resolve option labels → `buildLeadMessage` → `window.open(buildWhatsAppUrl(toWaDigits(nap.phoneE164), msg))` → `sent` signal. *AC:* exact href, one open, no success on honeypot. *Files:* `pages/quote/quote.page.ts`. *Deps:* T9.2
-- [ ] **T9.4** Success state: `tel:` fallback + `mailto:` with the same body; zero HTTP (`HttpClient` + `fetch` spies). *AC:* both hrefs correct, 0 requests. *Files:* `pages/quote/quote.page.ts|.page.html|.page.spec.ts`. *Deps:* T9.3
+- [x] **T9.1** RED field set: exactly 8 controls, labels + `aria-describedby`, no `input[type=file]`. *AC:* spec fails first. *Files:* `pages/quote/quote.page.spec.ts`. *Deps:* T3.3
+- [x] **T9.2** Reactive form (`NonNullableFormBuilder`): `workType` required, `location` required+min(4), `areaM2` required+m2Range(1–10000), `consent` requiredTrue, honeypot `website`; `role="alert"` errors, `aria-invalid`. *AC:* invalid submit opens nothing, `markAllAsTouched`, first invalid focused. *Files:* `pages/quote/quote.page.ts|.page.html`. *Deps:* T9.1
+- [x] **T9.3** Submit: honeypot → silent return; else resolve option labels → `buildLeadMessage` → `window.open(buildWhatsAppUrl(toWaDigits(nap.phoneE164), msg))` → `sent` signal. *AC:* exact href, one open, no success on honeypot. *Files:* `pages/quote/quote.page.ts`. *Deps:* T9.2
+- [x] **T9.4** Success state: `tel:` fallback + `mailto:` with the same body; zero HTTP (`HttpClient` + `fetch` spies). *AC:* both hrefs correct, 0 requests. *Files:* `pages/quote/quote.page.ts|.page.html|.page.spec.ts`. *Deps:* T9.3
 
 ## S10 — SEO + analytics + budgets [B] (~470, split at apply)
 
