@@ -34,7 +34,7 @@ None — `openspec/specs/` is empty; greenfield.
 
 ## Approach
 
-Standalone ZONELESS components, lazy `loadComponent` routes, no `.component` suffix. Typed content is the single source for copy, images, NAP, and lead endpoints.
+Standalone ZONELESS components, lazy `loadComponent` routes; `.component` suffix for components under `src/app/components/<name>/`, `.page` suffix for pages, classes suffixed `Component`/`Page`. Typed content is the single source for copy, images, NAP, and lead endpoints.
 
 Slices (auto-chain, stacked-to-main, one work unit per PR): **1** shell+nav → **2** content+services → **3** projects → **4** process/testimonios/nosotros → **5** quote+leads → **6** SEO/analytics/perf.
 
@@ -52,7 +52,7 @@ Slices (auto-chain, stacked-to-main, one work unit per PR): **1** shell+nav → 
 |---|---|
 | `src/app/app.routes.ts` | Modified |
 | `src/app/environments/*` | Modified — `gaMeasurementId`, `sitePhone` |
-| `src/app/pages/*`, `src/app/ui/*`, `src/content/*.ts` | New |
+| `src/app/pages/*`, `src/app/components/*`, `src/content/*.ts` | New |
 
 ## Risks
 

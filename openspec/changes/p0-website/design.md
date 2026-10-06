@@ -10,7 +10,7 @@ Angular 22.2 standalone **zoneless** SPA. Typed content modules under `src/conte
 |---|---|---|---|---|
 | D1 | Forms API | Reactive ✅ typed controls, `markAllAsTouched`, no `ngModel`; Template-driven (simpler markup, untyped controls) | **Reactive** (`NonNullableFormBuilder`) | `strictTemplates` + typed `FormGroup`; both work zoneless, reactive keeps the honeypot/consent state explicit. |
 | D2 | JSON-LD emission | Static `index.html` (crawler-visible, zero JS) vs runtime `SeoService` | **Runtime injection** | Static block would need NAP literals in `index.html` → violates `content-model` Req 2 and cannot be placeholder-gated. One `<script type="application/ld+json">` in `<head>`, updated in place per navigation. |
-| D3 | Unknown slug → 404 | Extra `/404` route + redirect (extra top-level route violates Req 1) vs reusing the `NotFound` component | **Reuse `NotFound` component** in detail pages | No extra route, no redirect flash; the `**` route and the slug-miss both render the same component and heading. |
+| D3 | Unknown slug → 404 | Extra `/404` route + redirect (extra top-level route violates Req 1) vs reusing the `NotFoundPage` component | **Reuse `NotFoundPage` component** in detail pages | No extra route, no redirect flash; the `**` route and the slug-miss both render the same component and heading. |
 | D4 | Consent Mode v2 | Advanced (gtag loaded pre-consent, cookieless pings) vs stub | **Stub: gtag not loaded until consent granted** | `seo-analytics-performance` Req 4 forbids loading the tag pre-consent. `ConsentService` defaults both signals to `denied` so a banner can later drive it. |
 | D5 | Component styles | Per-component `styles[]` (eats `anyComponentStyle` 4kB/8kB) vs global utilities | **Zero component styles**; shared patterns as Tailwind `@utility` in `styles.css` | Budget is never consumed; Tailwind emits only used utilities. |
 | D6 | Fonts | Webfont vs system stack | **System stack** (no webfont) | Saves ~40 kB + font-swap CLS; LCP becomes the hero image. |
@@ -23,14 +23,14 @@ Angular 22.2 standalone **zoneless** SPA. Typed content modules under `src/conte
 src/content/*.ts  ──import──▶  page components (lazy chunk)
       │  site.ts (NAP) is ALSO imported eagerly by shell + SeoService + Analytics
       ▼
-layout/footer · layout/header · sticky-cta · ui/phone-link · ui/whatsapp-link
-      │                                     │  (click)                     │ (click)
+components/layout/{footer,header,sticky-cta} · components/{phone-link,whatsapp-link}
+      │                                                    │  (click) │ (click)
       └──────────────▶ SeoService (Title/Meta/canonical + JSON-LD whitelist projection)
-                                                                │
+                                                                      │
                                    ANALYTICS.call() / .whatsapp() / .lead()
-                                                                        ▼
+                                                                      ▼
                                                        AnalyticsService → (id real && consent)
-                                                                        ▼
+                                                                      ▼
                                                             gtag.js injected → dataLayer
 ```
 
@@ -52,7 +52,7 @@ signal sent = true ──▶ success block: tel:+{digits}  +  mailto:{email}?bod
 
 ## File Map (create/modify/delete)
 
-`src/app/` — all standalone, no `.component` suffix, selectors `app-*`, **no `styleUrl`**.
+`src/app/` — all standalone; components live in `src/app/components/<name>/<name>.component.*` with class `<Name>Component`, pages in `src/app/pages/<name>/<name>.page.*` with class `<Name>Page`; selectors `app-*`, **no `styleUrl`** (D5: zero component styles).
 
 ```
 src/index.html                             M  lang="es-AR", description/OG fallback, theme-color
@@ -65,17 +65,17 @@ src/app/app.config.ts                      M  withComponentInputBinding, withInM
                                                  provideAppInitializer(() => { seo.start(); analytics.init(); })
 src/app/environments/environment.model.ts  M  + gaMeasurementId: string
 src/app/environments/environment{,.prod,.development}.ts   M  gaMeasurementId: '' (placeholder)
-src/app/layout/header.ts|.html             C  nav from site.nav + <app-phone-link>
-src/app/layout/footer.ts|.html             C  NAP + hours + <app-whatsapp-link> + GBP link
-src/app/layout/sticky-cta.ts|.html         C  @if (!isQuoteRoute()) wa + tel, sm:hidden fixed
-src/app/ui/phone-link.ts|.html             C  tel: anchor, (click)→call_click{placement}
-src/app/ui/whatsapp-link.ts|.html          C  wa.me anchor, (click)→whatsapp_click{placement}
-src/app/ui/service-card.ts|.html           C  input: Service
-src/app/ui/project-card.ts|.html           C  input: Project (thumb = photos[0])
-src/app/ui/testimonial-card.ts|.html       C  input: Testimonial (rating + author + context)
-src/app/ui/cta-block.ts|.html              C  input: {heading, body}; /presupuesto + <app-phone-link>
-src/app/ui/section-heading.ts|.html        C  input: {eyebrow?, title, lead?}
-src/app/ui/photo-gallery.ts|.html          C  @defer (on viewport) grid of ProjectPhoto
+src/app/components/layout/header.component.ts|.html  C  nav from site.nav + <app-phone-link>
+src/app/components/layout/footer.component.ts|.html  C  NAP + hours + <app-whatsapp-link> + GBP link
+src/app/components/layout/sticky-cta.component.ts|.html  C  @if (!isQuoteRoute()) wa + tel, sm:hidden fixed
+src/app/components/phone-link/phone-link.component.ts|.html  C  tel: anchor, (click)→call_click{placement}
+src/app/components/whatsapp-link/whatsapp-link.component.ts|.html  C  wa.me anchor, (click)→whatsapp_click{placement}
+src/app/components/service-card/service-card.component.ts|.html  C  input: Service
+src/app/components/project-card/project-card.component.ts|.html  C  input: Project (thumb = photos[0])
+src/app/components/testimonial-card/testimonial-card.component.ts|.html  C  input: Testimonial (rating + author + context)
+src/app/components/cta-block/cta-block.component.ts|.html  C  input: {heading, body}; /presupuesto + <app-phone-link>
+src/app/components/section-heading/section-heading.component.ts|.html  C  input: {eyebrow?, title, lead?}
+src/app/components/photo-gallery/photo-gallery.component.ts|.html  C  @defer (on viewport) grid of ProjectPhoto
 src/app/core/lead/lead-links.ts|.spec.ts   C  pure: toWaDigits, buildLeadMessage, buildWhatsAppUrl,
                                                  buildMailtoUrl, buildTelHref, LEAD_PHOTO_INVITE
 src/app/core/format.ts|.spec.ts            C  formatMoneyRange, formatArea, formatDuration
@@ -83,16 +83,16 @@ src/app/core/seo/json-ld.ts|.spec.ts       C  pure: buildBusinessJsonLd(nap, ext
 src/app/core/seo/seo.service.ts|.spec.ts   C  Title/Meta/canonical/robots + script tag lifecycle
 src/app/core/analytics/analytics.service.ts|.spec.ts   C  isRealGa4Id, init, track, page views
 src/app/core/consent/consent.service.ts|.spec.ts        C  denied default, grant(), isGranted()
-src/app/pages/home/home.ts|.html|.spec.ts                 C
-src/app/pages/services/services-list.ts|.html|.spec.ts   C
-src/app/pages/services/service-detail.ts|.html|.spec.ts   C
-src/app/pages/projects/projects-list.ts|.html|.spec.ts   C
-src/app/pages/projects/project-detail.ts|.html|.spec.ts  C  includes photo-gallery
-src/app/pages/process/process.ts|.html|.spec.ts          C
-src/app/pages/testimonials/testimonials.ts|.html|.spec.ts C
-src/app/pages/about/about.ts|.html|.spec.ts              C
-src/app/pages/quote/quote.ts|.html|.spec.ts              C  the form
-src/app/pages/not-found/not-found.ts|.html|.spec.ts      C  wildcard route + slug-miss reuse
+src/app/pages/home/home.page.ts|.page.html|.page.spec.ts  C
+src/app/pages/services/services-list.page.ts|.page.html|.page.spec.ts  C
+src/app/pages/services/service-detail.page.ts|.page.html|.page.spec.ts  C
+src/app/pages/projects/projects-list.page.ts|.page.html|.page.spec.ts  C
+src/app/pages/projects/project-detail.page.ts|.page.html|.page.spec.ts  C  includes photo-gallery
+src/app/pages/process/process.page.ts|.page.html|.page.spec.ts  C
+src/app/pages/testimonials/testimonials.page.ts|.page.html|.page.spec.ts  C
+src/app/pages/about/about.page.ts|.page.html|.page.spec.ts  C
+src/app/pages/quote/quote.page.ts|.page.html|.page.spec.ts  C  the form
+src/app/pages/not-found/not-found.page.ts|.page.html|.page.spec.ts  C  wildcard route + slug-miss reuse
 src/content/content.types.ts                C  every interface (schema)
 src/content/site.ts                          C  NAP, hours, credentials, warranty, story, areasServed,
                                                   googleBusinessProfileUrl, logo, ogImage, nav   [EAGER]
@@ -107,16 +107,16 @@ src/content/content.spec.ts                 C  contract suite over the whole con
 
 | Order | Path | `loadComponent` | `data.seo` |
 |---|---|---|---|
-| 1 | `''` (`pathMatch: 'full'`) | `pages/home/home` → `Home` | indexable |
-| 2 | `servicios` | `pages/services/services-list` → `ServicesList` | indexable |
-| 3 | `servicios/:slug` | `pages/services/service-detail` → `ServiceDetail` | indexable |
-| 4 | `proyectos` | `pages/projects/projects-list` → `ProjectsList` | indexable |
-| 5 | `proyectos/:slug` | `pages/projects/project-detail` → `ProjectDetail` | indexable |
-| 6 | `proceso` | `pages/process/process` → `Process` | indexable |
-| 7 | `testimonios` | `pages/testimonials/testimonials` → `Testimonials` | indexable |
-| 8 | `nosotros` | `pages/about/about` → `About` | indexable |
-| 9 | `presupuesto` | `pages/quote/quote` → `Quote` | indexable |
-| 10 | `**` | `pages/not-found/not-found` → `NotFound` | `indexable: false` → `<meta name="robots" content="noindex">` |
+| 1 | `''` (`pathMatch: 'full'`) | `pages/home/home.page` → `HomePage` | indexable |
+| 2 | `servicios` | `pages/services/services-list.page` → `ServicesListPage` | indexable |
+| 3 | `servicios/:slug` | `pages/services/service-detail.page` → `ServiceDetailPage` | indexable |
+| 4 | `proyectos` | `pages/projects/projects-list.page` → `ProjectsListPage` | indexable |
+| 5 | `proyectos/:slug` | `pages/projects/project-detail.page` → `ProjectDetailPage` | indexable |
+| 6 | `proceso` | `pages/process/process.page` → `ProcessPage` | indexable |
+| 7 | `testimonios` | `pages/testimonials/testimonials.page` → `TestimonialsPage` | indexable |
+| 8 | `nosotros` | `pages/about/about.page` → `AboutPage` | indexable |
+| 9 | `presupuesto` | `pages/quote/quote.page` → `QuotePage` | indexable |
+| 10 | `**` | `pages/not-found/not-found.page` → `NotFoundPage` | `indexable: false` → `<meta name="robots" content="noindex">` |
 
 **No guards.** `withComponentInputBinding()` binds `:slug` to an `input()` signal; `withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' })`. Detail page: `@if (entity(); as e) { … } @else { <app-not-found /> }`.
 
@@ -176,7 +176,7 @@ Collections are declared `as const satisfies readonly Service[]` — `satisfies`
 
 Lookups (`src/content/lookup.ts`, pure, returns `| undefined`): `findService`, `findProject`, `findTestimonial`, `resolveServiceSlugs`, `resolveProjectSlugs`, `contentImages()` (recursive walk used by the image contract test).
 
-### Quote form (`pages/quote/quote.ts`)
+### Quote form (`pages/quote/quote.page.ts`)
 
 | Control | Type | Validators | Message line (in order) |
 |---|---|---|---|
@@ -262,7 +262,7 @@ Contrast: CTA text is white on `brand-800` (≈9:1). `accent-600` on white is �
 | `core/consent/consent.service.spec.ts` | denied by default, `grant()` flips + flushes queue |
 | `core/format.spec.ts` | money range / m² / duration formatting |
 | `pages/**/*.spec.ts` (`RouterTestingHarness` + `provideRouter(routes)`) | per route: renders one `h1`, skip link first, ends with `cta-block`; services/projects render exactly N links in order; unknown slug renders `app-not-found`; single `priority` image; `lazy` on the rest; `noinput[type=file]` + exact 8 controls on `/presupuesto`; invalid submit opens nothing; honeypot silent; `wa.me` href exact; success state `tel:` + `mailto:`; zero HTTP (spy `HttpClient` + `fetch`) |
-| `layout/sticky-cta.spec.ts` | absent on `/presupuesto`, present elsewhere |
+| `components/layout/sticky-cta.component.spec.ts` | absent on `/presupuesto`, present elsewhere |
 | `app.spec.ts` (extend) | shell renders header/footer/sticky CTA around `router-outlet` |
 
 Zoneless tests: assert after `await fixture.whenStable()` (no `zone.js` flush). `@defer` grids are asserted via the placeholder/`content` blocks, not by waiting for hydration.

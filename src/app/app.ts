@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { Footer } from './layout/footer';
-import { Header } from './layout/header';
-import { StickyCta } from './layout/sticky-cta';
+import { FooterComponent } from './components/layout/footer.component';
+import { HeaderComponent } from './components/layout/header.component';
+import { StickyCtaComponent } from './components/layout/sticky-cta.component';
 
 /**
  * The shell. It owns the landmarks (skip link, header, `main`, footer, mobile CTA) and
@@ -15,7 +15,7 @@ import { StickyCta } from './layout/sticky-cta';
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, Header, Footer, StickyCta],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, StickyCtaComponent],
   templateUrl: './app.html'
 })
 export class App {}
