@@ -1,8 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners
+} from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
+import { SeoService } from './core/seo/seo.service';
 import { environment } from './environments/environment';
 import { ENVIRONMENT } from './environments/environment.token';
 
@@ -16,6 +22,9 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' })
     ),
+    // Subscribes before the initial navigation completes, so the first head rewrite
+    // is not missed.
+    provideAppInitializer(() => inject(SeoService).start()),
     { provide: ENVIRONMENT, useValue: environment }
   ]
 };
