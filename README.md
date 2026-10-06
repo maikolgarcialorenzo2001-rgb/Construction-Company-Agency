@@ -65,18 +65,40 @@ grep -rn "isPlaceholder" src/   # lists every flag; the src/content/ hits are th
 Every content entry that is not real client data carries `isPlaceholder: true`, so the
 last command lists whatever still has to be replaced before launch.
 
-## Manual accessibility gate (not run yet)
+## Accessibility gate
 
-Automated tests cover the structural half of the WCAG AA requirement: one `h1` per
-route, the skip link first, and image alt text (see `app.release-matrix.spec.ts` and
-`content.spec.ts`). Focus indicators, contrast, and focus order are **not** covered:
-no aXe, Lighthouse, or Playwright is installed in this repo.
+Two layers guard the WCAG AA basics (seo-analytics-performance Req 7):
 
-Until one of those tools is added, this checklist is a **manual release gate**. It has
-**not been run yet**. Run it once before launch and record the result (date, tool,
-route, findings) below:
+1. **Automated, every commit** — `bunx ng test --watch=false` runs the release matrix
+   plus an axe-core scan over every route. No browser and no human needed.
+2. **Manual, every release** — the checks that need a real layout, paint or keyboard
+   session. Recorded below, still pending.
 
-- [ ] Open the built site (`bunx ng serve` or the `dist/` output) with a keyboard only
+### Automated (jsdom + axe-core)
+
+| Check | Where |
+|---|---|
+| Exactly one `h1`, skip link first, one priority image, image budget | `app.release-matrix.spec.ts` |
+| `image-alt`, `button-name`, `link-name`, `label`, `nested-interactive` | `app.a11y.spec.ts` |
+| `landmark-one-main`, `page-has-heading-one`, `region`, `list`, `duplicate-id` | `app.a11y.spec.ts` |
+| No positive `tabindex` (focus order stays in reading order) | `app.a11y.spec.ts` |
+| Every content image has non-empty alt | `content.spec.ts` |
+
+The scan found and fixed one real violation: the mobile contact bar (`sticky-cta`) sat
+outside any landmark. It is now `role="complementary"` "Contacto rápido".
+
+### Still manual (not automatable under jsdom)
+
+- **Focus visibility, WCAG 2.4.7**: a paint-time property. There is no DOM-only axe
+  rule; tab through every route with a keyboard and eyeball the focus ring.
+- **Body text contrast at least 4.5:1, WCAG 1.4.3**: axe needs real layout and canvas,
+  which jsdom never computes. Run Lighthouse or the axe DevTools on the served site.
+- **Reading-order tab flow, WCAG 2.4.3**: automated proof covers the structure (no
+  positive `tabindex` reorders the stops); a real browser confirms the flow reads
+  naturally.
+
+### Manual checklist (not run yet)
+
 - [ ] First Tab lands on the skip link, and it reveals `<main id="main">` (every route)
 - [ ] Every interactive element shows a visible focus indicator while tabbing
 - [ ] Tab order follows reading order on every route
