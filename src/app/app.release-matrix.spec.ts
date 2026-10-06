@@ -11,7 +11,8 @@ import { routes } from './app.routes';
  * `priority` is the number of `fetchpriority="high"` images the route is allowed: the
  * single LCP image where a hero exists, none where the page has no above-the-fold photo.
  * `cta` says whether the shared CTA block closes the page; the quote page owns its own
- * form, so it is the only route that ends without one — the wildcard route included.
+ * form, so it is the only route that ends without one. Every other route closes with it,
+ * the wildcard route included.
  */
 interface RouteContract {
   readonly path: string;

@@ -72,6 +72,9 @@ describe('ProjectDetailPage', () => {
 
     expect(element.querySelector('app-not-found h1')).not.toBeNull();
     expect(element.textContent).not.toContain('Casa timber en Pilar');
+    // The slug-miss branch closes with exactly one CTA: the one NotFoundPage renders.
+    // Guards against a second block leaking in beside <app-not-found />.
+    expect(element.querySelectorAll('app-cta-block')).toHaveLength(1);
   });
 
   it('renders the 404 component when the route provides no slug at all', async () => {

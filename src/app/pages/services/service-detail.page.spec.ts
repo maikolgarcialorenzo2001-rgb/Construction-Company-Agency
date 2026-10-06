@@ -103,6 +103,9 @@ describe('ServiceDetailPage', () => {
 
     expect(element.querySelector('app-not-found')).toBeTruthy();
     expect(element.textContent).not.toContain(REFORMAS.name);
+    // The slug-miss branch closes with exactly one CTA: the one NotFoundPage renders.
+    // Guards against a second block leaking in beside <app-not-found />.
+    expect(element.querySelectorAll('app-cta-block')).toHaveLength(1);
   });
 
   it('renders the 404 component when the route delivers no slug at all', async () => {
