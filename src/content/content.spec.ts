@@ -18,6 +18,7 @@ import { contentImages, findProject, findService, findTestimonial } from './look
 /** Every module that may hold content. Imported lazily so the suite stays extensible. */
 const CONTENT_MODULES = [
   './site',
+  './home',
   './services',
   './projects',
   './process-steps',

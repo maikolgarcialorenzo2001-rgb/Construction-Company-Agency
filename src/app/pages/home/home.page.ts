@@ -1,13 +1,37 @@
-import { Component } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-/** Placeholder page: replaced by S8 (hero, highlights, featured work). */
+import { home } from '../../../content/home';
+import { projects } from '../../../content/projects';
+import { services } from '../../../content/services';
+import { resolveProjectSlugs, resolveServiceSlugs } from '../../../content/lookup';
+import { CtaBlockComponent } from '../../components/cta-block/cta-block.component';
+import { ProjectCardComponent } from '../../components/project-card/project-card.component';
+import { SectionHeadingComponent } from '../../components/section-heading/section-heading.component';
+import { ServiceCardComponent } from '../../components/service-card/service-card.component';
+
+/**
+ * Landing page. The hero headline is the single H1 and its photo the single priority
+ * image of the page. Featured content is resolved from slugs, so the template carries
+ * no service or project name of its own.
+ */
 @Component({
   selector: 'app-home',
-  template: `
-    <section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
-      <h1 class="text-section font-semibold text-ink-900">Obras y reformas con precio en claro</h1>
-      <p class="mt-4 text-ink-600">Contenido en preparación.</p>
-    </section>
-  `
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    NgOptimizedImage,
+    CtaBlockComponent,
+    ProjectCardComponent,
+    SectionHeadingComponent,
+    ServiceCardComponent
+  ],
+  templateUrl: './home.page.html'
 })
-export class HomePage {}
+export class HomePage {
+  protected readonly home = home;
+  protected readonly featuredServices = resolveServiceSlugs(home.featuredServiceSlugs, services);
+  protected readonly featuredProjects = resolveProjectSlugs(home.featuredProjectSlugs, projects);
+  protected readonly ctaHeading = '¿Hablamos de tu obra?';
+  protected readonly ctaBody =
+    'Pedinos el presupuesto: te lo armamos desglosado por partida, con plazos y sin sorpresas.';
+}

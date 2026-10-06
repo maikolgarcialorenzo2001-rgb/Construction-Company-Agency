@@ -1,0 +1,55 @@
+<section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+  <h1 class="text-display font-semibold text-ink-900">{{ home.hero.headline }}</h1>
+  <p class="mt-4 text-lg text-ink-600">{{ home.hero.subhead }}</p>
+
+  <div class="mt-10">
+    <img
+      data-testid="home-hero"
+      [ngSrc]="home.hero.image.src"
+      [alt]="home.hero.image.alt"
+      [width]="home.hero.image.width"
+      [height]="home.hero.image.height"
+      priority
+      class="aspect-[16/9] w-full rounded-xl object-cover"
+    />
+  </div>
+
+  <div class="mt-16">
+    <app-section-heading title="Por qué eleginos" lead="Lo que marcamos desde el primer día" />
+    <ul class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (highlight of home.highlights; track highlight.title) {
+        <li data-testid="highlight" class="surface-card flex flex-col gap-2">
+          <h3 class="text-xl font-semibold text-ink-900">{{ highlight.title }}</h3>
+          <p class="text-ink-600">{{ highlight.body }}</p>
+        </li>
+      }
+    </ul>
+  </div>
+
+  @if (featuredServices.length > 0) {
+    <div class="mt-16">
+      <app-section-heading title="Servicios destacados" lead="Los trabajos que más pedimos" />
+      <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        @for (service of featuredServices; track service.slug) {
+          <app-service-card [service]="service" />
+        }
+      </div>
+    </div>
+  }
+
+  @if (featuredProjects.length > 0) {
+    <div class="mt-16">
+      <app-section-heading
+        title="Proyectos destacados"
+        lead="Obras reales que muestran cómo trabajamos"
+      />
+      <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        @for (project of featuredProjects; track project.slug) {
+          <app-project-card [project]="project" />
+        }
+      </div>
+    </div>
+  }
+
+  <app-cta-block class="mt-16 block" [heading]="ctaHeading" [body]="ctaBody" />
+</section>

@@ -159,6 +159,8 @@ export interface HomeContent {
   readonly highlights: readonly { readonly title: string; readonly body: string }[];
   readonly featuredServiceSlugs: readonly string[];
   readonly featuredProjectSlugs: readonly string[];
+  /** True until the client supplies the real hero copy and photo. Release gate. */
+  readonly isPlaceholder?: true;
 }
 
 export type JobType = 'reforma' | 'obra-nueva' | 'ampliacion' | 'reparacion' | 'comercial' | 'otro';

@@ -93,9 +93,9 @@ Chain strategy: stacked-to-main
 
 ## S8 — Home + nosotros [B]+[C] (~300)
 
-- [ ] **T8.1 [C]** `home.ts`: hero, highlights, `featuredServiceSlugs`, `featuredProjectSlugs`. *AC:* build green. *Files:* `content/home.ts`. *Deps:* T2.1
-- [ ] **T8.2 [B]** `/`: one `h1`, hero as the single `priority` image, highlights, resolved featured services/projects, `cta-block`. *AC:* one priority image, no hardcoded service/project names. *Files:* `pages/home/home.page.ts|.page.html|.page.spec.ts`. *Deps:* T8.1, T6.4, T5.4
-- [ ] **T8.3 [B]** `/nosotros`: story, 4 credentials, warranty, NAP matching `site.ts`, `cta-block`. *AC:* all trust payload + NAP values visible. *Files:* `pages/about/about.page.ts|.page.html|.page.spec.ts`. *Deps:* T2.2
+- [x] **T8.1 [C]** `home.ts`: hero, highlights, `featuredServiceSlugs`, `featuredProjectSlugs`. *AC:* build green. *Files:* `content/home.ts`. *Deps:* T2.1
+- [x] **T8.2 [B]** `/`: one `h1`, hero as the single `priority` image, highlights, resolved featured services/projects, `cta-block`. *AC:* one priority image, no hardcoded service/project names. *Files:* `pages/home/home.page.ts|.page.html|.page.spec.ts`. *Deps:* T8.1, T6.4, T5.4
+- [x] **T8.3 [B]** `/nosotros`: story, 4 credentials, warranty, NAP matching `site.ts`, `cta-block`. *AC:* all trust payload + NAP values visible. *Files:* `pages/about/about.page.ts|.page.html|.page.spec.ts`. *Deps:* T2.2
 
 ## S9 — Quote lead capture [B] (~390)
 

@@ -1,0 +1,74 @@
+<section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+  <h1 class="text-display font-semibold text-ink-900">Nosotros</h1>
+
+  <div class="mt-6">
+    <app-section-heading
+      title="Obras cerradas, no promesas"
+      lead="Contanos qué necesitás y te respondemos con un presupuesto desglosado por partida."
+    />
+  </div>
+
+  <p class="mt-6 text-lg leading-relaxed text-ink-600">{{ site.story }}</p>
+
+  <div class="mt-16">
+    <app-section-heading
+      title="Acreditaciones"
+      lead="Registrados y asegurados: los datos que te conviene verificar antes de firmar."
+    />
+    <dl data-testid="credentials" class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div class="surface-card">
+        <dt class="text-sm uppercase tracking-wide text-ink-400">ART</dt>
+        <dd class="mt-1 font-semibold text-ink-900">{{ site.credentials.art }}</dd>
+      </div>
+      <div class="surface-card">
+        <dt class="text-sm uppercase tracking-wide text-ink-400">Seguro</dt>
+        <dd class="mt-1 font-semibold text-ink-900">{{ site.credentials.insurance }}</dd>
+      </div>
+      <div class="surface-card">
+        <dt class="text-sm uppercase tracking-wide text-ink-400">Matrícula</dt>
+        <dd class="mt-1 font-semibold text-ink-900">
+          {{ site.credentials.professionalRegistration }}
+        </dd>
+      </div>
+      <div class="surface-card">
+        <dt class="text-sm uppercase tracking-wide text-ink-400">CUIT</dt>
+        <dd class="mt-1 font-semibold text-ink-900">{{ site.credentials.cuit }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="mt-16">
+    <app-section-heading
+      title="Garantía"
+      lead="Si algo no está bien, lo arreglamos nosotros."
+    />
+    <p class="mt-6 max-w-3xl text-lg leading-relaxed text-ink-600">
+      {{ site.warranty }}
+    </p>
+  </div>
+
+  <div class="mt-16">
+    <app-section-heading
+      title="Dónde encontrarnos"
+      lead="Escribinos o llamanos: atendemos de lunes a viernes y los sábados a la mañana."
+    />
+    <address class="mt-6 not-italic leading-relaxed text-ink-600">
+      <strong class="font-semibold text-ink-900">{{ site.nap.name }}</strong><br />
+      {{ site.nap.streetAddress }}<br />
+      {{ site.nap.postalCode }} {{ site.nap.locality }}<br />
+      {{ site.nap.region }} · {{ site.nap.country }}
+      <p class="mt-3">
+        <app-phone-link />
+      </p>
+      <p class="mt-2">
+        <a
+          [href]="'mailto:' + site.nap.email"
+          class="font-medium text-brand-800 hover:underline"
+          >{{ site.nap.email }}</a
+        >
+      </p>
+    </address>
+  </div>
+
+  <app-cta-block class="mt-16 block" [heading]="ctaHeading" [body]="ctaBody" />
+</section>
