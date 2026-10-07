@@ -8,4 +8,6 @@ export interface Environment {
    * treats it as absent and stays completely silent until the client fills it in.
    */
   gaMeasurementId: string;
+  /** Absolute site origin (e.g. https://example.com). Empty in development. */
+  siteUrl: string;
 }

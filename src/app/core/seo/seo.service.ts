@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRouteSnapshot, NavigationEnd, NavigationStart, Router } from '@angular/router';
 
 import { site } from '../../../content/site';
+import { ENVIRONMENT } from '../../environments/environment.token';
 import { buildJsonLd } from './json-ld';
 
 /**
@@ -38,6 +39,7 @@ export class SeoService {
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly environment = inject(ENVIRONMENT);
 
   private started = false;
   private overrides: SeoOverride = {};
@@ -86,8 +88,12 @@ export class SeoService {
     this.setMeta('property', 'og:title', title);
     this.setMeta('property', 'og:description', description);
     this.setMeta('name', 'robots', route.indexable === false ? 'noindex,nofollow' : 'index,follow');
+    this.setMeta('property', 'og:type', 'website');
+    this.setMeta('property', 'og:image', site.ogImage.src);
+    this.setMeta('name', 'twitter:card', 'summary_large_image');
 
     const url = this.canonicalUrl();
+    this.setMeta('property', 'og:url', url);
     this.setLink('canonical', url);
     this.writeJsonLd(url);
   }
@@ -110,7 +116,8 @@ export class SeoService {
   }
 
   private canonicalUrl(): string {
-    return new URL(this.router.url, this.document.location.origin).href;
+    const origin = this.environment.siteUrl?.trim() || this.document.location.origin;
+    return new URL(this.router.url, origin).href;
   }
 
   private setTitle(title: string): void {

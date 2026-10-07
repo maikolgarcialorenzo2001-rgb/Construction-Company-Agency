@@ -11,5 +11,6 @@ export const environment: Environment = {
   // resolve to a real host. Replace once an API is defined.
   apiUrl: 'http://localhost:3000',
   // Empty on purpose: a dev build must never talk to a real GA4 property.
-  gaMeasurementId: ''
+  gaMeasurementId: '',
+  siteUrl: ''
 };

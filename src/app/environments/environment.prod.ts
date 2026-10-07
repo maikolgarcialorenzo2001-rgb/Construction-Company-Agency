@@ -9,5 +9,7 @@ export const environment: Environment = {
   // PROVISIONAL: no backend exists yet. See environment.ts.
   apiUrl: 'https://api.example.com',
   // PROVISIONAL: no GA4 property yet. See environment.ts.
-  gaMeasurementId: ''
+  gaMeasurementId: '',
+  // PROVISIONAL: replace with the real public origin once confirmed (no localhost in prod).
+  siteUrl: 'https://constructora-ejemplo.com.ar'
 };

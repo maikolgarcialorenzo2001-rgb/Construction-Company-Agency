@@ -11,5 +11,7 @@ export const environment: Environment = {
   apiUrl: 'https://api.example.com',
   // PROVISIONAL: no GA4 property yet, so the analytics gate stays closed and gtag.js
   // is never loaded. Replace with the client's `G-XXXXXXXXXX` before launch.
-  gaMeasurementId: ''
+  gaMeasurementId: '',
+  // PROVISIONAL: replace with the real public origin once confirmed (no localhost in prod).
+  siteUrl: 'https://constructora-ejemplo.com.ar'
 };
