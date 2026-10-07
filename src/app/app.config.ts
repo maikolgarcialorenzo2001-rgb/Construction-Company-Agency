@@ -5,6 +5,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners
 } from '@angular/core';
+import { provideClientHydration } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -16,6 +17,10 @@ import { ENVIRONMENT } from './environments/environment.token';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    // Attaches to the prerendered DOM instead of re-rendering it, preserving the
+    // per-route head through boot (Req 2). Plain, no transfer cache: the app performs
+    // zero HTTP at bootstrap and all content is bundled.
+    provideClientHydration(),
     provideHttpClient(),
     provideRouter(
       routes,
