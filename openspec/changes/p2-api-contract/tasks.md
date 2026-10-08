@@ -145,7 +145,7 @@ Chain strategy: stacked-to-main
 - **Work-unit commit message:** `feat(contract): add worker and company profile endpoints (p2-api-contract)`
 - **Acceptance criteria:**
   - [x] Profile operations defined
-  - [ ] Role constraints maintained
+  - [x] Role constraints maintained
 - **Effort:** M
 
 ### T3.3 — Verify lint and slice gates
@@ -174,8 +174,8 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `feat(contract): generate TypeScript types from OpenAPI contract (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] Generated file exists with do-not-edit header
-  - [ ] Deterministic from current contract
+  - [x] Generated file exists with do-not-edit header
+  - [x] Deterministic from current contract
 - **Effort:** S
 
 ### T4.2 — Add type-level conformance spec (RED→GREEN)
@@ -185,8 +185,8 @@ Chain strategy: stacked-to-main
 - **TDD step:** Write spec first conceptually (RED) → GREEN when types match.
 - **Work-unit commit message:** `test(contract): add type-level API conformance spec (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] Conformance spec compiles and passes
-  - [ ] Role and key paths assertions hold
+  - [x] Conformance spec compiles and passes
+  - [x] Role and key paths assertions hold
 - **Effort:** S
 
 ### T4.3 — Verify full gate passes
@@ -196,7 +196,7 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `test(contract): run full contract gate (lint, check, lint, test, build) (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] All commands in full gate pass with exit 0
+  - [x] All commands in full gate pass with exit 0
 - **Effort:** S
 
 ### T4.4 — Final verification of contract completeness
@@ -206,10 +206,10 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `docs(contract): verify API surface coverage against spec (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] All required domains covered
-  - [ ] Pagination envelope shared across list endpoints
-  - [ ] Error envelope referenced where applicable
-  - [ ] `info.version` is 1.0.0
+  - [x] All required domains covered
+  - [x] Pagination envelope shared across list endpoints
+  - [x] Error envelope referenced where applicable
+  - [x] `info.version` is 1.0.0
 - **Effort:** S
 
 **Slice 4 gate:** full gate `bun run contract:lint && bun run contract:check && bunx ng lint && bunx ng test --watch=false && bunx ng build`
