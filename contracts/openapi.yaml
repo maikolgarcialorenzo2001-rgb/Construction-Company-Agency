@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  title: Construction Company Agency API
+  description: API contract for the construction company platform (worker/company)
+  version: 1.0.0
+servers:
+  - url: https://api.constructora-ejemplo.com.ar
+    description: Production API (provisional)
+tags:
+  - name: auth
+  - name: profiles
+  - name: feed
+  - name: jobs
+  - name: applications
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    Role:
+      type: string
+      enum:
+        - worker
+        - company
+        - admin
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - pageSize
+        - total
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+
+    PageEnvelope:
+      type: object
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items: {}
+        meta:
+          $ref: '#/components/schemas/Pagination'
+      additionalProperties: false
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - auth
+      operationId: register
+      description: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                role:
+                  $ref: '#/components/schemas/Role'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - userId
+                  - token
+                properties:
+                  userId:
+                    type: string
+                  token:
+                    type: string
+                additionalProperties: false
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - auth
+      operationId: login
+      description: Login with credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              additionalProperties: false
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                  - role
+                properties:
+                  token:
+                    type: string
+                  role:
+                    $ref: '#/components/schemas/Role'
+                additionalProperties: false
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags:
+        - auth
+      operationId: getMe
+      description: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - userId
+                  - email
+                  - role
+                properties:
+                  userId:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    $ref: '#/components/schemas/Role'
+                additionalProperties: false
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
