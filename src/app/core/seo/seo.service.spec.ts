@@ -1,4 +1,5 @@
 import { DOCUMENT } from '@angular/common';
+import { ENVIRONMENT } from '../../environments/environment.token';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -41,7 +42,15 @@ describe('SeoService', () => {
   };
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(routes),
+        {
+          provide: ENVIRONMENT,
+          useValue: { production: false, siteUrl: "", apiUrl: "http://localhost:3000", gaMeasurementId: "" }
+        }
+      ]
+    });
 
     seo = TestBed.inject(SeoService);
     doc = TestBed.inject(DOCUMENT);
