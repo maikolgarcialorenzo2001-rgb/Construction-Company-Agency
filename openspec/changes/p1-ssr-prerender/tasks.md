@@ -53,7 +53,7 @@
 - **Acceptance criteria:**  
   - [x] Req 2: hydration enabled via `provideClientHydration()`.  
   - [x] Req 1,4: build emits prerendered files for known routes (count matches) and `index.csr.html` present.  
-  - [ ] Req 3,6: gate passes; initial bundle ≤ 450 kB warn / 500 kB error; build-time delta recorded vs 381.64 kB baseline (R6).  
+  - [x] Req 3,6: gate passes; initial bundle ≤ 450 kB warn / 500 kB error; build-time delta recorded vs 381.64 kB baseline (R6).  
 - **Effort:** S
 
 **Slice 1 total changed lines (estimate):** ~150–220 LOC (config + 4 new server files + 1–2 specs). **≤400?** Yes. **Data/config-dominant?** Config-heavy (angular.json/package.json + server wiring) but still ≤400.
