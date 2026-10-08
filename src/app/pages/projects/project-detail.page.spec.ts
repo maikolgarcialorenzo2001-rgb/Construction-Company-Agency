@@ -1,7 +1,9 @@
+import { DOCUMENT } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { ENVIRONMENT } from '../../environments/environment.token';
 import { projects } from '../../../content/projects';
 import { services } from '../../../content/services';
 import { ProjectDetailPage } from './project-detail.page';
@@ -160,5 +162,95 @@ describe('ProjectDetailPage', () => {
 
     expect(element.querySelector('a[href="/proyectos"]')).not.toBeNull();
     expect(element.querySelector('app-cta-block a[href="/presupuesto"]')).toBeTruthy();
+  });
+});
+
+describe('ProjectDetailPage per-slug head (Req 10)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
+    TestBed.configureTestingModule({
+      imports: [ProjectDetailPage],
+      providers: [
+        provideRouter([
+          {
+            path: 'proyectos/:slug',
+            component: ProjectDetailPage,
+            data: { seo: { title: 'Proyectos', description: 'Nuestros proyectos' } },
+          },
+        ]),
+        {
+          provide: ENVIRONMENT,
+          useValue: {
+            production: false,
+            apiUrl: 'https://api.example.com',
+            gaMeasurementId: '',
+            siteUrl: 'https://example.com',
+          },
+        },
+      ],
+    });
+  });
+
+  const render = async (slug: string): Promise<void> => {
+    observers.length = 0;
+    await TestBed.inject(Router).navigateByUrl(`/proyectos/${slug}`);
+    const fixture = TestBed.createComponent(ProjectDetailPage);
+    fixture.componentRef.setInput('slug', slug);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  };
+
+  const head = (): HTMLHeadElement => TestBed.inject(DOCUMENT).head;
+
+  it('writes the project title and brief into the head, overriding the generic route title', async () => {
+    const obra = projects[0];
+
+    await render(obra.slug);
+
+    expect(head().querySelector('title')?.textContent?.trim()).toBe(obra.title);
+    expect(head().querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+      obra.brief
+    );
+  });
+
+  it('keeps og:title and og:description aligned with the head title', async () => {
+    const obra = projects[0];
+
+    await render(obra.slug);
+
+    expect(head().querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
+      obra.title
+    );
+    expect(head().querySelector('meta[property="og:description"]')?.getAttribute('content')).toBe(
+      obra.brief
+    );
+  });
+
+  it('points canonical and og:url at the per-slug URL', async () => {
+    const obra = projects[0];
+
+    await render(obra.slug);
+    const url = `https://example.com/proyectos/${obra.slug}`;
+
+    expect(head().querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
+    expect(head().querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(url);
+  });
+
+  it('derives a wholly per-slug head for a second project, distinct from the first', async () => {
+    const obra = projects[1];
+    expect(obra.title).not.toBe(projects[0].title);
+
+    await render(obra.slug);
+    const url = `https://example.com/proyectos/${obra.slug}`;
+
+    expect(head().querySelector('title')?.textContent?.trim()).toBe(obra.title);
+    expect(head().querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+      obra.brief
+    );
+    expect(head().querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
+      obra.title
+    );
+    expect(head().querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
+    expect(head().querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(url);
   });
 });

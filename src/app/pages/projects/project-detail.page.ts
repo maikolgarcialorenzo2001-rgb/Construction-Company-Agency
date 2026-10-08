@@ -1,11 +1,12 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { findProject, resolveServiceSlugs } from '../../../content/lookup';
 import { projects } from '../../../content/projects';
 import { services } from '../../../content/services';
 import { formatArea, formatDuration, formatMoneyRange } from '../../core/format';
+import { SeoService } from '../../core/seo/seo.service';
 import { NotFoundPage } from '../not-found/not-found.page';
 import { CtaBlockComponent } from '../../components/cta-block/cta-block.component';
 import { PhotoGalleryComponent } from '../../components/photo-gallery/photo-gallery.component';
@@ -29,6 +30,20 @@ import { SectionHeadingComponent } from '../../components/section-heading/sectio
 export class ProjectDetailPage {
   /** Bound from the route by `withComponentInputBinding()`. */
   readonly slug = input<string>();
+
+  private readonly seo = inject(SeoService);
+
+  constructor() {
+    // Overrides are cleared on every NavigationStart, so the head is re-set here on
+    // each navigation that resolves a project. `project()` re-reads the slug, so the
+    // effect re-fires when the route input changes (Req 10).
+    effect(() => {
+      const detail = this.project();
+      if (detail !== undefined) {
+        this.seo.override({ title: detail.title, description: detail.brief });
+      }
+    });
+  }
 
   protected readonly project = computed(() => {
     const value = this.slug();

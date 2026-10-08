@@ -123,9 +123,9 @@
 - **TDD step (RED test first):** Add jsdom unit spec for `ServiceDetailPage` asserting `SeoService.override()` called with content-derived title/description when slug set (mock/spy). Must fail before implementation. 
 - **Work-unit commit message:** `feat(pages): apply per-slug SEO override for service detail (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Req 10 (Scenarios): override uses content-derived values; generic route title not frozen.  
-  - [ ] Canonical/og:url follow per-slug URL (via SeoService + override path).  
-  - [ ] RED→GREEN.  
+  - [x] Req 10 (Scenarios): override uses content-derived values; generic route title not frozen.  
+  - [x] Canonical/og:url follow per-slug URL (via SeoService + override path).  
+  - [x] RED→GREEN.  
 - **Effort:** S
 
 ### T3.2 — ProjectDetailPage override (OD-2)
@@ -135,8 +135,8 @@
 - **TDD step (RED test first):** Add spec asserting override called with content-derived values for project slug. Must fail before implementation. 
 - **Work-unit commit message:** `feat(pages): apply per-slug SEO override for project detail (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Req 10: per-slug head on detail pages.  
-  - [ ] RED→GREEN.  
+  - [x] Req 10: per-slug head on detail pages.  
+  - [x] RED→GREEN.  
 - **Effort:** S
 
 ### T3.3 — Slice gate + distinctness coverage
@@ -146,8 +146,8 @@
 - **TDD step (RED test first):** Specs RED before implementations; now GREEN. 
 - **Work-unit commit message:** `test(pages): add per-slug override specs and gate slice 3 (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Req 10: override specs GREEN; existing suite green.  
-  - [ ] Gate passes; no regressions (Req 6,13).  
+  - [x] Req 10: override specs GREEN; existing suite green.  
+  - [x] Gate passes; no regressions (Req 6,13).  
 - **Effort:** S
 
 **Slice 3 total changed lines (estimate):** ~70–120 LOC (page changes + specs). **≤400?** Yes. **Data/config-dominant?** No.

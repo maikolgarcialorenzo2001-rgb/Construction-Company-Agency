@@ -1,7 +1,7 @@
 # Progress: `p1-ssr-prerender` — build-time prerender + client hydration
 
 **Change:** `p1-ssr-prerender` (project: `construction-company-agency`) · **Mode:** hybrid (disk artifacts + Engram) · **Date:** 2026-10-08
-**Status:** Slices 1–2 applied and gated green; slice 3 (per-slug heads) is the next work unit.
+**Status:** Slices 1–3 applied and gated green; slice 4 (gate hardening) is the next work unit.
 
 ## Phase table
 
@@ -14,7 +14,7 @@
 | tasks | ✅ | `openspec/changes/p1-ssr-prerender/tasks.md` (slices 1–2 checkboxes audited) |
 | apply — slice 1 | ✅ | `7647cee` prerender plumbing + hydration |
 | apply — slice 2 | ✅ | `8b758e6` og/twitter head + SITE_URL canonical; tests `9165e04` |
-| apply — slice 3 | ⏳ pending | per-slug heads (`SeoService.override()` on detail pages) |
+| apply — slice 3 | ✅ | `f3aa861` service per-slug head; ProjectDetailPage per-slug head + slice 3 gate (2nd slice-3 commit) |
 | apply — slice 4 | ⏳ pending | gate hardening (`scripts/verify-prerender.ts` + lint wiring) |
 | verify | ⏳ pending | `sdd-verify` after all slices land |
 | archive | ⏳ pending | `sdd-archive` after verify passes |
@@ -24,6 +24,8 @@ Gate at `9165e04`: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng bu
 Batch A (T2.2–T2.4 spec hardening), 2026-10-08: gate re-run green — `bunx ng lint` ✓ · `bunx ng test --watch=false` 356/356 ✓ · `bunx ng build` (21 prerendered routes) ✓.
 
 Batch B (T1.4 build-size evidence, R6), 2026-10-08: `bunx ng build` ✓ — initial total **409.17 kB** raw (112.01 kB est. transfer), 21 prerendered routes, no budget warning emitted.
+
+Batch C (slice 3 — per-slug heads, T3.1–T3.3), 2026-10-08: gate re-run green — `bunx ng lint` ✓ · `bunx ng test --watch=false` **364/364** ✓ (356 + 8 new SEO specs) · `bunx ng build` (21 prerendered routes) ✓. Commits: `f3aa861` "feat(seo): per-slug head override on ServiceDetailPage" + "feat(seo): per-slug head override on ProjectDetailPage + slice 3 gate".
 
 ## Locked decisions
 
@@ -85,7 +87,6 @@ Note: `environment.guard.spec.ts` already covers prod `siteUrl` shape (absolute,
 
 ## Resume instructions
 
-1. **Next:** slice 3 — per-slug heads (T3.1 `ServiceDetailPage`, T3.2 `ProjectDetailPage`, T3.3 gate) via orchestrator: `sdd-continue p1-ssr-prerender`.
-2. Then slice 4 — gate hardening: `scripts/verify-prerender.ts` + `scripts/` lint wiring + end-to-end gate (T4.1–T4.3). The verify script's "og:image exactly once" assertion will catch the Known-gap triplicate.
-3. Then `sdd-verify p1-ssr-prerender`, then `sdd-archive p1-ssr-prerender`.
-4. All commands Bun-only: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng build` · `bun scripts/verify-prerender.ts`. Never npm/npx/yarn.
+1. **Next:** slice 4 — gate hardening: `scripts/verify-prerender.ts` + `scripts/` lint wiring + end-to-end gate (T4.1–T4.3). The verify script's "og:image exactly once" assertion will catch the Known-gap triplicate.
+2. Then `sdd-verify p1-ssr-prerender`, then `sdd-archive p1-ssr-prerender`.
+3. All commands Bun-only: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng build` · `bun scripts/verify-prerender.ts`. Never npm/npx/yarn.
