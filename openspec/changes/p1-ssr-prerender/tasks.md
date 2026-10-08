@@ -81,7 +81,7 @@
 - **TDD step (RED test first):** Extend unit specs to assert `og:image`, `og:url`, `twitter:card` written once; dev fallback uses `document.location.origin`; prod uses `SITE_URL`. Must fail before implementation. 
 - **Work-unit commit message:** `feat(seo): enrich head with og:* and twitter:card; add SITE_URL origin (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Req 8: complete social head written; `og:image == site.ogImage.src`; each appears once (in-place rewrite).  
+  - [x] Req 8: complete social head written; `og:image == site.ogImage.src`; each appears once (in-place rewrite).  
   - [x] Req 9: absolute canonical/og:url/JSON-LD url from SITE_URL in prod; dev fallback to `document.location.origin`.  
   - [x] Req 12: head completeness preserved (JSON-LD absolute).  
   - [ ] RED→GREEN for SeoService specs.  
@@ -95,7 +95,7 @@
 - **Work-unit commit message:** `feat(seo): add static og:image fallback to index.html (p1-ssr-prerender)`
 - **Acceptance criteria:**  
   - [x] Req 11 (Scenario: CSR fallback unfurls): static `og:image` present in `index.html`.  
-  - [ ] Req 8 duplication guard: runtime supersedes without duplicates (tested).  
+  - [x] Req 8 duplication guard: runtime supersedes without duplicates (tested).  
 - **Effort:** S
 
 ### T2.4 — Head units + document specs + slice gate
@@ -105,7 +105,7 @@
 - **TDD step (RED test first):** Specs from T2.2–T2.3 must be RED before their implementations; now GREEN gate. 
 - **Work-unit commit message:** `test(seo): add head completeness and duplication specs; gate slice 2 (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Req 8–9,11: all unit specs GREEN.  
+  - [x] Req 8–9,11: all unit specs GREEN.  
   - [x] Req 6,13: existing suite green; lint/test/build GREEN for slice.  
 - **Effort:** S
 

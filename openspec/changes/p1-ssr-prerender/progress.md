@@ -21,6 +21,8 @@
 
 Gate at `9165e04`: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng build` — green (not re-run during this handoff).
 
+Batch A (T2.2–T2.4 spec hardening), 2026-10-08: gate re-run green — `bunx ng lint` ✓ · `bunx ng test --watch=false` 356/356 ✓ · `bunx ng build` (21 prerendered routes) ✓.
+
 ## Locked decisions
 
 | Decision | Choice |
@@ -42,21 +44,26 @@ Gate at `9165e04`: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng bu
 | R6 build-time growth | Measured in slice 1 | delta vs 381.64 kB baseline recorded at first apply slice — **not yet recorded (see Known gaps)** |
 | R7 root `server.ts` escaping lint | N/A for Option B | wire `lintFilePatterns` + `tsconfig.server.json` the day `server.ts` exists |
 
-## Known gaps (from checkbox audit, 2026-10-08)
+## Known gaps (from checkbox audit, 2026-10-08; batch A updates same date)
 
 Left unchecked in `tasks.md` — slice 3/4 work or follow-up required:
 
 | Task | Criterion | Why unchecked |
 |---|---|---|
 | T1.2 | RED→GREEN for shared enumeration spec | Spec exists, is content-derived and green, but spec + implementation landed in the same commit (`7647cee`) — RED phase not independently evidenced |
-| T1.4 | Build-time delta recorded vs 381.64 kB baseline (R6) | No post-hydration bundle size recorded anywhere (commits, docs, Engram); R6 demands "measured, not assumed" |
+| T1.4 | Build-time delta recorded vs 381.64 kB baseline (R6) | No post-hydration bundle size recorded anywhere (commits, docs, Engram); R6 demands "measured, not assumed" — **batch B** |
 | T2.1 | Guard spec RED→GREEN | Same process-evidence gap: spec added in the same commit as the values (`8b758e6`) |
-| T2.2 | Req 8 — each social tag appears once | **`src/index.html` ships THREE identical `<meta property="og:image">` tags** (lines 19–21, introduced by `8b758e6`); `SeoService.setMeta()` only rewrites the first match, so prerendered HTML will keep all three. Violates Req 8 "once each" |
-| T2.2 | RED→GREEN for SeoService specs | The demanded specs (og:image / og:url / twitter:card written once; prod `SITE_URL` origin) were never written — `seo.service.spec.ts` got only the `ENVIRONMENT` provider |
-| T2.3 | Duplication guard tested | No spec counts `og:image` occurrences (`content()` matches the first tag only); the triplicate above proves the guard is missing |
-| T2.4 | Req 8–9,11 unit specs GREEN | No-duplication-after-boot and head-consistency coverage from the task description is absent; suite is green but Req 8's "once each" is untested and currently false in static HTML |
+| T2.2 | RED→GREEN for SeoService specs | Specs now written and GREEN (batch A: og:image/og:url/twitter:card written-once across navigations + production SITE_URL canonical/og:url never localhost), but green-on-first-run — implementation pre-existed, so RED→GREEN process evidence still absent (same class as T1.2/T2.1) |
 
-**Fix recommendation:** deduplicate `src/index.html` og:image (keep one) and add an occurrence-count assertion in `app.document.spec.ts` before slice 4's verify script (which asserts "exactly once" dist-side and would fail on the triplicate).
+**Resolved by batch A (2026-10-08):**
+
+| Former gap | Evidence |
+|---|---|
+| T2.2 Req 8 — social tag appears once (`index.html` shipped THREE og:image) | Restored to exactly ONE `<meta property="og:image">`; occurrence-count guard in `app.document.spec.ts` now fails on any triplicate |
+| T2.3 duplication guard tested | `count()` helper asserts exactly one of og:image/og:title/og:description/og:type in static `src/index.html` |
+| T2.4 Req 8–9,11 unit specs GREEN | Hydration no-duplication spec (seeded static head → 3 navigations → single set of og/twitter/canonical, rewritten in place, `og:title == title`); prod-origin spec; `tasks.md` T2.2/T2.3/T2.4 sub-checkboxes flipped. Gate: `ng lint` ✓ · `ng test --watch=false` 356/356 ✓ · `ng build` 21 routes ✓ |
+
+Note: `environment.guard.spec.ts` already covers prod `siteUrl` shape (absolute, no localhost) — do not duplicate. The test build file-replaces `environment.ts` with `environment.development.ts` (`siteUrl: ''`), so specs must inject `ENVIRONMENT` explicitly for prod-origin cases.
 
 ## Engram topic keys
 

@@ -34,6 +34,9 @@ describe('SeoService', () => {
   const canonicalHref = (): string | null =>
     doc.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? null;
 
+  /** Occurrence count of a head selector — guards Req 8 ("once each"). */
+  const count = (selector: string): number => doc.querySelectorAll(selector).length;
+
   const jsonLdScripts = (): HTMLScriptElement[] =>
     Array.from(doc.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]'));
 
@@ -56,7 +59,7 @@ describe('SeoService', () => {
     doc = TestBed.inject(DOCUMENT);
     doc.head
       .querySelectorAll(
-        'title, meta[name="description"], meta[name="robots"], ' +
+        'title, meta[name="description"], meta[name="robots"], meta[name="twitter:card"], ' +
           'meta[property^="og:"], link[rel="canonical"], script[type="application/ld+json"]'
       )
       .forEach((node) => node.remove());
@@ -148,5 +151,99 @@ describe('SeoService', () => {
     await goto('/proceso');
     expect(doc.title).toBe(routeSeo('proceso').title);
     expect(metaContent('name', 'description')).toBe(routeSeo('proceso').description);
+  });
+
+  it('writes og:image, og:url and twitter:card exactly once, rewritten per navigation', async () => {
+    await goto('/');
+    expect(count('meta[property="og:image"]')).toBe(1);
+    expect(count('meta[property="og:url"]')).toBe(1);
+    expect(count('meta[name="twitter:card"]')).toBe(1);
+    expect(metaContent('property', 'og:image')).toBe(site.ogImage.src);
+    expect(metaContent('property', 'og:url')).toBe(new URL('/', doc.location.origin).href);
+    expect(metaContent('name', 'twitter:card')).toBe('summary_large_image');
+
+    await goto('/servicios');
+    expect(count('meta[property="og:image"]')).toBe(1);
+    expect(count('meta[property="og:url"]')).toBe(1);
+    expect(count('meta[name="twitter:card"]')).toBe(1);
+    expect(metaContent('property', 'og:url')).toBe(new URL('/servicios', doc.location.origin).href);
+    expect(metaContent('property', 'og:image')).toBe(site.ogImage.src);
+  });
+
+  it('keeps a single set of og/twitter tags when enriching a document that already ships the static ones', async () => {
+    // Simulate hydration over the static head shipped by src/index.html.
+    const seed = (attribute: 'name' | 'property', key: string, value: string): void => {
+      const meta = doc.createElement('meta');
+      meta.setAttribute(attribute, key);
+      meta.setAttribute('content', value);
+      doc.head.appendChild(meta);
+    };
+    seed('property', 'og:title', 'Obras, reformas y ampliaciones | Constructora Ejemplo');
+    seed('property', 'og:image', 'https://images.example.com/og-cover.webp');
+    seed('name', 'twitter:card', 'summary');
+
+    await goto('/');
+    await goto('/proceso');
+    await goto('/servicios');
+
+    expect(count('meta[property="og:title"]')).toBe(1);
+    expect(count('meta[property="og:description"]')).toBe(1);
+    expect(count('meta[property="og:image"]')).toBe(1);
+    expect(count('meta[property="og:url"]')).toBe(1);
+    expect(count('meta[name="twitter:card"]')).toBe(1);
+    expect(count('link[rel="canonical"]')).toBe(1);
+
+    // The seeded nodes are rewritten in place, not shadowed by new ones.
+    expect(metaContent('property', 'og:image')).toBe(site.ogImage.src);
+    expect(metaContent('name', 'twitter:card')).toBe('summary_large_image');
+    expect(metaContent('property', 'og:url')).toBe(new URL('/servicios', doc.location.origin).href);
+    expect(metaContent('property', 'og:title')).toBe(doc.title);
+  });
+});
+
+describe('SeoService with a production SITE_URL', () => {
+  const PRODUCTION_SITE_URL = 'https://constructora-ejemplo.com.ar';
+
+  let doc: Document;
+  let harness: RouterTestingHarness;
+
+  beforeEach(async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(routes),
+        {
+          provide: ENVIRONMENT,
+          useValue: {
+            production: true,
+            siteUrl: PRODUCTION_SITE_URL,
+            apiUrl: 'https://api.example.com',
+            gaMeasurementId: ''
+          }
+        }
+      ]
+    });
+
+    TestBed.inject(SeoService).start();
+    doc = TestBed.inject(DOCUMENT);
+    doc.head
+      .querySelectorAll(
+        'title, meta[name="description"], meta[name="robots"], meta[name="twitter:card"], ' +
+          'meta[property^="og:"], link[rel="canonical"], script[type="application/ld+json"]'
+      )
+      .forEach((node) => node.remove());
+
+    harness = await RouterTestingHarness.create();
+  });
+
+  it('builds an absolute canonical and og:url on the SITE_URL origin, never on localhost', async () => {
+    await harness.navigateByUrl('/servicios');
+
+    const canonical = doc.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? '';
+    expect(canonical).toBe(`${PRODUCTION_SITE_URL}/servicios`);
+    expect(canonical).not.toContain('localhost');
+
+    const ogUrl = doc.querySelector('meta[property="og:url"]')?.getAttribute('content') ?? '';
+    expect(ogUrl).toBe(`${PRODUCTION_SITE_URL}/servicios`);
+    expect(ogUrl).not.toContain('localhost');
   });
 });

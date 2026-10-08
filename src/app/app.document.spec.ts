@@ -25,6 +25,12 @@ const content = (name: string, attribute: string): string => {
   return val[1];
 };
 
+/** Occurrence count of a meta tag — guards Req 8 ("once each") / Req 11 regressions. */
+const count = (attribute: 'name' | 'property', key: string): number => {
+  const re = new RegExp('<meta[^>]*' + attribute + '="' + key + '"[^>]*>', 'gi');
+  return (INDEX_HTML.match(re) ?? []).length;
+};
+
 describe('shipped document (src/index.html)', () => {
   it('declares the es-AR document language', () => {
     expect(tag('html')).toMatch(/lang="es-AR"/);
@@ -55,5 +61,12 @@ describe('shipped document (src/index.html)', () => {
     expect(content('theme-color', 'name').trim().length).toBeGreaterThan(0);
     const viewport = content('viewport', 'name');
     expect(viewport).toContain('width=device-width');
+  });
+
+  it('ships each social meta exactly once (no duplicate og tags in the static head)', () => {
+    expect(count('property', 'og:image')).toBe(1);
+    expect(count('property', 'og:title')).toBe(1);
+    expect(count('property', 'og:description')).toBe(1);
+    expect(count('property', 'og:type')).toBe(1);
   });
 });
