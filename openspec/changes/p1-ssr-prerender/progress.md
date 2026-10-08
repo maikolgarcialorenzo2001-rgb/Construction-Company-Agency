@@ -1,7 +1,7 @@
 # Progress: `p1-ssr-prerender` — build-time prerender + client hydration
 
 **Change:** `p1-ssr-prerender` (project: `construction-company-agency`) · **Mode:** hybrid (disk artifacts + Engram) · **Date:** 2026-10-08
-**Status:** Slices 1–3 applied and gated green; slice 4 (gate hardening) is the next work unit.
+**Status:** Slices 1–4 applied and gated green; ready for `sdd-verify`.
 
 ## Phase table
 
@@ -15,7 +15,7 @@
 | apply — slice 1 | ✅ | `7647cee` prerender plumbing + hydration |
 | apply — slice 2 | ✅ | `8b758e6` og/twitter head + SITE_URL canonical; tests `9165e04` |
 | apply — slice 3 | ✅ | `f3aa861` service per-slug head; ProjectDetailPage per-slug head + slice 3 gate (2nd slice-3 commit) |
-| apply — slice 4 | ⏳ pending | gate hardening (`scripts/verify-prerender.ts` + lint wiring) |
+| apply — slice 4 | ✅ | `dbdc8c3` scripts/ lint wiring · `4a95927` verify script · T4.3 gate commit (tasks.md + progress.md) |
 | verify | ⏳ pending | `sdd-verify` after all slices land |
 | archive | ⏳ pending | `sdd-archive` after verify passes |
 
@@ -26,6 +26,8 @@ Batch A (T2.2–T2.4 spec hardening), 2026-10-08: gate re-run green — `bunx ng
 Batch B (T1.4 build-size evidence, R6), 2026-10-08: `bunx ng build` ✓ — initial total **409.17 kB** raw (112.01 kB est. transfer), 21 prerendered routes, no budget warning emitted.
 
 Batch C (slice 3 — per-slug heads, T3.1–T3.3), 2026-10-08: gate re-run green — `bunx ng lint` ✓ · `bunx ng test --watch=false` **364/364** ✓ (356 + 8 new SEO specs) · `bunx ng build` (21 prerendered routes) ✓. Commits: `f3aa861` "feat(seo): per-slug head override on ServiceDetailPage" + "feat(seo): per-slug head override on ProjectDetailPage + slice 3 gate".
+
+Batch D (slice 4 — gate hardening, T4.1–T4.3), 2026-10-08: `dbdc8c3` "chore(lint): wire scripts/ for linting/typecheck" (`lintFilePatterns` += `scripts/**/*.ts`; decision in commit body: no `tsconfig.scripts.json` — Bun typechecks at run time, eslint covers type-aware rules) · `4a95927` "feat(verify): add content-derived post-build prerender assertions" (`scripts/verify-prerender.ts`, 268 LOC, zero new deps; RED proof: bogus dist root → exit 1 with per-assertion listing). Full gate end-to-end green — `bunx ng lint` ✓ · `bunx ng test --watch=false` **364/364** ✓ · `bunx ng build` (21 prerendered routes) ✓ · `bun scripts/verify-prerender.ts` — **PASS: 21 routes verified (7 static + 6 services + 8 projects) · 21 heads checked · CSR fallback ok · no localhost · server.ts absent · @angular/ssr only SSR dep** · exit 0. Req 1/4/5 file inventory satisfied by script asserts (Req 5: no root `server.ts`, no Express, `@angular/ssr` only SSR dep). R6 delta NOT re-measured — batch B evidence stands (409.17 kB vs 381.64 kB baseline, +27.53 kB / +7.21%). R4 head stability noted via the per-page exactly-once head assertions (title/description/robots/canonical/og:*/twitter:card) on all 21 prerendered pages.
 
 ## Locked decisions
 
@@ -87,6 +89,5 @@ Note: `environment.guard.spec.ts` already covers prod `siteUrl` shape (absolute,
 
 ## Resume instructions
 
-1. **Next:** slice 4 — gate hardening: `scripts/verify-prerender.ts` + `scripts/` lint wiring + end-to-end gate (T4.1–T4.3). The verify script's "og:image exactly once" assertion will catch the Known-gap triplicate.
-2. Then `sdd-verify p1-ssr-prerender`, then `sdd-archive p1-ssr-prerender`.
-3. All commands Bun-only: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng build` · `bun scripts/verify-prerender.ts`. Never npm/npx/yarn.
+1. **Next:** `sdd-verify p1-ssr-prerender`, then `sdd-archive p1-ssr-prerender`.
+2. All commands Bun-only: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng build` · `bun scripts/verify-prerender.ts`. Never npm/npx/yarn.

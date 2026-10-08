@@ -164,8 +164,8 @@
 - **TDD step (RED test first):** N/A (tooling). 
 - **Work-unit commit message:** `chore(lint): wire scripts/ for linting/typecheck (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Decision recorded in commit body; lint passes on `scripts/verify-prerender.ts`.  
-  - [ ] No change to `bun.lock`.  
+  - [x] Decision recorded in commit body; lint passes on `scripts/verify-prerender.ts`.  
+  - [x] No change to `bun.lock`.  
 - **Effort:** S
 
 ### T4.2 — Post-build verify script (content-derived)
@@ -175,10 +175,10 @@
 - **TDD step (RED test first):** N/A (post-build integration script). Test by running against fresh build after Slices 1–3 (will fail until all in place) — RED phase is “script fails when assertions missing”. 
 - **Work-unit commit message:** `feat(verify): add content-derived post-build prerender assertions (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Req 1,4,8–12: all dist assertions implemented (content-derived).  
-  - [ ] Req 3: script exits non-zero on failure (render gate).  
-  - [ ] Req 9: `localhost` grep fails build.  
-  - [ ] Uses Bun (native TS).  
+  - [x] Req 1,4,8–12: all dist assertions implemented (content-derived).  
+  - [x] Req 3: script exits non-zero on failure (render gate).  
+  - [x] Req 9: `localhost` grep fails build.  
+  - [x] Uses Bun (native TS).  
 - **Effort:** M
 
 ### T4.3 — End-to-end gate + final verification
@@ -188,9 +188,9 @@
 - **TDD step (RED test first):** Existing suite must remain green (Req 13). 
 - **Work-unit commit message:** `test(verify): run full gate with post-build prerender checks (p1-ssr-prerender)`
 - **Acceptance criteria:**  
-  - [ ] Req 3,6,8–13: full gate GREEN end-to-end.  
-  - [ ] Req 1,4,5: file inventory satisfied; no server runtime artifacts (Req 5).  
-  - [ ] Hydration delta measured vs baseline (recorded).  
+  - [x] Req 3,6,8–13: full gate GREEN end-to-end.  
+  - [x] Req 1,4,5: file inventory satisfied; no server runtime artifacts (Req 5).  
+  - [x] Hydration delta measured vs baseline (recorded).  
 - **Effort:** S
 
 **Slice 4 total changed lines (estimate):** ~150–200 LOC (script + lint wiring). **≤400?** Yes. **Data/config-dominant?** Yes.
