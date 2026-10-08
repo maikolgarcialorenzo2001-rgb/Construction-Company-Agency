@@ -200,6 +200,57 @@ components:
               items:
                 $ref: '#/components/schemas/Application'
 
+    FeedPostInput:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+        attachments:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+
+    FeedPost:
+      type: object
+      required:
+        - id
+        - authorId
+        - content
+        - createdAt
+      properties:
+        id:
+          type: string
+        authorId:
+          type: string
+        content:
+          type: string
+          minLength: 1
+        attachments:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    FeedPostPage:
+      allOf:
+        - $ref: '#/components/schemas/PageEnvelope'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/FeedPost'
+
   parameters:
     PageParam:
       name: page
@@ -705,6 +756,188 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /feed/posts:
+    post:
+      tags:
+        - feed
+      operationId: createFeedPost
+      description: Create a feed post (worker or company role)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedPostInput'
+      responses:
+        '201':
+          description: Feed post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedPost'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /feed/timeline:
+    get:
+      tags:
+        - feed
+      operationId: getTimeline
+      description: List feed posts in reverse chronological order with pagination
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Page of feed posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedPostPage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /feed/posts/{postId}:
+    get:
+      tags:
+        - feed
+      operationId: getFeedPost
+      description: Get a feed post by id
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          description: Feed post identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Feed post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedPost'
+        '404':
+          description: Feed post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - feed
+      operationId: updateFeedPost
+      description: Update a feed post (author role)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          description: Feed post identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedPostInput'
+      responses:
+        '200':
+          description: Updated feed post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedPost'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Feed post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - feed
+      operationId: deleteFeedPost
+      description: Delete a feed post (author role)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          description: Feed post identifier
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Feed post deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Feed post not found
           content:
             application/json:
               schema:
