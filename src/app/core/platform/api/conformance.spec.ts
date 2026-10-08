@@ -103,7 +103,7 @@ describe('api contract conformance', () => {
       expectTypeOf<components['schemas']['Error']>().toEqualTypeOf<{
         code: string;
         message: string;
-        details?: { [key: string]: unknown };
+        details?: Record<string, unknown>;
       }>();
     });
 
