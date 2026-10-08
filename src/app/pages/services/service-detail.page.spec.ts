@@ -1,6 +1,9 @@
+import { DOCUMENT } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
+
+import { ENVIRONMENT } from '../../environments/environment.token';
 
 import { projects } from '../../../content/projects';
 import { services } from '../../../content/services';
@@ -112,5 +115,87 @@ describe('ServiceDetailPage', () => {
     const element = await render();
 
     expect(element.querySelector('app-not-found')).toBeTruthy();
+  });
+});
+
+describe('ServiceDetailPage per-slug head (Req 10)', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [ServiceDetailPage],
+      providers: [
+        provideRouter([
+          {
+            path: 'servicios/:slug',
+            component: ServiceDetailPage,
+            data: { seo: { title: 'Servicios', description: 'Todos los servicios' } },
+          },
+        ]),
+        {
+          provide: ENVIRONMENT,
+          useValue: {
+            production: false,
+            apiUrl: 'https://api.example.com',
+            gaMeasurementId: '',
+            siteUrl: 'https://example.com',
+          },
+        },
+      ],
+    });
+  });
+
+  const render = async (slug: string): Promise<void> => {
+    await TestBed.inject(Router).navigateByUrl(`/servicios/${slug}`);
+    const fixture = TestBed.createComponent(ServiceDetailPage);
+    fixture.componentRef.setInput('slug', slug);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  };
+
+  const head = (): HTMLHeadElement => TestBed.inject(DOCUMENT).head;
+
+  it('writes the service name and summary into the head, overriding the generic route title', async () => {
+    await render(REFORMAS.slug);
+
+    expect(head().querySelector('title')?.textContent?.trim()).toBe(REFORMAS.name);
+    expect(head().querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+      REFORMAS.summary
+    );
+  });
+
+  it('keeps og:title and og:description aligned with the head title', async () => {
+    await render(REFORMAS.slug);
+
+    expect(head().querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
+      REFORMAS.name
+    );
+    expect(
+      head().querySelector('meta[property="og:description"]')?.getAttribute('content')
+    ).toBe(REFORMAS.summary);
+  });
+
+  it('points canonical and og:url at the per-slug URL', async () => {
+    await render(REFORMAS.slug);
+    const url = `https://example.com/servicios/${REFORMAS.slug}`;
+
+    expect(head().querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
+    expect(head().querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(url);
+  });
+
+  it('derives a wholly per-slug head for a second service, distinct from the first', async () => {
+    const segundo = services[1];
+    expect(segundo.name).not.toBe(REFORMAS.name);
+
+    await render(segundo.slug);
+    const url = `https://example.com/servicios/${segundo.slug}`;
+
+    expect(head().querySelector('title')?.textContent?.trim()).toBe(segundo.name);
+    expect(head().querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+      segundo.summary
+    );
+    expect(head().querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
+      segundo.name
+    );
+    expect(head().querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
+    expect(head().querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(url);
   });
 });
