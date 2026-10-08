@@ -91,9 +91,9 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `feat(contract): add job posts CRUD, listing, and search endpoints (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] Job operations defined with required metadata
-  - [ ] Pagination via shared envelope
-  - [ ] Shared Error references
+  - [x] Job operations defined with required metadata
+  - [x] Pagination via shared envelope
+  - [x] Shared Error references
 - **Effort:** M
 
 ### T2.2 — Add Applications paths and schemas
@@ -103,8 +103,8 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `feat(contract): add applications endpoints (postulación, list, transitions) (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] Applications operations defined
-  - [ ] Shared pagination/envelope usage
+  - [x] Applications operations defined
+  - [x] Shared pagination/envelope usage
 - **Effort:** M
 
 ### T2.3 — Verify lint and slice gates
@@ -114,8 +114,8 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `test(contract): verify jobs and applications paths lint-clean (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] `contract:lint` passes
-  - [ ] All slice gates pass
+  - [x] `contract:lint` passes
+  - [x] All slice gates pass
 - **Effort:** S
 
 **Slice 2 gate:** same as slice 1
@@ -155,8 +155,8 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `test(contract): verify feed and profiles paths lint-clean (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] `contract:lint` passes
-  - [ ] All slice gates pass
+  - [x] `contract:lint` passes
+  - [x] All slice gates pass
 - **Effort:** S
 
 **Slice 3 gate:** same as slice 1
