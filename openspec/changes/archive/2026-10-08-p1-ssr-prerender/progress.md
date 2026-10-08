@@ -1,7 +1,7 @@
 # Progress: `p1-ssr-prerender` — build-time prerender + client hydration
 
 **Change:** `p1-ssr-prerender` (project: `construction-company-agency`) · **Mode:** hybrid (disk artifacts + Engram) · **Date:** 2026-10-08
-**Status:** Slices 1–4 applied and gated green; ready for `sdd-verify`.
+**Status:** COMPLETE — 100%. All slices applied, verify PASS WITH WARNINGS, change archived 2026-10-08.
 
 ## Phase table
 
@@ -16,8 +16,8 @@
 | apply — slice 2 | ✅ | `8b758e6` og/twitter head + SITE_URL canonical; tests `9165e04` |
 | apply — slice 3 | ✅ | `f3aa861` service per-slug head; ProjectDetailPage per-slug head + slice 3 gate (2nd slice-3 commit) |
 | apply — slice 4 | ✅ | `dbdc8c3` scripts/ lint wiring · `4a95927` verify script · T4.3 gate commit (tasks.md + progress.md) |
-| verify | ⏳ pending | `sdd-verify` after all slices land |
-| archive | ⏳ pending | `sdd-archive` after verify passes |
+| verify | ✅ | PASS WITH WARNINGS — `verify-report.md` + Engram #827 (0 CRITICAL; 13/18 rows COMPLIANT, 3 PARTIAL, 2 UNTESTED → both annotated at archive) |
+| archive | ✅ | `openspec/changes/archive/2026-10-08-p1-ssr-prerender/` — deltas synced to `openspec/specs/` (server-rendering created, seo reqs 8–13 appended); archive report on disk + Engram `sdd/p1-ssr-prerender/archive-report` |
 
 Gate at `9165e04`: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng build` — green (not re-run during this handoff).
 
@@ -89,5 +89,5 @@ Note: `environment.guard.spec.ts` already covers prod `siteUrl` shape (absolute,
 
 ## Resume instructions
 
-1. **Next:** `sdd-verify p1-ssr-prerender`, then `sdd-archive p1-ssr-prerender`.
+1. **SDD cycle complete.** Open follow-ups are listed in `archive-report.md` (§ Follow-ups): og:image host swap before release, browser-level halves of SR-2/SR-4/SEO-12 pending E2E tooling, T1.2/T2.1/T2.2 RED→GREEN process evidence, coverage wiring next change, CLS measurement deferred.
 2. All commands Bun-only: `bunx ng lint` · `bunx ng test --watch=false` · `bunx ng build` · `bun scripts/verify-prerender.ts`. Never npm/npx/yarn.
