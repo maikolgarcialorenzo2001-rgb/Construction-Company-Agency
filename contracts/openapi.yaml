@@ -143,6 +143,63 @@ components:
               items:
                 $ref: '#/components/schemas/Job'
 
+    ApplicationStatus:
+      type: string
+      enum:
+        - pending
+        - accepted
+        - rejected
+        - withdrawn
+
+    ApplicationInput:
+      type: object
+      required:
+        - jobId
+      properties:
+        jobId:
+          type: string
+        message:
+          type: string
+          minLength: 1
+      additionalProperties: false
+
+    Application:
+      type: object
+      required:
+        - id
+        - jobId
+        - applicantId
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+        jobId:
+          type: string
+        applicantId:
+          type: string
+        message:
+          type: string
+        status:
+          $ref: '#/components/schemas/ApplicationStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    ApplicationPage:
+      allOf:
+        - $ref: '#/components/schemas/PageEnvelope'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Application'
+
   parameters:
     PageParam:
       name: page
@@ -504,6 +561,150 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Job post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /applications:
+    post:
+      tags:
+        - applications
+      operationId: createApplication
+      description: Apply to a job post (worker role)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationInput'
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Job post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - applications
+      operationId: listApplications
+      description: List applications with optional filters and pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: query
+          description: Filter applications by job post id
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter applications by status
+          schema:
+            $ref: '#/components/schemas/ApplicationStatus'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Page of applications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationPage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /applications/{applicationId}/status:
+    patch:
+      tags:
+        - applications
+      operationId: updateApplicationStatus
+      description: Transition an application status (company or worker role)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          description: Application identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  $ref: '#/components/schemas/ApplicationStatus'
+              additionalProperties: false
+      responses:
+        '200':
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Application not found
           content:
             application/json:
               schema:
