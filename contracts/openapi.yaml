@@ -251,6 +251,110 @@ components:
               items:
                 $ref: '#/components/schemas/FeedPost'
 
+    WorkerProfile:
+      type: object
+      required:
+        - userId
+        - role
+        - fullName
+        - createdAt
+      properties:
+        userId:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        fullName:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    WorkerProfileInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+
+    CompanyProfile:
+      type: object
+      required:
+        - companyId
+        - role
+        - name
+        - createdAt
+      properties:
+        companyId:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        website:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    CompanyProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        website:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+      additionalProperties: false
+
   parameters:
     PageParam:
       name: page
@@ -276,7 +380,7 @@ paths:
       tags:
         - auth
       operationId: register
-      description: Register a new user
+      description: Register a new user (admin role cannot be self-assigned)
       requestBody:
         required: true
         content:
@@ -938,6 +1042,174 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Feed post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /profiles/worker/{userId}:
+    get:
+      tags:
+        - profiles
+      operationId: getWorkerProfile
+      description: Get a worker profile by user id
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Worker profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerProfile'
+        '404':
+          description: Worker profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - profiles
+      operationId: updateWorkerProfile
+      description: Update a worker profile (worker owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerProfileInput'
+      responses:
+        '200':
+          description: Updated worker profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerProfile'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Worker profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /profiles/company/{companyId}:
+    get:
+      tags:
+        - profiles
+      operationId: getCompanyProfile
+      description: Get a company profile by company id
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          description: Company identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Company profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+        '404':
+          description: Company profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - profiles
+      operationId: updateCompanyProfile
+      description: Update a company profile (company owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          description: Company identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyProfileInput'
+      responses:
+        '200':
+          description: Updated company profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Company profile not found
           content:
             application/json:
               schema:
