@@ -133,8 +133,8 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `feat(contract): add feed posts CRUD and timeline endpoints (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] Feed operations with metadata
-  - [ ] Timeline uses shared pagination
+  - [x] Feed operations with metadata
+  - [x] Timeline uses shared pagination
 - **Effort:** M
 
 ### T3.2 — Add Profiles paths and schemas
@@ -144,7 +144,7 @@ Chain strategy: stacked-to-main
 - **TDD step:** N/A
 - **Work-unit commit message:** `feat(contract): add worker and company profile endpoints (p2-api-contract)`
 - **Acceptance criteria:**
-  - [ ] Profile operations defined
+  - [x] Profile operations defined
   - [ ] Role constraints maintained
 - **Effort:** M
 
