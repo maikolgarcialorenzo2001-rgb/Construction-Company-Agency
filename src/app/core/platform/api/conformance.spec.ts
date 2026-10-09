@@ -1,4 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest';
+import type { AssertExtends } from '../domain/contract-conformance';
 import type { components, operations, paths } from './generated/schema.gen';
 
 /**
@@ -125,6 +126,21 @@ describe('api contract conformance', () => {
       expectTypeOf<operations['getTimeline']>().not.toBeNever();
       expectTypeOf<operations['getWorkerProfile']>().not.toBeNever();
       expectTypeOf<operations['updateCompanyProfile']>().not.toBeNever();
+    });
+  });
+
+  describe('AssertExtends rejects drift (W1 mechanism)', () => {
+    it('rejects a candidate that drops the required schema fields', () => {
+      // A correct domain type extends the schema type, so the constraint holds. A
+      // drifted candidate ({ id: number } is missing authorId/content/createdAt)
+      // violates the type-argument constraint, which is exactly what W1 must catch.
+      // @ts-expect-error - { id: number } must NOT be assignable to the schema FeedPost
+      type Drifted = AssertExtends<components['schemas']['FeedPost'], { id: number }>;
+
+      // The directive above is self-guarding: if AssertExtends ever stopped rejecting
+      // this candidate, the error would vanish and tsc would report the now-unused
+      // suppression comment, failing the type-check.
+      expectTypeOf<Drifted>().toEqualTypeOf<{ id: number }>();
     });
   });
 });
