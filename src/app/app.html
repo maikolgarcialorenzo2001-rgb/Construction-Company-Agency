@@ -1,7 +1,13 @@
 <a class="skip-link" href="#main">Ir al contenido principal</a>
-<app-header />
+@if (isPlatform()) {
+  <app-platform-header />
+} @else {
+  <app-header />
+}
 <main id="main" tabindex="-1">
   <router-outlet />
 </main>
-<app-footer />
-<app-sticky-cta />
+@if (!isPlatform()) {
+  <app-footer />
+  <app-sticky-cta />
+}

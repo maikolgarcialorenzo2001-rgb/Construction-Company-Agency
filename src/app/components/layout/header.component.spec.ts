@@ -82,6 +82,14 @@ describe('HeaderComponent', () => {
     expect(phones[0].getAttribute('href')).toBe(`tel:+${toWaDigits(site.nap.phoneE164)}`);
   });
 
+  it('exposes a single platform entry point linking to /plataforma', async () => {
+    const element = await render();
+    const entries = Array.from(element.querySelectorAll('a[href="/plataforma"]'));
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0].textContent?.trim()).toBeTruthy();
+  });
+
   it('marks the section of the current route', async () => {
     const fixture = TestBed.createComponent(HeaderComponent);
     const element = await navigateTo(fixture, '/servicios');

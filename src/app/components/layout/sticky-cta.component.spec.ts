@@ -30,6 +30,13 @@ describe('StickyCtaComponent', () => {
         // A route `path` must not start with a slash, hence the slice.
         provideRouter([
           { path: QUOTE_ROUTE.slice(1), component: PageStub },
+          {
+            path: 'plataforma',
+            children: [
+              { path: '', component: PageStub },
+              { path: '**', component: PageStub }
+            ]
+          },
           { path: '**', component: PageStub }
         ])
       ]
@@ -59,6 +66,23 @@ describe('StickyCtaComponent', () => {
     await navigateTo(fixture, QUOTE_ROUTE);
 
     const element = await navigateTo(fixture, '/proyectos');
+
+    expect(element.querySelector('a[href^="https://wa.me/"]')).not.toBeNull();
+  });
+
+  it('renders nothing across the platform subtree', async () => {
+    for (const path of ['/plataforma', '/plataforma/trabajos', '/plataforma/perfil']) {
+      const fixture = TestBed.createComponent(StickyCtaComponent);
+      const element = await navigateTo(fixture, path);
+
+      expect(element.querySelector('a'), `${path} must render no sticky CTA`).toBeNull();
+      expect(element.textContent?.trim(), `${path} must be empty`).toBe('');
+    }
+  });
+
+  it('keeps a marketing path that only shares the platform prefix (boundary-exact)', async () => {
+    const fixture = TestBed.createComponent(StickyCtaComponent);
+    const element = await navigateTo(fixture, '/plataformas-curso');
 
     expect(element.querySelector('a[href^="https://wa.me/"]')).not.toBeNull();
   });
