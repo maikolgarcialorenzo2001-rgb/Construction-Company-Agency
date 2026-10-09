@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { JOBS_GATEWAY } from '../api/ports';
-import type { JobOpening, Page } from '../domain';
+import { APPLICATIONS_GATEWAY, JOBS_GATEWAY } from '../api/ports';
+import type { Application, ApplicationInput, JobOpening, Page } from '../domain';
 import { JOBS } from '../mocks/fixtures';
 import { JobsStore } from './jobs.store';
 
@@ -110,5 +110,56 @@ describe('JobsStore', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'No hay obras publicadas'
     );
+  });
+
+  it('loads the existing application for a job into the application signal', async () => {
+    const store = TestBed.inject(JobsStore);
+
+    await store.loadApplication(JOBS[0].id);
+
+    expect(store.applicationViewStatus()).toBe('ready');
+    expect(store.application()?.applicantId).toBe('worker-1');
+    expect(store.application()?.status).toBe('accepted');
+  });
+
+  it('settles on none when the job has no application', async () => {
+    const store = TestBed.inject(JobsStore);
+
+    await store.loadApplication(JOBS[2].id);
+
+    expect(store.applicationViewStatus()).toBe('none');
+    expect(store.application()).toBeNull();
+  });
+
+  it('creates an application through the gateway and surfaces its status', async () => {
+    const created: ApplicationInput[] = [];
+    TestBed.overrideProvider(APPLICATIONS_GATEWAY, {
+      useValue: {
+        list: async (): Promise<Page<Application>> => ({
+          items: [],
+          meta: { page: 1, pageSize: 20, total: 0 }
+        }),
+        create: async (input: ApplicationInput): Promise<Application> => {
+          created.push(input);
+          return {
+            id: 'app-test',
+            jobId: input.jobId,
+            applicantId: 'worker-1',
+            message: input.message,
+            status: 'pending',
+            createdAt: '2026-10-06T00:00:00.000Z'
+          };
+        }
+      }
+    });
+
+    const store = TestBed.inject(JobsStore);
+
+    const application = await store.apply(JOBS[0].id, 'Quiero postularme');
+
+    expect(created).toEqual([{ jobId: JOBS[0].id, message: 'Quiero postularme' }]);
+    expect(application.status).toBe('pending');
+    expect(store.applicationViewStatus()).toBe('ready');
+    expect(store.application()).toBe(application);
   });
 });
