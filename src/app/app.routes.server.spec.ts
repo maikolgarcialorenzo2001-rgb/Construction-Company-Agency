@@ -14,9 +14,13 @@ import { serverRoutes } from './app.routes.server';
 /** Every browser route path, in registration order. */
 const BROWSER_PATHS = routes.map((route) => route.path as string);
 
-/** Non-param, non-wildcard browser paths — the static prerender candidates. */
+/** Boundary-exact platform predicate, re-derived here so the spec does not agree by construction. */
+const isPlatform = (path: string): boolean =>
+  path === 'plataforma' || path.startsWith('plataforma/');
+
+/** Non-param, non-wildcard, non-platform browser paths — the static prerender candidates. */
 const STATIC_BROWSER_PATHS = BROWSER_PATHS.filter(
-  (path) => path !== '**' && !path.includes(':')
+  (path) => path !== '**' && !path.includes(':') && !isPlatform(path)
 );
 
 /** Narrowing guard: only the prerender-with-params variant declares these members. */
@@ -81,6 +85,19 @@ describe('app.routes.server', () => {
     expect(wildcard).toBeDefined();
     expect(wildcard?.renderMode).toBe(RenderMode.Client);
     expect(prerendered().some((route) => route.path === '**')).toBe(false);
+  });
+
+  it('never prerenders the platform subtree: no path equals or nests under plataforma', () => {
+    for (const route of prerendered()) {
+      expect(isPlatform(route.path), `${route.path} must not be prerendered`).toBe(false);
+    }
+  });
+
+  it('covers the platform subtree with an explicit Client server route', () => {
+    const platform = serverRoutes.find((route) => route.path === 'plataforma/**');
+
+    expect(platform, 'plataforma/** must be registered as a Client route').toBeDefined();
+    expect(platform?.renderMode).toBe(RenderMode.Client);
   });
 
   it('prerenders servicios/:slug over every service slug from src/content', async () => {

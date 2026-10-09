@@ -7,13 +7,25 @@
  * never from a hardcoded route or slug count.
  */
 
+import { isWithinPrefix } from './core/platform/platform-paths';
+
+export { isWithinPrefix } from './core/platform/platform-paths';
+
 /**
  * The prerenderable static paths from the browser route table: everything except the
  * wildcard (which must never be prerendered, Req 1) and the `:param` routes (those get
  * their own entries with `getPrerenderParams`).
  */
-export const prerenderStaticPaths = (routePaths: readonly string[]): string[] =>
-  routePaths.filter((path) => path !== '**' && !path.includes(':'));
+export const prerenderStaticPaths = (
+  routePaths: readonly string[],
+  excluded: readonly string[] = []
+): string[] =>
+  routePaths.filter(
+    (path) =>
+      path !== '**' &&
+      !path.includes(':') &&
+      !excluded.some((prefix) => isWithinPrefix(path, prefix))
+  );
 
 /**
  * `{ slug }` param objects for `getPrerenderParams`, one per content entry. The build

@@ -55,5 +55,14 @@ describe('server route shared helpers', () => {
     it('filters any route list: params and wildcard out, plain paths kept', () => {
       expect(prerenderStaticPaths(['', 'a', 'a/:id', 'b/:slug/c', '**'])).toEqual(['', 'a']);
     });
+
+    it('drops an excluded subtree by prefix, boundary-exact (plataformas-curso survives)', () => {
+      expect(
+        prerenderStaticPaths(
+          ['plataforma', 'plataforma/trabajos', 'servicios', 'plataformas-curso'],
+          ['plataforma']
+        )
+      ).toEqual(['servicios', 'plataformas-curso']);
+    });
   });
 });

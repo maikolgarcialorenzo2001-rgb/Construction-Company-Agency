@@ -2,6 +2,7 @@ import { PrerenderFallback, RenderMode, ServerRoute } from '@angular/ssr';
 
 import { projects } from '../content/projects';
 import { services } from '../content/services';
+import { PLATFORM_PREFIX } from './core/platform/platform-paths';
 import { routes } from './app.routes';
 import { prerenderStaticPaths, slugParams } from './app.server-routes.shared';
 
@@ -10,6 +11,9 @@ import { prerenderStaticPaths, slugParams } from './app.server-routes.shared';
  *
  * - Static entries are DERIVED from the browser route table (`app.routes.ts`) via
  *   `prerenderStaticPaths`, so a new page is prerendered the moment it lands there.
+ * - The `plataforma` subtree is EXCLUDED by prefix (boundary-exact, so
+ *   `plataformas-curso` survives) and resolved locally by an explicit
+ *   `plataforma/**` Client entry: the build must emit no platform HTML.
  * - Param entries enumerate `src/content` through `slugParams` — the count is never
  *   hardcoded (Req 1).
  * - `**` renders on the client only: it is never prerendered (Req 1) and it is what
@@ -19,7 +23,8 @@ import { prerenderStaticPaths, slugParams } from './app.server-routes.shared';
  *   (`Server`) needs a runtime that a static deployment does not have (R5).
  */
 const staticPrerenderRoutes: ServerRoute[] = prerenderStaticPaths(
-  routes.map((route) => route.path as string)
+  routes.map((route) => route.path as string),
+  [PLATFORM_PREFIX]
 ).map((path) => ({ path, renderMode: RenderMode.Prerender }));
 
 export const serverRoutes: ServerRoute[] = [
@@ -36,5 +41,6 @@ export const serverRoutes: ServerRoute[] = [
     fallback: PrerenderFallback.Client,
     getPrerenderParams: () => Promise.resolve(slugParams(projects))
   },
+  { path: `${PLATFORM_PREFIX}/**`, renderMode: RenderMode.Client },
   { path: '**', renderMode: RenderMode.Client }
 ];

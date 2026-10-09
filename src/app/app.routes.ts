@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 
+import { PLATFORM_PREFIX } from './core/platform/platform-paths';
+
 /**
  * Per-route SEO payload consumed by `SeoService` (S10): `indexable` drives the robots
  * meta, `title`/`description` are the es-AR copy that rewrites the head on every
@@ -90,6 +92,68 @@ export const routes: Routes = [
       'Contanos qué tenés en mente, qué plazo manejás y dónde queda la obra: te respondemos por WhatsApp con el siguiente paso.'
     ),
     loadComponent: () => import('./pages/quote/quote.page').then((m) => m.QuotePage)
+  },
+  {
+    path: PLATFORM_PREFIX,
+    data: NOINDEX(
+      'Plataforma | Constructora Ejemplo',
+      'Espacio de trabajo de Constructora Ejemplo: novedades, búsquedas laborales y perfil. Contenido de demostración, fuera de buscadores.'
+    ),
+    children: [
+      {
+        path: '',
+        data: NOINDEX(
+          'Novedades de la plataforma | Constructora Ejemplo',
+          'Feed de obras y novedades de la plataforma de Constructora Ejemplo. Contenido de demostración.'
+        ),
+        loadComponent: () => import('./pages/plataforma/feed.page').then((m) => m.PlatformFeedPage)
+      },
+      {
+        path: 'trabajos',
+        data: NOINDEX(
+          'Trabajos disponibles | Plataforma | Constructora Ejemplo',
+          'Búsquedas laborales abiertas en la plataforma de Constructora Ejemplo. Contenido de demostración.'
+        ),
+        loadComponent: () =>
+          import('./pages/plataforma/jobs-list.page').then((m) => m.PlatformJobsListPage)
+      },
+      {
+        path: 'trabajos/:id',
+        data: NOINDEX(
+          'Detalle del trabajo | Plataforma | Constructora Ejemplo',
+          'Detalle de una búsqueda laboral y postulación en la plataforma de Constructora Ejemplo. Contenido de demostración.'
+        ),
+        loadComponent: () =>
+          import('./pages/plataforma/job-detail.page').then((m) => m.PlatformJobDetailPage)
+      },
+      {
+        path: 'login',
+        data: NOINDEX(
+          'Ingresar | Plataforma | Constructora Ejemplo',
+          'Acceso a la plataforma de Constructora Ejemplo. Página de demostración.'
+        ),
+        loadComponent: () =>
+          import('./pages/plataforma/login.page').then((m) => m.PlatformLoginPage)
+      },
+      {
+        path: 'registro',
+        data: NOINDEX(
+          'Crear cuenta | Plataforma | Constructora Ejemplo',
+          'Registro en la plataforma de Constructora Ejemplo. Página de demostración.'
+        ),
+        loadComponent: () =>
+          import('./pages/plataforma/registro.page').then((m) => m.PlatformRegistroPage)
+      },
+      {
+        path: 'perfil',
+        data: NOINDEX(
+          'Mi perfil | Plataforma | Constructora Ejemplo',
+          'Perfil de trabajador o empresa en la plataforma de Constructora Ejemplo. Contenido de demostración.'
+        ),
+        loadComponent: () =>
+          import('./pages/plataforma/perfil.page').then((m) => m.PlatformPerfilPage)
+      }
+    ]
   },
   {
     path: '**',

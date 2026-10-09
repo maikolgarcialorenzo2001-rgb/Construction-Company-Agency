@@ -34,6 +34,12 @@ const ROUTE_CONTRACTS: readonly RouteContract[] = [
   { path: '/testimonios', images: 0, priority: 0, cta: true },
   { path: '/nosotros', images: 0, priority: 0, cta: true },
   { path: '/presupuesto', images: 0, priority: 0, cta: false },
+  { path: '/plataforma', images: 0, priority: 0, cta: false },
+  { path: '/plataforma/trabajos', images: 0, priority: 0, cta: false },
+  { path: '/plataforma/trabajos/7', images: 0, priority: 0, cta: false },
+  { path: '/plataforma/login', images: 0, priority: 0, cta: false },
+  { path: '/plataforma/registro', images: 0, priority: 0, cta: false },
+  { path: '/plataforma/perfil', images: 0, priority: 0, cta: false },
   { path: '/pagina-que-no-existe', images: 0, priority: 0, cta: true }
 ];
 
