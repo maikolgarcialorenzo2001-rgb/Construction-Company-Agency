@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal
+} from '@angular/core';
 
+import { SessionService } from '../../core/platform/auth/session.service';
 import type { Role } from '../../core/platform/domain';
 import { applicationStatusLabel } from '../../core/platform/store/application-status';
 import { JobsStore } from '../../core/platform/store/jobs.store';
@@ -13,8 +22,9 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
  *
  * Unknown ids settle on a `not-found` state; the gateway never throws for a
  * missing opening, so this page shows a message instead of an error. The apply
- * form is gated by `role` (S5 supplies the session); an anonymous visitor or a
- * company sees the opening but cannot apply.
+ * form is gated by the effective role: the explicit `role` input or the live
+ * `SessionService` role (S5). A company or anonymous viewer sees the opening but
+ * cannot apply.
  */
 @Component({
   selector: 'app-platform-job-detail',
@@ -49,7 +59,7 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
         </p>
       }
 
-      @if (role() === 'worker' && store.applicationViewStatus() === 'none') {
+      @if (effectiveRole() === 'worker' && store.applicationViewStatus() === 'none') {
         <form
           data-testid="apply-form"
           class="mt-6 rounded-xl border border-ink-900/10 p-4"
@@ -80,12 +90,16 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
 })
 export class PlatformJobDetailPage {
   protected readonly store = inject(JobsStore);
+  private readonly session = inject(SessionService);
 
   /** Bound from the `:id` route param by `withComponentInputBinding`. */
   readonly id = input<string>('');
 
-  /** Authenticated role; `null` is an anonymous visitor (S5 wires the session). */
+  /** Authenticated role; `null` is an anonymous visitor. */
   readonly role = input<Role | null>(null);
+
+  /** The session role, unless the explicit input overrides it (test/preview). */
+  protected readonly effectiveRole = computed(() => this.role() ?? this.session.role());
 
   protected readonly applicationStatusLabel = applicationStatusLabel;
   protected readonly draft = signal('');

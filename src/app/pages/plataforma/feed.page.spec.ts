@@ -1,10 +1,21 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { FEED_GATEWAY } from '../../core/platform/api/ports';
+import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import type { Page, Post } from '../../core/platform/domain';
 import { FEED_POSTS } from '../../core/platform/mocks/fixtures';
 import { PlatformFeedPage } from './feed.page';
+
+/** Seeds a local mock session, as `SessionService` would after login. */
+const seedSession = (role: 'worker' | 'company'): void =>
+  localStorage.setItem(
+    SESSION_STORAGE_KEY,
+    JSON.stringify({
+      token: 'mock-token',
+      user: { userId: role === 'company' ? 'company-1' : 'worker-1', email: 'demo@test', role }
+    })
+  );
 
 /**
  * Zoneless page tests: every scenario drives `detectChanges` + `whenStable`
@@ -13,8 +24,11 @@ import { PlatformFeedPage } from './feed.page';
  */
 describe('PlatformFeedPage', () => {
   beforeEach(() => {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
     TestBed.configureTestingModule({});
   });
+
+  afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
 
   it('renders the timeline once the gateway resolves', async () => {
     const fixture = TestBed.createComponent(PlatformFeedPage);
@@ -159,5 +173,29 @@ describe('PlatformFeedPage', () => {
     fixture.detectChanges();
 
     expect(element.querySelectorAll('[data-testid="feed-post"]')).toHaveLength(FEED_POSTS.length);
+  });
+
+  it('shows the composer from a company session without an explicit role input', async () => {
+    seedSession('company');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="feed-composer"]')
+    ).not.toBeNull();
+  });
+
+  it('hides the composer from a worker session without an explicit role input', async () => {
+    seedSession('worker');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="feed-composer"]')
+    ).toBeNull();
   });
 });

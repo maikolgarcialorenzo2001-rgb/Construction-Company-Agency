@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
+import { SessionService } from '../../core/platform/auth/session.service';
 import type { Role } from '../../core/platform/domain';
 import { FeedStore } from '../../core/platform/store/feed.store';
 
@@ -8,9 +9,9 @@ import { FeedStore } from '../../core/platform/store/feed.store';
  * zoneless: the page never calls `ApplicationRef`/`detectChanges` on itself;
  * every state change arrives through a `.set()` in the store.
  *
- * The composer is gated by `role` (S3 seam). S5 supplies the authenticated
- * session role; an anonymous visitor leaves it `null`, so no one can publish
- * without a company session.
+ * The composer is gated by the effective role: the explicit `role` input (a
+ * preview/test seam) or, when absent, the live `SessionService` role. S5 wires
+ * the session in, so a company session sees the composer and a worker does not.
  */
 @Component({
   selector: 'app-platform-feed',
@@ -19,7 +20,7 @@ import { FeedStore } from '../../core/platform/store/feed.store';
     <section class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 class="text-section font-semibold text-ink-900">Novedades</h1>
 
-      @if (role() === 'company') {
+      @if (effectiveRole() === 'company') {
         <form
           data-testid="feed-composer"
           class="mt-6 rounded-xl border border-ink-900/10 p-4"
@@ -69,9 +70,13 @@ import { FeedStore } from '../../core/platform/store/feed.store';
 })
 export class PlatformFeedPage {
   protected readonly store = inject(FeedStore);
+  private readonly session = inject(SessionService);
 
-  /** Authenticated role; `null` is an anonymous visitor (S5 wires the session). */
+  /** Authenticated role; `null` is an anonymous visitor. */
   readonly role = input<Role | null>(null);
+
+  /** The session role, unless the explicit input overrides it (test/preview). */
+  protected readonly effectiveRole = computed(() => this.role() ?? this.session.role());
 
   protected readonly draft = signal('');
 

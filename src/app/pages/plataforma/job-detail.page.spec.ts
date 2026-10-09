@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { APPLICATIONS_GATEWAY, JOBS_GATEWAY } from '../../core/platform/api/ports';
+import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import type { Application, ApplicationInput, JobOpening } from '../../core/platform/domain';
 import { JOBS } from '../../core/platform/mocks/fixtures';
 import { PlatformJobDetailPage } from './job-detail.page';
@@ -14,8 +15,11 @@ import { PlatformJobDetailPage } from './job-detail.page';
  */
 describe('PlatformJobDetailPage', () => {
   beforeEach(() => {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
+
+  afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
 
   it('resolves the opening bound by the route id', async () => {
     const fixture = TestBed.createComponent(PlatformJobDetailPage);
@@ -176,5 +180,24 @@ describe('PlatformJobDetailPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="apply-form"]')).toBeNull();
+  });
+
+  it('lets a worker session apply without an explicit role input', async () => {
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: 'mock-token',
+        user: { userId: 'worker-1', email: 'lucia@demo.test', role: 'worker' }
+      })
+    );
+    const fixture = TestBed.createComponent(PlatformJobDetailPage);
+    fixture.componentRef.setInput('id', JOBS[2].id); // job-3: no seeded application for worker-1
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="apply-form"]')
+    ).not.toBeNull();
   });
 });
