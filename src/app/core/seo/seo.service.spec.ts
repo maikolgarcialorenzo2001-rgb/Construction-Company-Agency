@@ -119,12 +119,32 @@ describe('SeoService', () => {
     expect(metaContent('name', 'robots')).toBe('index,follow');
   });
 
-  it('keeps exactly one json-ld script across three navigations, rewritten in place', async () => {
+  it('marks the platform route noindex,nofollow and emits no structured data', async () => {
+    await goto('/plataforma/login');
+
+    expect(metaContent('name', 'robots')).toBe('noindex,nofollow');
+    expect(jsonLdScripts()).toHaveLength(0);
+  });
+
+  it('drops the structured-data script on a noindex route and restores it on the next indexable one', async () => {
+    await goto('/servicios');
+    expect(jsonLdScripts()).toHaveLength(1);
+
+    await goto('/plataforma/login');
+    expect(metaContent('name', 'robots')).toBe('noindex,nofollow');
+    expect(jsonLdScripts()).toHaveLength(0);
+
+    await goto('/presupuesto');
+    expect(metaContent('name', 'robots')).toBe('index,follow');
+    expect(jsonLdScripts()).toHaveLength(1);
+  });
+
+  it('keeps exactly one json-ld script across indexable navigations, rewritten in place', async () => {
     await goto('/servicios');
     expect(jsonLdScripts()).toHaveLength(1);
     const script = jsonLdScripts()[0];
 
-    await goto('/pagina-que-no-existe');
+    await goto('/nosotros');
     await goto('/presupuesto');
 
     expect(jsonLdScripts()).toHaveLength(1);

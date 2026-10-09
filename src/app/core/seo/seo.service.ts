@@ -95,7 +95,14 @@ export class SeoService {
     const url = this.canonicalUrl();
     this.setMeta('property', 'og:url', url);
     this.setLink('canonical', url);
-    this.writeJsonLd(url);
+
+    // Noindex routes must not ship structured data: skip the write and drop any script
+    // left over from a client-side transition off an indexable route.
+    if (route.indexable === false) {
+      this.removeJsonLd();
+    } else {
+      this.writeJsonLd(url);
+    }
   }
 
   /** Deepest activated route carrying `data.seo`; `undefined` before the first navigation. */
@@ -162,5 +169,10 @@ export class SeoService {
       head.appendChild(script);
     }
     script.textContent = JSON.stringify(buildJsonLd(site, url));
+  }
+
+  /** Removes the JSON-LD script, if any, so a noindex route cannot leak structured data. */
+  private removeJsonLd(): void {
+    this.document.head.querySelector(JSON_LD_SELECTOR)?.remove();
   }
 }
