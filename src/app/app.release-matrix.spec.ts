@@ -5,6 +5,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { App } from './app';
 import { routes } from './app.routes';
+import { SESSION_STORAGE_KEY } from './core/platform/auth/session.service';
+
+/** A seeded company session: the platform working pages are guarded since S5. */
+const COMPANY_SESSION = JSON.stringify({
+  token: 'mock-token-company-1',
+  user: { userId: 'company-1', email: 'norte@demo.test', role: 'company' }
+});
 
 /**
  * One row per reachable route: the perf/a11y contract the whole site must honour.
@@ -48,6 +55,9 @@ describe('release matrix', () => {
   let router: Router;
 
   beforeEach(async () => {
+    // The platform working pages are guarded since S5: seed a session so every
+    // row renders its real page instead of redirecting to the login screen.
+    localStorage.setItem(SESSION_STORAGE_KEY, COMPANY_SESSION);
     TestBed.configureTestingModule({
       imports: [App],
       // `withComponentInputBinding` is how a detail page receives its `:slug`, exactly
@@ -60,6 +70,8 @@ describe('release matrix', () => {
     await fixture.whenStable();
     router = TestBed.inject(Router);
   });
+
+  afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
 
   /** Navigates the real shell (chrome + routed page) and flushes the render pass. */
   const goto = async (path: string): Promise<HTMLElement> => {

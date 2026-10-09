@@ -2,7 +2,14 @@ import { provideRouter, Router } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingHarness } from '@angular/router/testing';
 
+import { SESSION_STORAGE_KEY } from './core/platform/auth/session.service';
 import { routes } from './app.routes';
+
+/** A seeded company session so the guarded platform pages are reachable. */
+const COMPANY_SESSION = JSON.stringify({
+  token: 'mock-token-company-1',
+  user: { userId: 'company-1', email: 'norte@demo.test', role: 'company' }
+});
 
 /** The marketing route table, in registration order. */
 const MARKETING_ROUTE_TABLE = [
@@ -74,8 +81,8 @@ describe('app routes', () => {
       }
     });
 
-    it('guards no route: navigation is reachable without auth or data resolvers', () => {
-      for (const route of routes) {
+    it('leaves the marketing table unguarded: no canActivate, canActivateChild or resolve', () => {
+      for (const route of routes.filter((candidate) => candidate.path !== 'plataforma')) {
         expect(route.canActivate).toBeUndefined();
         expect(route.canActivateChild).toBeUndefined();
         expect(route.resolve).toBeUndefined();
@@ -106,9 +113,14 @@ describe('app routes', () => {
     };
 
     beforeEach(async () => {
+      // The platform children are guarded since S5; seed a session so the
+      // protected routes resolve to their real pages instead of redirecting.
+      localStorage.setItem(SESSION_STORAGE_KEY, COMPANY_SESSION);
       TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
       harness = await RouterTestingHarness.create();
     });
+
+    afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
 
     it.each([
       ['/', 'app-home'],

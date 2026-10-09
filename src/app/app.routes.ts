@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { authGuard } from './core/platform/auth/auth.guard';
 import { PLATFORM_PREFIX } from './core/platform/platform-paths';
 
 /**
@@ -102,6 +103,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        canActivate: [authGuard],
         data: NOINDEX(
           'Novedades de la plataforma | Constructora Ejemplo',
           'Feed de obras y novedades de la plataforma de Constructora Ejemplo. Contenido de demostración.'
@@ -110,6 +112,7 @@ export const routes: Routes = [
       },
       {
         path: 'trabajos',
+        canActivate: [authGuard],
         data: NOINDEX(
           'Trabajos disponibles | Plataforma | Constructora Ejemplo',
           'Búsquedas laborales abiertas en la plataforma de Constructora Ejemplo. Contenido de demostración.'
@@ -119,6 +122,7 @@ export const routes: Routes = [
       },
       {
         path: 'trabajos/:id',
+        canActivate: [authGuard],
         data: NOINDEX(
           'Detalle del trabajo | Plataforma | Constructora Ejemplo',
           'Detalle de una búsqueda laboral y postulación en la plataforma de Constructora Ejemplo. Contenido de demostración.'
@@ -146,6 +150,7 @@ export const routes: Routes = [
       },
       {
         path: 'perfil',
+        canActivate: [authGuard],
         data: NOINDEX(
           'Mi perfil | Plataforma | Constructora Ejemplo',
           'Perfil de trabajador o empresa en la plataforma de Constructora Ejemplo. Contenido de demostración.'
