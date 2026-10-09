@@ -80,4 +80,84 @@ describe('PlatformFeedPage', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('No hay novedades todavía');
   });
+
+  it('shows the composer only for the company role', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'company');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="feed-composer"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="feed-publish"]')).not.toBeNull();
+  });
+
+  it('hides the composer from a worker', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="feed-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="feed-publish"]')).toBeNull();
+  });
+
+  it('hides the composer from an anonymous visitor (no role)', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="feed-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="feed-publish"]')).toBeNull();
+  });
+
+  it('publishes a post to the top of the timeline as company', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'company');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const textarea = element.querySelector(
+      '[data-testid="feed-composer"] textarea'
+    ) as HTMLTextAreaElement;
+    textarea.value = 'Arrancamos la instalación de sanitarias en Palermo.';
+    textarea.dispatchEvent(new Event('input'));
+
+    (element.querySelector('[data-testid="feed-publish"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const items = element.querySelectorAll('[data-testid="feed-post"]');
+    expect(items).toHaveLength(FEED_POSTS.length + 1);
+    expect(items[0].textContent).toContain('Arrancamos la instalación de sanitarias en Palermo.');
+    expect(textarea.value).toBe('');
+  });
+
+  it('does not publish an empty post', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'company');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const textarea = element.querySelector(
+      '[data-testid="feed-composer"] textarea'
+    ) as HTMLTextAreaElement;
+    textarea.value = '   ';
+    textarea.dispatchEvent(new Event('input'));
+
+    (element.querySelector('[data-testid="feed-publish"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(element.querySelectorAll('[data-testid="feed-post"]')).toHaveLength(FEED_POSTS.length);
+  });
 });

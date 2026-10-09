@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 
 import { FEED_GATEWAY } from '../api/ports';
-import type { Post } from '../domain';
+import type { Post, PostInput } from '../domain';
 
 /** Lifecycle of the timeline: idle → loading → ready | empty. */
 export type FeedStatus = 'idle' | 'loading' | 'ready' | 'empty';
@@ -30,5 +30,14 @@ export class FeedStore {
     this.state.set({ status: 'loading', posts: [] });
     const page = await this.gateway.timeline();
     this.state.set({ status: page.items.length ? 'ready' : 'empty', posts: page.items });
+  }
+
+  async create(content: string): Promise<void> {
+    const input: PostInput = { content };
+    const post = await this.gateway.create(input);
+    this.state.update((state) => ({
+      status: 'ready',
+      posts: [post, ...state.posts]
+    }));
   }
 }

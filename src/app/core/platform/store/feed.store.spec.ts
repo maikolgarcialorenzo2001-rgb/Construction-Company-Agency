@@ -126,4 +126,61 @@ describe('FeedStore', () => {
     expect(store.status()).toBe('empty');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('No hay novedades todavía');
   });
+
+  it('prepends a created post to the timeline and clears the empty state', async () => {
+    TestBed.overrideProvider(FEED_GATEWAY, {
+      useValue: {
+        timeline: async (): Promise<Page<Post>> => ({
+          items: [FEED_POSTS[0]],
+          meta: { page: 1, pageSize: 20, total: 1 }
+        }),
+        create: async (input: { content: string }): Promise<Post> => ({
+          id: 'post-new-1',
+          authorId: 'company-1',
+          content: input.content,
+          createdAt: '2026-10-09T12:00:00.000Z'
+        })
+      }
+    });
+
+    const store = TestBed.inject(FeedStore);
+    await store.load();
+    expect(store.posts()).toHaveLength(1);
+
+    await store.create('Arrancamos la instalación de sanitarias en Palermo.');
+
+    expect(store.status()).toBe('ready');
+    const posts = store.posts();
+    expect(posts).toHaveLength(2);
+    expect(posts[0].content).toBe('Arrancamos la instalación de sanitarias en Palermo.');
+    expect(posts[0].id).toBe('post-new-1');
+    expect(posts[1].id).toBe(FEED_POSTS[0].id);
+  });
+
+  it('promotes an empty timeline to ready when the first post is created', async () => {
+    TestBed.overrideProvider(FEED_GATEWAY, {
+      useValue: {
+        timeline: async (): Promise<Page<Post>> => ({
+          items: [],
+          meta: { page: 1, pageSize: 20, total: 0 }
+        }),
+        create: async (input: { content: string }): Promise<Post> => ({
+          id: 'post-new-1',
+          authorId: 'company-1',
+          content: input.content,
+          createdAt: '2026-10-09T12:00:00.000Z'
+        })
+      }
+    });
+
+    const store = TestBed.inject(FeedStore);
+    await store.load();
+    expect(store.status()).toBe('empty');
+
+    await store.create('Primer aviso de la empresa.');
+
+    expect(store.status()).toBe('ready');
+    expect(store.posts()).toHaveLength(1);
+    expect(store.posts()[0].content).toBe('Primer aviso de la empresa.');
+  });
 });
