@@ -192,6 +192,30 @@ Hydration MUST NOT alter requirements 3–5: inert without a measurement ID, con
 - WHEN `bunx ng test --watch=false` runs
 - THEN the requirements 3–5 specs pass unchanged
 
+### Requirement: 14. [B] Platform subtree is noindex
+
+Every `/plataforma/**` route MUST be non-indexable and MUST emit `<meta name="robots" content="noindex">`. The route-table noindex set MUST equal the platform routes plus the `**` wildcard; marketing routes MUST remain indexable.
+
+#### Scenario: Platform routes declare noindex
+
+- GIVEN the route table
+- WHEN the routes with `data.seo.indexable === false` are collected
+- THEN the set is exactly the `/plataforma/**` routes plus `**`
+
+#### Scenario: Platform page emits robots noindex
+
+- GIVEN a rendered `/plataforma/**` page
+- WHEN the document head is inspected
+- THEN the robots meta contains `noindex`
+
+#### Scenario: No structured-data leak on platform
+
+- GIVEN a `/plataforma/**` page
+- WHEN the head is inspected
+- THEN no `HomeAndConstructionBusiness` JSON-LD is emitted
+
+> **Archive annotation (verify: was CRITICAL, RESOLVED in `2b5041a`):** `SeoService.apply()` originally wrote the `HomeAndConstructionBusiness` JSON-LD on every `NavigationEnd`, so `/plataforma/**` shipped `robots=noindex,nofollow` **and** one JSON-LD script. Fixed: `seo.service.ts` now branches on `route.indexable === false` → `removeJsonLd()` (dropping any pre-existing `script[type="application/ld+json"]`, so a client-side transition off an indexable route cannot leak), else the unchanged `writeJsonLd(url)`. Covered by `seo.service.spec.ts` and an independent 5-case probe (A–E) reverted after the run; indexable marketing routes still emit exactly one script.
+
 ## Out of Scope
 
 - `hreflang`, service-area pages, certifications, review automation, blog.
