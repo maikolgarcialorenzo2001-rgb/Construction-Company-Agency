@@ -28,6 +28,7 @@ func NewRouter(deps Deps) *gin.Engine {
 
 	r.POST("/auth/register", register(deps.Auth))
 	r.POST("/auth/login", login(deps.Auth))
+	r.GET("/auth/me", RequireAuth(deps.Tokens), me(deps.Auth))
 
 	return r
 }
