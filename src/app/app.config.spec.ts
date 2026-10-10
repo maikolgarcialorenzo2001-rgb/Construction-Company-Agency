@@ -1,4 +1,6 @@
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DOCUMENT } from '@angular/common';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -32,6 +34,16 @@ const sentEvents = (): { name: string; params: Record<string, unknown> }[] =>
       name: frame[1] as string,
       params: frame[2] as Record<string, unknown>
     }));
+
+/**
+ * Navigates the platform harness and waits for the lazy chunk to paint. The
+ * testing backend never auto-responds, so any HTTP issued during activation
+ * stays pending and fails `verify()`.
+ */
+const bootstrapPlatform = async (harness: RouterTestingHarness, url: string): Promise<void> => {
+  await harness.navigateByUrl(url);
+  await TestBed.inject(ApplicationRef).whenStable();
+};
 
 describe('appConfig', () => {
   afterEach(() => {
@@ -72,5 +84,22 @@ describe('appConfig', () => {
 
     expect(doc.title).toBe(routeTitle('proceso'));
     expect(sentEvents().some((event) => event.params['page_path'] === '/proceso')).toBe(true);
+  });
+
+  it('bootstraps the platform subtree with zero HTTP', async () => {
+    TestBed.configureTestingModule({
+      // The testing backend must be provided AFTER `provideHttpClient()` (already in
+      // `appConfig.providers`) so it becomes the active backend.
+      providers: [...appConfig.providers, provideHttpClientTesting()]
+    });
+    const httpMock = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create();
+
+    // Both unguarded platform routes activate their lazy chunk and inject the
+    // in-memory gateways — neither may touch the network.
+    await bootstrapPlatform(harness, '/plataforma/login');
+    await bootstrapPlatform(harness, '/plataforma/registro');
+
+    httpMock.verify();
   });
 });

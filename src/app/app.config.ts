@@ -18,8 +18,10 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     // Attaches to the prerendered DOM instead of re-rendering it, preserving the
-    // per-route head through boot (Req 2). Plain, no transfer cache: the app performs
-    // zero HTTP at bootstrap and all content is bundled.
+    // per-route head through boot (Req 2). No HTTP is issued at platform bootstrap:
+    // platform data comes from in-memory mock gateways, not the network. The HTTP
+    // transfer cache stays enabled (provideClientHydration default) for any future
+    // HTTP-backed page.
     provideClientHydration(),
     provideHttpClient(),
     provideRouter(
