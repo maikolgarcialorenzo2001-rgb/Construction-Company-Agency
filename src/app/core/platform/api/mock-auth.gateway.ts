@@ -25,6 +25,9 @@ export class MockAuthGateway implements AuthGateway {
   private sequence = 0;
 
   async register(input: RegisterInput): Promise<RegisteredSession> {
+    if (input.role === 'admin') {
+      throw new Error('Rol no permitido para el registro');
+    }
     if (this.accounts.some((account) => account.email === input.email)) {
       throw new Error('Ya existe una cuenta con ese email');
     }

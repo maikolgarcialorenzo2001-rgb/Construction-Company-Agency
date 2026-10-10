@@ -145,6 +145,32 @@ describe('mock gateway adapters', () => {
 
       await expect(gateway.me()).rejects.toThrow('No autenticado');
     });
+
+    it('rejects a self-assigned admin role with a Spanish error and creates no session', async () => {
+      const gateway = TestBed.inject(AUTH_GATEWAY);
+
+      await expect(
+        gateway.register({ email: 'admin@demo.test', password: 'demo1234', role: 'admin' })
+      ).rejects.toThrow('Rol no permitido para el registro');
+
+      await expect(gateway.me()).rejects.toThrow('No autenticado');
+    });
+
+    it('registers a company account through me()', async () => {
+      const gateway = TestBed.inject(AUTH_GATEWAY);
+
+      const registered = await gateway.register({
+        email: 'empresa@demo.test',
+        password: 'demo1234',
+        role: 'company'
+      });
+
+      expect(registered.userId).toMatch(/^user-/);
+
+      const me = await gateway.me();
+      expect(me.email).toBe('empresa@demo.test');
+      expect(me.role).toBe('company');
+    });
   });
 
   describe('ProfilesGateway mock', () => {

@@ -100,4 +100,15 @@ describe('SessionService', () => {
 
     http.verify();
   });
+
+  it('bubbles up the rejected admin role and persists nothing', async () => {
+    const session = TestBed.inject(SessionService);
+
+    await expect(
+      session.register({ email: 'admin@demo.test', password: 'demo1234', role: 'admin' })
+    ).rejects.toThrow('Rol no permitido para el registro');
+
+    expect(session.currentUser()).toBeNull();
+    expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
+  });
 });
