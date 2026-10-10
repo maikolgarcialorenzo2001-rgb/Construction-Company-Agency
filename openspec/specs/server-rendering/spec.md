@@ -44,7 +44,9 @@ Option B: build-time prerender (`outputMode: "static"`) + client hydration (`pro
 
 ### Requirement: Platform hydration without transfer cache
 
-Client-rendered platform pages MUST hydrate from their own browser output and MUST NOT depend on prerender transfer state. Bootstrapping the platform subtree MUST NOT require any HTTP.
+Client-rendered platform pages MUST hydrate from their own browser output and MUST NOT depend on prerender transfer state. Bootstrapping the platform subtree MUST NOT require any HTTP. A bootstrap test MUST assert that bootstrapping/navigating `/plataforma/**` issues zero HTTP requests, proven with `HttpTestingController` (zero pending requests). The `provideClientHydration()` configuration comment in `app.config.ts` MUST accurately state that no HTTP is issued at platform bootstrap while the HTTP transfer cache remains enabled by default.
+
+(Previously: zero-HTTP bootstrap was asserted without an automated test, and the in-code comment misleadingly read "Plain, no transfer cache".)
 
 #### Scenario: Platform hydrates with zero HTTP
 
@@ -53,7 +55,21 @@ Client-rendered platform pages MUST hydrate from their own browser output and MU
 - THEN no HTTP request is issued during bootstrap
 - AND the page renders after lazily loading its chunk
 
-> **Archive annotation (verify UNTESTED — W2):** No test asserts zero HTTP during platform bootstrap. Additionally, `provideClientHydration()` in `app.config.ts` keeps the HTTP transfer cache enabled by default, so the in-code comment "Plain, no transfer cache" is inaccurate — inert here (no HTTP at bootstrap), but misleading. Tracked as follow-up W2.
+> **Archive annotation (verify W2 — CLOSED by this change):** `app.config.spec.ts` now boots the platform subtree through a `bootstrapPlatform()` helper (navigating `/plataforma/login` and `/plataforma/registro`) with `provideHttpClientTesting()` after `provideHttpClient()`, asserting `httpMock.verify()` passes with zero pending requests — probe-re-proven during verify: an injected `GET /__probe__` fails the test, and the run is reverted. The `provideClientHydration()` comment in `app.config.ts` now states zero HTTP at platform bootstrap while the transfer cache stays enabled by default. The untested-gap recorded by `p2-platform-foundation` W2 is resolved.
+
+#### Scenario: Zero-HTTP bootstrap is asserted by a test
+
+- GIVEN the platform app bootstrapped in a TestBed with `provideHttpClientTesting()`
+- WHEN the platform subtree is bootstrapped/navigated (e.g. `/plataforma/login`)
+- THEN no HTTP request is issued during bootstrap or navigation
+- AND `HttpTestingController.verify()` passes with zero pending requests
+
+#### Scenario: Hydration comment is accurate
+
+- GIVEN the `provideClientHydration()` block in `app.config.ts`
+- WHEN the comment is inspected
+- THEN it states zero HTTP is issued at platform bootstrap
+- AND it states the HTTP transfer cache remains enabled by default
 
 ### Requirement: 2. [B] Hydration reuses prerendered DOM
 

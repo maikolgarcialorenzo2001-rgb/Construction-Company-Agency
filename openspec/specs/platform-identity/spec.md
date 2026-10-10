@@ -4,7 +4,9 @@
 
 ### Requirement: Role model
 
-The platform MUST model exactly `worker | company | admin`. Registration MUST offer only `worker` and `company`; `admin` MUST NOT be self-assigned.
+The platform MUST model exactly `worker | company | admin`. Registration MUST offer only `worker` and `company`; `admin` MUST NOT be self-assigned. The registration boundary (`MockAuthGateway.register`) MUST reject an `admin` role with a clear Spanish error message consistent with existing auth errors, and MUST accept `worker` and `company`. The `Role` enum and `contracts/openapi.yaml` MUST remain unchanged.
+
+(Previously: the self-service restriction was enforced only at the form; programmatic `register` accepted any `Role`.)
 
 #### Scenario: Registration offers only self-service roles
 
@@ -12,13 +14,26 @@ The platform MUST model exactly `worker | company | admin`. Registration MUST of
 - WHEN the role options are inspected
 - THEN only `worker` and `company` are offered
 
-> **Archive annotation (verify W5 — UI-only enforcement):** Enforced and tested at the form (`registro.page.spec.ts`, `SELF_SERVICE_ROLES = [worker, company]`), but `SessionService.register` / `MockAuthGateway.register` accept any `Role` if invoked programmatically. The spec wording ("offered") is satisfied; acceptable for a mock demo, flagged for awareness. The contract-level role exclusion is also carried by `p2-api-contract` follow-up S3.
-
 #### Scenario: Role is computed from the session
 
 - GIVEN an authenticated user with role `company`
 - WHEN the role signal is read
 - THEN it resolves to `company`
+
+#### Scenario: Programmatic register rejects admin
+
+- GIVEN the mock auth gateway
+- WHEN `register` is called with role `admin`
+- THEN it rejects with a clear Spanish error message
+- AND no session is created
+
+> **Archive annotation (verify W5 — CLOSED by this change):** `MockAuthGateway.register` now guards `admin` FIRST (before the duplicate-email check), throwing exactly `Rol no permitido para el registro`; `SessionService.register` bubbles the rejection with `currentUser()` staying null and nothing persisted in storage, while `worker`/`company` still register normally through `me()`. The `Role` enum and `contracts/openapi.yaml` are unchanged (`bun run contract:check` clean, `git diff contracts/` empty, no commit touched `contracts/`). The UI-only-enforcement gap recorded by `p2-platform-foundation` W5 is resolved.
+
+#### Scenario: Worker and company register normally
+
+- GIVEN the mock auth gateway
+- WHEN `register` is called with role `worker` or `company`
+- THEN the user is created with that role
 
 ### Requirement: Mock session, visibly demo
 
@@ -50,7 +65,9 @@ Authentication MUST be a local mock: `SessionService` MUST persist a mock sessio
 
 ### Requirement: Auth and profiles gateway ports
 
-`AuthGateway` and `ProfilesGateway` MUST be defined as ports behind DI tokens with `Mock*Gateway` adapters backed by deterministic fixtures. Swapping to a real adapter MUST be a provider change only.
+`AuthGateway` and `ProfilesGateway` MUST be defined as ports behind DI tokens with `Mock*Gateway` adapters backed by deterministic fixtures. Swapping to a real adapter MUST be a provider change only. Each token (`AUTH_GATEWAY`, `PROFILES_GATEWAY`) MUST have a DI test proving an alternative implementation resolves and is used.
+
+(Previously: swappability was proven only for the `FEED_GATEWAY` token; the auth/profiles swaps were unexercised.)
 
 #### Scenario: Mock adapter satisfies the port
 
@@ -64,7 +81,13 @@ Authentication MUST be a local mock: `SessionService` MUST persist a mock sessio
 - WHEN the flow runs
 - THEN it renders from that adapter
 
-> **Archive annotation (verify PARTIAL — swap coverage, W4):** Swappability is proven only for the `FEED_GATEWAY` token (`ports.spec.ts`); the auth/profiles token swap is not individually exercised. The DI pattern is identical, so risk is low; tracked as follow-up W4.
+#### Scenario: Each auth and profiles token proves swappability
+
+- GIVEN a TestBed overriding `AUTH_GATEWAY` (and separately `PROFILES_GATEWAY`) with a custom adapter
+- WHEN the token is injected
+- THEN the custom implementation is resolved via DI
+
+> **Archive annotation (verify W4 — CLOSED by this change):** `ports.spec.ts` now has one explicit `it` per port (auth, jobs, applications, profiles): typed custom stub → `TestBed.overrideProvider(TOKEN, { useValue: custom })` → identity `expect(...).toBe(custom)` plus a sentinel method call proving use (`me()` → `swap-user`, `byId('x')` → null, `list()` → empty `Page`, `worker('any')` → `fullName: 'Swap'`). RED was proven by removing the overrides (4 failures → suite 487 passed / 4 failed before adding them). The swap-coverage gap recorded by `p2-platform-foundation` W4 is resolved.
 
 ### Requirement: Profiles
 
