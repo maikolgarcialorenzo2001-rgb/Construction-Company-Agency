@@ -51,9 +51,10 @@ export interface RegisteredSession {
   token: string;
 }
 
-/** Mirrors the `jobId` / `status` filters of `GET /applications`. */
+/** Mirrors the `jobId` / `applicantId` / `status` filters of `GET /applications`. */
 export interface ApplicationsFilter {
   jobId?: string;
+  applicantId?: string;
   status?: ApplicationStatus;
 }
 

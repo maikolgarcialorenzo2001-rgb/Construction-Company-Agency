@@ -96,6 +96,34 @@ describe('mock gateway adapters', () => {
       expect(pending.items).toHaveLength(1);
       expect(pending.items[0].status).toBe('pending');
     });
+
+    it('filters by applicantId so an applicant only sees their own', async () => {
+      const gateway = TestBed.inject(APPLICATIONS_GATEWAY);
+
+      const page = await gateway.list({ applicantId: 'worker-1' });
+
+      expect(page.items.map((application) => application.id)).toEqual(['app-1']);
+    });
+
+    it('combines jobId and applicantId with AND semantics', async () => {
+      const gateway = TestBed.inject(APPLICATIONS_GATEWAY);
+
+      const both = await gateway.list({ jobId: JOBS[1].id, applicantId: 'worker-2' });
+      expect(both.items.map((application) => application.id)).toEqual(['app-2']);
+
+      const none = await gateway.list({ jobId: JOBS[0].id, applicantId: 'worker-2' });
+      expect(none.items).toEqual([]);
+      expect(none.meta.total).toBe(0);
+    });
+
+    it('returns an empty page when no application matches', async () => {
+      const gateway = TestBed.inject(APPLICATIONS_GATEWAY);
+
+      const page = await gateway.list({ applicantId: 'sin-postulaciones' });
+
+      expect(page.items).toEqual([]);
+      expect(page.meta.total).toBe(0);
+    });
   });
 
   describe('AuthGateway mock', () => {

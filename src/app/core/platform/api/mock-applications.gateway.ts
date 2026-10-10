@@ -25,6 +25,7 @@ export class MockApplicationsGateway implements ApplicationsGateway {
     const filtered = this.applications.filter(
       (application) =>
         (filter.jobId === undefined || application.jobId === filter.jobId) &&
+        (filter.applicantId === undefined || application.applicantId === filter.applicantId) &&
         (filter.status === undefined || application.status === filter.status)
     );
     return paginate(filtered);
