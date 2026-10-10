@@ -8,8 +8,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"cca/backend/internal/auth"
 	"cca/backend/internal/config"
 	"cca/backend/internal/httpapi"
+	"cca/backend/internal/service"
+	"cca/backend/internal/store/memory"
 )
 
 func main() {
@@ -18,7 +21,11 @@ func main() {
 		log.Fatalf("startup: %v", err)
 	}
 
-	router := httpapi.NewRouter(httpapi.Deps{})
+	issuer := auth.NewJWT(cfg.JWTSecret, cfg.TokenTTL)
+	users := memory.NewUserStore()
+	authService := service.NewAuth(users, issuer, auth.Bcrypt{})
+
+	router := httpapi.NewRouter(httpapi.Deps{Auth: authService, Tokens: issuer})
 
 	addr := ":" + strconv.Itoa(cfg.Port)
 	log.Printf("cca/backend listening on %s", addr)
