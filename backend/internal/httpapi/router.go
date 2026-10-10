@@ -27,6 +27,7 @@ func NewRouter(deps Deps) *gin.Engine {
 	r.GET("/health", health)
 
 	r.POST("/auth/register", register(deps.Auth))
+	r.POST("/auth/login", login(deps.Auth))
 
 	return r
 }
