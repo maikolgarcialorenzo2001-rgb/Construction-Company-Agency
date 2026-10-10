@@ -192,6 +192,26 @@ function walkFiles(dir: string): string[] {
   return out;
 }
 
+/**
+ * Recursively collect every artifact under `root` whose repo-relative path names
+ * the platform subtree (case-insensitive; matches dirs AND files, so an empty
+ * `plataforma/` directory is caught too). The platform subtree is client-rendered,
+ * so ANY `*plataforma*` entry in the client output is a leak.
+ */
+function findPlatformArtifacts(root: string): string[] {
+  const hits: string[] = [];
+  const visit = (dir: string): void => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      const rel = relative(REPO_ROOT, full);
+      if (/plataforma/i.test(rel)) hits.push(rel);
+      if (statSync(full).isDirectory()) visit(full);
+    }
+  };
+  visit(root);
+  return hits;
+}
+
 // ── 1. Expected route set is derived from content, never hardcoded. ──
 const serviceRoutes = services.map((s) => `servicios/${s.slug}`);
 const projectRoutes = projects.map((p) => `proyectos/${p.slug}`);
@@ -255,6 +275,13 @@ if (ssrDeps.join(',') !== '@angular/ssr') {
   fail('package.json', `expected @angular/ssr as the only SSR-related dep, found: ${ssrDeps.join(', ') || 'none'}`);
 }
 
+// ── 6. No platform artifact in the built client output (the subtree is client-only). ──
+if (existsSync(DIST_ROOT)) {
+  for (const artifact of findPlatformArtifacts(DIST_ROOT)) {
+    fail(artifact, 'platform artifact present in client output');
+  }
+}
+
 // ── Report. ──
 if (failures.length > 0) {
   console.error(`verify-prerender: ${failures.length} assertion(s) failed\n`);
@@ -263,6 +290,6 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `PASS · routes verified: ${expectedRoutes.length} (${STATIC_PATHS.length} static + ${serviceRoutes.length} services + ${projectRoutes.length} projects) · heads checked: ${headsChecked} · CSR fallback ok · no localhost · server.ts absent · @angular/ssr only SSR dep`
+  `PASS · routes verified: ${expectedRoutes.length} (${STATIC_PATHS.length} static + ${serviceRoutes.length} services + ${projectRoutes.length} projects) · heads checked: ${headsChecked} · CSR fallback ok · no localhost · server.ts absent · @angular/ssr only SSR dep · no plataforma leak`
 );
 process.exit(0);
