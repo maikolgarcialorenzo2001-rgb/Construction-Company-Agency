@@ -37,6 +37,12 @@ yarn-error.log
 .env.*
 !.env.example
 
+# Go backend
+/backend/bin
+backend/.env
+backend/*.test
+backend/coverage.out
+
 # Gentle AI skill registry cache (regenerated on every refresh)
 /.atl/*.cache.json
 .sass-cache/
