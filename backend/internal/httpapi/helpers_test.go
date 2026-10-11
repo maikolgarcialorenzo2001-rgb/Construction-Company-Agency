@@ -14,18 +14,26 @@ import (
 	"cca/backend/internal/auth"
 	"cca/backend/internal/httpapi"
 	"cca/backend/internal/service"
+	"cca/backend/internal/store"
 	"cca/backend/internal/store/memory"
 )
 
 const testSecret = "test-secret"
 
-// newAuthRouter wires the real auth service over an in-memory store with an
-// HS256 issuer and the real bcrypt hasher (cost 10).
-func newAuthRouter() *gin.Engine {
+// newAuthRouterWithStore wires the real auth service over the given
+// store.UserStore with an HS256 issuer and the real bcrypt hasher (cost 10).
+// The default suite passes the in-memory store; the gated Postgres contract
+// test passes the pgx adapter.
+func newAuthRouterWithStore(s store.UserStore) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	issuer := auth.NewJWT(testSecret, time.Hour)
-	svc := service.NewAuth(memory.NewUserStore(), issuer, auth.Bcrypt{})
+	svc := service.NewAuth(s, issuer, auth.Bcrypt{})
 	return httpapi.NewRouter(httpapi.Deps{Auth: svc, Tokens: issuer})
+}
+
+// newAuthRouter wires the real auth service over an in-memory store.
+func newAuthRouter() *gin.Engine {
+	return newAuthRouterWithStore(memory.NewUserStore())
 }
 
 // doJSON fires a request with an optional JSON body and optional bearer token.
