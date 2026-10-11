@@ -5,11 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"cca/backend/internal/domain"
 )
 
 func TestJWT_IssueVerifyRoundTrip(t *testing.T) {
-	j := NewJWT("top-secret", time.Hour)
+	const ttl = time.Hour
+	j := NewJWT("top-secret", ttl)
 
 	token, err := j.Issue("user-1", domain.RoleWorker)
 	if err != nil {
@@ -28,6 +31,25 @@ func TestJWT_IssueVerifyRoundTrip(t *testing.T) {
 	}
 	if claims.Role != domain.RoleWorker {
 		t.Errorf("claims.Role = %q, want worker", claims.Role)
+	}
+
+	// Decode the minted payload and assert the exp claim directly: exp must be
+	// present and exp − iat must equal the configured TTL. Issue derives both
+	// from a single clock read, so the difference is exact for a whole-second TTL.
+	var wire jwt.MapClaims
+	if _, _, err := jwt.NewParser().ParseUnverified(token, &wire); err != nil {
+		t.Fatalf("ParseUnverified() error = %v, want nil", err)
+	}
+	exp, ok := wire["exp"].(float64)
+	if !ok {
+		t.Fatal(`token is missing the "exp" claim`)
+	}
+	iat, ok := wire["iat"].(float64)
+	if !ok {
+		t.Fatal(`token is missing the "iat" claim`)
+	}
+	if got := int64(exp - iat); got != int64(ttl.Seconds()) {
+		t.Errorf("exp - iat = %ds, want the TTL %ds", got, int64(ttl.Seconds()))
 	}
 }
 
