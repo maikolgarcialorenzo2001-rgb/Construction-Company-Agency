@@ -23,7 +23,9 @@ type Config struct {
 	// JWTSecret signs and verifies bearer tokens (JWT_SECRET, required).
 	JWTSecret string
 	// ContractPath optionally overrides the resolved openapi.yaml location
-	// (CONTRACT_PATH). Empty means "use the module-relative default".
+	// (CONTRACT_PATH). Empty means "use the module-relative default". It is
+	// consumed by contract.ResolvePath() at test time (the test-only guard),
+	// not by the composition root.
 	ContractPath string
 	// TokenTTL is the lifetime of issued JWTs (TOKEN_TTL, default 24h).
 	TokenTTL time.Duration

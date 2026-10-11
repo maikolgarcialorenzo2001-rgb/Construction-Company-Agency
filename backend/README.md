@@ -29,12 +29,25 @@ Read from the environment (see `.env.example`):
 |---------------------------|----------|-------------------------------|--------------------------------|
 | `PORT`                    | no       | `8080`                        | HTTP listen port               |
 | `JWT_SECRET`              | yes      | —                             | HS256 signing secret           |
-| `CONTRACT_PATH`           | no       | repo `contracts/openapi.yaml` | Contract override              |
+| `CONTRACT_PATH`           | no       | repo `contracts/openapi.yaml` | Contract override (test guard) |
 | `TOKEN_TTL`               | no       | `24h`                         | Issued JWT lifetime            |
 | `DATABASE_URL`            | no       | — (in-memory)                 | PostgreSQL DSN; selects pgx    |
 | `CCA_TEST_DATABASE_URL`   | no       | —                             | DSN for the gated test suite   |
 
 Startup fails fast when `JWT_SECRET` is missing or a value is invalid.
+
+### Contract guard and `CONTRACT_PATH`
+
+`CONTRACT_PATH` is consumed at **test time** by `contract.ResolvePath()`
+(`internal/contract`), which loads and validates `contracts/openapi.yaml`
+through the kin-openapi guard. `config.Config.ContractPath` mirrors the env var
+so the configuration surface is complete and forward-compatible, but the
+composition root (`cmd/server`) intentionally does **not** load the contract:
+the guard is a test-only harness (design D3). Run the guard check with:
+
+```sh
+go test ./internal/contract/ -run TestGuard_LoadsAndValidatesContract
+```
 
 ## Database and migrations
 
