@@ -4,7 +4,7 @@
 # convenience default — override it to point elsewhere:
 #   make test-integration CCA_TEST_DATABASE_URL=postgres://user:pass@host:5432/db
 # The tests never hardcode a DSN; they read this environment variable.
-CCA_TEST_DATABASE_URL ?= postgres://postgres:postgres@127.0.0.1:5432/cca
+CCA_TEST_DATABASE_URL ?= postgres://postgres:123@127.0.0.1:5432/cca
 
 build:
 	go build ./...

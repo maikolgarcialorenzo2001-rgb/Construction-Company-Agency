@@ -59,10 +59,10 @@ on shutdown.
 
 ```sh
 # Serve against PostgreSQL (migrations run at startup):
-DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/cca go run ./cmd/server
+DATABASE_URL=postgres://postgres:123@127.0.0.1:5432/cca go run ./cmd/server
 
 # Apply the migrations only, without opening a listener:
-DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/cca make migrate
+DATABASE_URL=postgres://postgres:123@127.0.0.1:5432/cca make migrate
 ```
 
 ## Integration tests
@@ -73,7 +73,7 @@ otherwise. The default `go test ./...` therefore stays dependency-free.
 
 ```sh
 # Optional override; this is the built-in default in the Makefile:
-make test-integration CCA_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/cca
+make test-integration CCA_TEST_DATABASE_URL=postgres://postgres:123@127.0.0.1:5432/cca
 ```
 
 `make test-integration` runs with `-count=1 -p 1`: the gated packages share a
