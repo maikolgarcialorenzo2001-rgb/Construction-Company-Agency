@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -61,6 +62,67 @@ func TestLoad_RejectsInvalidPort(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLoad_DatabaseURL(t *testing.T) {
+	tests := []struct {
+		name string
+		set  func(t *testing.T)
+		want string
+	}{
+		{
+			name: "unset",
+			set: func(t *testing.T) {
+				unsetenv(t, "DATABASE_URL")
+			},
+			want: "",
+		},
+		{
+			name: "empty",
+			set: func(t *testing.T) {
+				t.Setenv("DATABASE_URL", "")
+			},
+			want: "",
+		},
+		{
+			name: "set",
+			set: func(t *testing.T) {
+				t.Setenv("DATABASE_URL", "postgres://postgres:postgres@127.0.0.1:5432/cca")
+			},
+			want: "postgres://postgres:postgres@127.0.0.1:5432/cca",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("JWT_SECRET", "s3cr3t")
+			tt.set(t)
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load() returned error: %v", err)
+			}
+			if cfg.DatabaseURL != tt.want {
+				t.Errorf("DatabaseURL = %q, want %q", cfg.DatabaseURL, tt.want)
+			}
+		})
+	}
+}
+
+// unsetenv removes key for the duration of the test and restores the previous
+// value afterwards.
+func unsetenv(t *testing.T, key string) {
+	t.Helper()
+	prev, had := os.LookupEnv(key)
+	if err := os.Unsetenv(key); err != nil {
+		t.Fatalf("Unsetenv(%q): %v", key, err)
+	}
+	t.Cleanup(func() {
+		if had {
+			os.Setenv(key, prev)
+		} else {
+			os.Unsetenv(key)
+		}
+	})
 }
 
 func TestLoad_ReadsOverrides(t *testing.T) {

@@ -27,6 +27,9 @@ type Config struct {
 	ContractPath string
 	// TokenTTL is the lifetime of issued JWTs (TOKEN_TTL, default 24h).
 	TokenTTL time.Duration
+	// DatabaseURL optionally selects the PostgreSQL adapter (DATABASE_URL).
+	// Empty means the in-memory store is used.
+	DatabaseURL string
 }
 
 // Load reads configuration from the environment, applying defaults and
@@ -64,6 +67,8 @@ func Load() (Config, error) {
 		}
 		cfg.TokenTTL = ttl
 	}
+
+	cfg.DatabaseURL = os.Getenv("DATABASE_URL")
 
 	return cfg, nil
 }
