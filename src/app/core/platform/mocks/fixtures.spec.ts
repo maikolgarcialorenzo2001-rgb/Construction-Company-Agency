@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { APPLICATIONS, COMMENTS, FEED_POSTS, JOBS } from './fixtures';
+import {
+  APPLICATIONS,
+  COMMENTS,
+  COMPANY_PROFILES,
+  DEMO_ACCOUNTS,
+  FEED_POSTS,
+  JOBS,
+  WORKER_PROFILES
+} from './fixtures';
 
 /** The worker ids the seeded profiles/applications are allowed to reference. */
 const WORKER_IDS = ['worker-1', 'worker-2', 'worker-3'];
@@ -124,5 +132,49 @@ describe('sentinel application shape (R1)', () => {
     expect(APPLICATIONS.filter((application) => application.applicantId === 'worker-1')).toHaveLength(
       1
     );
+  });
+});
+
+describe('profile and account fixtures', () => {
+  it('seeds three worker profiles and two company profiles, keyed by id', () => {
+    expect(WORKER_PROFILES.map((profile) => profile.userId)).toEqual([
+      'worker-1',
+      'worker-2',
+      'worker-3'
+    ]);
+    expect(COMPANY_PROFILES.map((profile) => profile.companyId)).toEqual(['company-1', 'company-2']);
+  });
+
+  it('flags every seeded profile as a placeholder', () => {
+    expect(WORKER_PROFILES.every((profile) => profile.isPlaceholder === true)).toBe(true);
+    expect(COMPANY_PROFILES.every((profile) => profile.isPlaceholder === true)).toBe(true);
+  });
+
+  it('varies worker skills across the seeded profiles', () => {
+    const allSkills = WORKER_PROFILES.flatMap((profile) => profile.skills ?? []);
+
+    expect(new Set(allSkills).size).toBeGreaterThan(WORKER_PROFILES.length);
+  });
+
+  it('seeds five demo accounts, all with the shared demo password', () => {
+    expect(DEMO_ACCOUNTS.map((account) => account.userId)).toEqual([
+      'worker-1',
+      'company-1',
+      'worker-2',
+      'worker-3',
+      'company-2'
+    ]);
+    expect(DEMO_ACCOUNTS.every((account) => account.password === 'demo1234')).toBe(true);
+    expect(DEMO_ACCOUNTS.every((account) => account.isPlaceholder === true)).toBe(true);
+  });
+
+  it('gives every seeded profile a matching demo account', () => {
+    const accountIds = new Set(DEMO_ACCOUNTS.map((account) => account.userId));
+    const profileIds = [
+      ...WORKER_PROFILES.map((profile) => profile.userId),
+      ...COMPANY_PROFILES.map((profile) => profile.companyId)
+    ];
+
+    expect(profileIds.every((id) => accountIds.has(id))).toBe(true);
   });
 });

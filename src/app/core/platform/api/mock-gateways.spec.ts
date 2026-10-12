@@ -240,6 +240,18 @@ describe('mock gateway adapters', () => {
       expect(await gateway.worker('sin-usuario')).toBeNull();
       expect(await gateway.company('sin-empresa')).toBeNull();
     });
+
+    it('seeds the extra demo profiles so worker-2/3 and company-2 resolve', async () => {
+      const gateway = TestBed.inject(PROFILES_GATEWAY);
+
+      const worker2 = await gateway.worker('worker-2');
+      const worker3 = await gateway.worker('worker-3');
+      const company2 = await gateway.company('company-2');
+
+      expect(worker2?.fullName).toBe('Martín Gómez');
+      expect(worker3?.fullName).toBe('Sofía Ruiz');
+      expect(company2?.name).toBe('Grupo Delta Construcciones');
+    });
   });
 
   describe('CommentsGateway mock', () => {

@@ -421,35 +421,78 @@ export const APPLICATIONS = seededApplications satisfies readonly Application[];
 
 // --- Profiles ---------------------------------------------------------------
 
-const seededWorkerProfile = {
-  userId: 'worker-1',
-  role: 'worker' as const,
-  fullName: 'Lucía Fernández',
-  phone: '+54 9 11 4444-0000',
-  location: 'Avellaneda, GBA Sur',
-  bio: 'Electricista matriculada, ocho años de obra residencial y comercial.',
-  skills: ['Electricidad', 'Sanitarias'],
-  createdAt: '2026-09-15T12:00:00.000Z',
-  isPlaceholder: true
-} satisfies Placeholder<WorkerProfile>;
+const seededWorkerProfiles = [
+  {
+    userId: 'worker-1',
+    role: 'worker' as const,
+    fullName: 'Lucía Fernández',
+    phone: '+54 9 11 4444-0000',
+    location: 'Avellaneda, GBA Sur',
+    bio: 'Electricista matriculada, ocho años de obra residencial y comercial.',
+    skills: ['Electricidad', 'Sanitarias'],
+    createdAt: '2026-09-15T12:00:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    userId: 'worker-2',
+    role: 'worker' as const,
+    fullName: 'Martín Gómez',
+    phone: '+54 9 11 4444-1111',
+    location: 'Quilmes, GBA Sur',
+    bio: 'Pintor de obra, seis años en plantas industriales y edificios.',
+    skills: ['Pintura', 'Yesería'],
+    createdAt: '2026-09-18T12:00:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    userId: 'worker-3',
+    role: 'worker' as const,
+    fullName: 'Sofía Ruiz',
+    phone: '+54 9 11 4444-2222',
+    location: 'Tigre, GBA Norte',
+    bio: 'Herrera y soldadora, especializada en estructuras metálicas a medida.',
+    skills: ['Herrería', 'Soldadura'],
+    createdAt: '2026-09-20T12:00:00.000Z',
+    isPlaceholder: true
+  }
+] satisfies readonly Placeholder<WorkerProfile>[];
 
-/** The demo worker profile behind `worker-1`. */
-export const WORKER_PROFILE = seededWorkerProfile satisfies WorkerProfile;
+/** All seeded worker profiles. */
+export const WORKER_PROFILES = seededWorkerProfiles satisfies readonly WorkerProfile[];
 
-const seededCompanyProfile = {
-  companyId: 'company-1',
-  role: 'company' as const,
-  name: 'Constructora Norte SAC',
-  description: 'Obra residencial y comercial en GBA Norte y CABA.',
-  contactEmail: 'obras@norte.test',
-  website: 'https://constructora-norte.test',
-  location: 'San Isidro, GBA Norte',
-  createdAt: '2026-09-10T12:00:00.000Z',
-  isPlaceholder: true
-} satisfies Placeholder<CompanyProfile>;
+/** The demo worker profile behind `worker-1` (the session user on `/plataforma`). */
+export const WORKER_PROFILE = WORKER_PROFILES[0];
+
+const seededCompanyProfiles = [
+  {
+    companyId: 'company-1',
+    role: 'company' as const,
+    name: 'Constructora Norte SAC',
+    description: 'Obra residencial y comercial en GBA Norte y CABA.',
+    contactEmail: 'obras@norte.test',
+    website: 'https://constructora-norte.test',
+    location: 'San Isidro, GBA Norte',
+    createdAt: '2026-09-10T12:00:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    companyId: 'company-2',
+    role: 'company' as const,
+    name: 'Grupo Delta Construcciones',
+    description: 'Obra industrial y comercial en GBA Sur y La Plata.',
+    contactEmail: 'contacto@delta.test',
+    website: 'https://grupo-delta.test',
+    location: 'La Plata, Buenos Aires',
+    createdAt: '2026-09-12T12:00:00.000Z',
+    isPlaceholder: true
+  }
+] satisfies readonly Placeholder<CompanyProfile>[];
+
+/** All seeded company profiles. */
+export const COMPANY_PROFILES = seededCompanyProfiles satisfies readonly CompanyProfile[];
 
 /** The demo company profile behind `company-1`. */
-export const COMPANY_PROFILE = seededCompanyProfile satisfies CompanyProfile;
+export const COMPANY_PROFILE = COMPANY_PROFILES[0];
 
 // --- Demo accounts ----------------------------------------------------------
 
@@ -467,12 +510,36 @@ const seededAccounts = [
     password: 'demo1234',
     role: 'company' as const,
     isPlaceholder: true
+  },
+  {
+    userId: 'worker-2',
+    email: 'martin@demo.test',
+    password: 'demo1234',
+    role: 'worker' as const,
+    isPlaceholder: true
+  },
+  {
+    userId: 'worker-3',
+    email: 'sofia@demo.test',
+    password: 'demo1234',
+    role: 'worker' as const,
+    isPlaceholder: true
+  },
+  {
+    userId: 'company-2',
+    email: 'delta@demo.test',
+    password: 'demo1234',
+    role: 'company' as const,
+    isPlaceholder: true
   }
 ] satisfies readonly Placeholder<DemoAccount>[];
 
 /**
- * Seeded mock credentials. Both passwords are the obvious `demo1234`: this is
- * a local mock with no network, the auth screens say "Modo demo".
+ * Seeded mock credentials, one per seeded profile. Every password is the
+ * obvious `demo1234`: this is a local mock with no network, the auth screens
+ * say "Modo demo". Reachability from the login screen is not wired yet
+ * (the role switcher lands in a later step) — these accounts are seeded so the
+ * profile data resolves once it is.
  */
 export const DEMO_ACCOUNTS = seededAccounts satisfies readonly DemoAccount[];
 
