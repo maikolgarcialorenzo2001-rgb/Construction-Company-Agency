@@ -105,4 +105,39 @@ describe('HeaderComponent', () => {
 
     expect(element.querySelectorAll('nav a[aria-current="page"]').length).toBe(0);
   });
+
+  it('renders the promo strip inside the header with a registration CTA', async () => {
+    const element = await render();
+    const strip = element.querySelector('header [data-testid="header-promo"]');
+
+    expect(strip, 'the promo strip must live inside the header landmark').not.toBeNull();
+    expect(strip!.textContent).toContain(site.promo.text);
+
+    const cta = strip!.querySelector<HTMLAnchorElement>('[data-testid="header-promo-cta"]');
+    expect(cta?.getAttribute('href')).toBe('/plataforma/registro');
+    expect(cta?.textContent?.trim()).toBe(site.promo.ctaLabel);
+  });
+
+  it('lists every promo plan in the strip', async () => {
+    const element = await render();
+    const rows = element.querySelectorAll('[data-testid="header-promo-plans"] li');
+
+    expect(rows).toHaveLength(site.promo.plans.length);
+    site.promo.plans.forEach((plan, index) => {
+      expect(rows[index].textContent, `plan ${plan.name} name`).toContain(plan.name);
+      expect(rows[index].textContent, `plan ${plan.name} price`).toContain(plan.price);
+    });
+  });
+
+  it('keeps the promo strip static, non-dismissible and image-free', async () => {
+    const element = await render();
+    const strip = element.querySelector('[data-testid="header-promo"]');
+
+    expect(strip).not.toBeNull();
+    expect(strip!.querySelectorAll('img')).toHaveLength(0);
+    expect(
+      strip!.querySelectorAll('button'),
+      'the promo strip must not offer a dismiss control'
+    ).toHaveLength(0);
+  });
 });

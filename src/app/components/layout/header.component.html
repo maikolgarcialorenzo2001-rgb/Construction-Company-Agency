@@ -31,4 +31,28 @@
       <app-phone-link variant="button" label="Llamanos" placement="header" class="hidden sm:block" />
     </div>
   </div>
+
+  <div data-testid="header-promo" class="border-t border-ink-900/10 bg-brand-50 text-ink-900">
+    <div
+      class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-2 text-sm"
+    >
+      <p class="font-medium">{{ site.promo.text }}</p>
+      <ul
+        data-testid="header-promo-plans"
+        class="flex flex-wrap items-center gap-x-4 gap-y-1 text-ink-600"
+      >
+        @for (plan of site.promo.plans; track plan.name) {
+          <li>
+            {{ plan.name }} · {{ plan.price }}@if (plan.note) {<span> ({{ plan.note }})</span>}
+          </li>
+        }
+      </ul>
+      <a
+        routerLink="/plataforma/registro"
+        data-testid="header-promo-cta"
+        class="font-medium text-brand-800 hover:underline"
+        >{{ site.promo.ctaLabel }}</a
+      >
+    </div>
+  </div>
 </header>
