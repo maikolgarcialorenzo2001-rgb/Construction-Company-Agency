@@ -20,7 +20,7 @@ The feed MUST be read and written through a `FeedGateway` port bound with a DI t
 
 ### Requirement: Feed renders via signals (zoneless)
 
-The feed MUST render from a `FeedStore` whose state is signals/computed; gateway responses MUST be written into a signal so the zoneless app paints. There MUST be no zone-based change detection.
+The feed MUST render from a `FeedStore` whose state is signals/computed; gateway responses MUST be written into a signal so the zoneless app paints. There MUST be no zone-based change detection. The feed MUST also surface, inside each post's list item, an inline comment thread sourced from that post's `CommentsStore` signals.
 
 #### Scenario: Async posts paint
 
@@ -33,6 +33,13 @@ The feed MUST render from a `FeedStore` whose state is signals/computed; gateway
 - GIVEN a pending or empty timeline
 - WHEN the feed renders
 - THEN a loading or empty state is shown
+
+#### Scenario: Inline comment thread per post
+
+- GIVEN the feed renders posts
+- WHEN a post's comments have loaded
+- THEN an inline comment thread appears inside that post's list item
+- AND each post's thread reflects its own `CommentsStore` state
 
 ### Requirement: Company-gated composer
 
