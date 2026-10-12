@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { FEED_GATEWAY } from '../../core/platform/api/ports';
+import { COMMENTS_GATEWAY, FEED_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
-import type { Page, Post } from '../../core/platform/domain';
-import { FEED_POSTS } from '../../core/platform/mocks/fixtures';
+import type { Comment, Page, Post } from '../../core/platform/domain';
+import { COMMENTS, FEED_POSTS } from '../../core/platform/mocks/fixtures';
 import { PlatformFeedPage } from './feed.page';
 
 /** Seeds a local mock session, as `SessionService` would after login. */
@@ -197,5 +197,178 @@ describe('PlatformFeedPage', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('[data-testid="feed-composer"]')
     ).toBeNull();
+  });
+
+  // --- Inline comment thread (WU3) -------------------------------------------
+
+  it('renders an inline comment thread per post from the seeded fixtures', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    // The posts paint first, then the effect kicks the per-post comment loads;
+    // their resolution needs one more flush before the threads paint.
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const posts = element.querySelectorAll('[data-testid="feed-post"]');
+    expect(element.querySelectorAll('[data-testid="comment-thread"]')).toHaveLength(
+      FEED_POSTS.length
+    );
+
+    // post-1 seeds 2 comments (worker + company), in createdAt order.
+    const postOne = posts[0];
+    expect(postOne.querySelectorAll('[data-testid="comment"]')).toHaveLength(2);
+    expect(postOne.textContent).toContain('Buen punto, comparto la misma inquietud.');
+    expect(postOne.textContent).toContain('Constructora Norte');
+    expect(postOne.textContent).toContain('Te respondemos por interno para coordinar.');
+
+    // post-2 seeds 0 comments: the empty state, not a bare list.
+    const postTwo = posts[1];
+    expect(postTwo.querySelectorAll('[data-testid="comment"]')).toHaveLength(0);
+    expect(postTwo.querySelector('[data-testid="comment-empty"]')).not.toBeNull();
+
+    // post-3 seeds 1 comment.
+    const postThree = posts[2];
+    expect(postThree.querySelectorAll('[data-testid="comment"]')).toHaveLength(1);
+    expect(postThree.textContent).toContain('Gracias por el aviso.');
+  });
+
+  it('shows a loading state inside each thread while its comments are pending', async () => {
+    const resolvers = new Map<string, (comments: Comment[]) => void>();
+    TestBed.overrideProvider(COMMENTS_GATEWAY, {
+      useValue: {
+        list: (postId: string) =>
+          new Promise<Comment[]>((resolve) => {
+            resolvers.set(postId, resolve);
+          }),
+        create: async () => {
+          throw new Error('not under test');
+        }
+      }
+    });
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('[data-testid="comment-loading"]')).toHaveLength(
+      FEED_POSTS.length
+    );
+
+    for (const post of FEED_POSTS) {
+      resolvers.get(post.id)?.([...COMMENTS].filter((c) => c.postId === post.id));
+    }
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const posts = element.querySelectorAll('[data-testid="feed-post"]');
+    expect(posts[0].querySelectorAll('[data-testid="comment"]')).toHaveLength(2);
+    expect(posts[1].querySelector('[data-testid="comment-empty"]')).not.toBeNull();
+    expect(posts[2].querySelectorAll('[data-testid="comment"]')).toHaveLength(1);
+  });
+
+  it('shows a comment composer on every post for each authenticated role', async () => {
+    for (const role of ['worker', 'company', 'admin'] as const) {
+      const fixture = TestBed.createComponent(PlatformFeedPage);
+      fixture.componentRef.setInput('role', role);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const composers = (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[data-testid="comment-composer"]'
+      );
+      expect(composers, `${role} comment composers`).toHaveLength(FEED_POSTS.length);
+      fixture.destroy();
+    }
+  });
+
+  it('hides the comment composer from an anonymous visitor', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('[data-testid="comment-composer"]')).toHaveLength(0);
+  });
+
+  it('gives every composer a unique control id bound to a real label', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const textareas = Array.from(
+      element.querySelectorAll('[data-testid="comment-composer"] textarea')
+    ) as HTMLTextAreaElement[];
+    expect(textareas).toHaveLength(FEED_POSTS.length);
+
+    const ids = textareas.map((textarea) => textarea.id);
+    expect(ids).toEqual(['comment-content-post-1', 'comment-content-post-2', 'comment-content-post-3']);
+
+    for (const textarea of textareas) {
+      const label = element.querySelector(`label[for="${textarea.id}"]`);
+      expect(label, `label bound to ${textarea.id}`).not.toBeNull();
+    }
+  });
+
+  it('renders no duplicate element ids across the feed', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const ids = Array.from(element.querySelectorAll('[id]')).map((node) => node.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain('comment-content-post-1');
+  });
+
+  it('marks each comment thread as a polite live region', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const threads = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="comment-thread"]')
+    );
+    expect(threads).toHaveLength(FEED_POSTS.length);
+
+    for (const thread of threads) {
+      expect(thread.getAttribute('aria-live'), 'thread live region').toBe('polite');
+    }
+  });
+
+  it('appends a comment to the thread when an authenticated user submits a composer', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const form = element.querySelector('[data-testid="comment-composer"]') as HTMLFormElement;
+    const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.value = 'Coordinemos el lunes a las 8.';
+    textarea.dispatchEvent(new Event('input'));
+
+    (form.querySelector('[data-testid="comment-submit"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const postOne = element.querySelector('[data-testid="feed-post"]') as HTMLElement;
+    expect(postOne.querySelectorAll('[data-testid="comment"]')).toHaveLength(3);
+    expect(postOne.textContent).toContain('Coordinemos el lunes a las 8.');
+    expect(textarea.value).toBe('');
   });
 });
