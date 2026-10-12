@@ -124,3 +124,27 @@ describe('site content: navigation', () => {
     expect(paths).not.toContain('/presupuesto');
   });
 });
+
+describe('site content: promo teaser', () => {
+  it('describes the trial-to-paid offer with copy, a CTA label and an absolute CTA path', () => {
+    const { promo } = site;
+
+    nonEmpty(promo.text, 'promo.text');
+    nonEmpty(promo.ctaLabel, 'promo.ctaLabel');
+    expect(promo.ctaPath, 'promo.ctaPath must be an absolute router path').toMatch(/^\//);
+    expect(promo.isPlaceholder, 'promo must be flagged as placeholder').toBe(true);
+  });
+
+  it('holds 2 to 3 placeholder plans, each with a name and a price', () => {
+    const { plans } = site.promo;
+
+    expect(plans.length, 'promo needs at least two plans').toBeGreaterThanOrEqual(2);
+    expect(plans.length, 'promo must not turn into a price table').toBeLessThanOrEqual(3);
+
+    for (const plan of plans) {
+      nonEmpty(plan.name, 'plan.name');
+      nonEmpty(plan.price, 'plan.price');
+      expect(plan.isPlaceholder, `${plan.name} must be flagged as placeholder`).toBe(true);
+    }
+  });
+});

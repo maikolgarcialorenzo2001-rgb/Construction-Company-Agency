@@ -83,6 +83,33 @@ export interface Site {
    * conversion action rendered by the header, not a navigation section.
    */
   readonly nav: readonly NavItem[];
+  /** The trial-to-paid teaser the marketing header renders. */
+  readonly promo: Promo;
+}
+
+/**
+ * One placeholder tier of the trial-to-paid offer. `isPlaceholder` is a required `true`
+ * literal so the release gate can never miss it.
+ */
+export interface PromoPlan {
+  readonly name: string;
+  /** Human-readable price or trial length, e.g. `Gratis 7 días`. */
+  readonly price: string;
+  readonly note?: string;
+  readonly isPlaceholder: true;
+}
+
+/**
+ * The trial-to-paid teaser. It is the ONLY place the offer copy lives, so the marketing
+ * header renders from the content graph and the placeholder gate can flag it.
+ */
+export interface Promo {
+  readonly text: string;
+  readonly ctaLabel: string;
+  /** Absolute router path, e.g. `/plataforma/registro`. */
+  readonly ctaPath: string;
+  readonly plans: readonly PromoPlan[];
+  readonly isPlaceholder: true;
 }
 
 export interface MoneyRange {

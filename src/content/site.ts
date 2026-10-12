@@ -64,5 +64,22 @@ export const site = {
     { slug: 'proceso', label: 'Cómo trabajamos', path: '/proceso' },
     { slug: 'testimonios', label: 'Testimonios', path: '/testimonios' },
     { slug: 'nosotros', label: 'Nosotros', path: '/nosotros' }
-  ]
+  ],
+  // Placeholder trial-to-paid teaser rendered by the marketing header. Pricing is fictional.
+  promo: {
+    text: '7 días de uso gratis, después planes de pago',
+    ctaLabel: 'Crear cuenta gratis',
+    ctaPath: '/plataforma/registro',
+    plans: [
+      { name: 'Inicial', price: 'Gratis 7 días', note: 'Sin tarjeta', isPlaceholder: true },
+      {
+        name: 'Profesional',
+        price: 'USD 19 / mes',
+        note: 'Para equipos chicos',
+        isPlaceholder: true
+      },
+      { name: 'Estudio', price: 'USD 49 / mes', note: 'Para constructoras', isPlaceholder: true }
+    ],
+    isPlaceholder: true
+  }
 } as const satisfies Site;

@@ -477,6 +477,7 @@ describe('content graph: placeholder release gate', () => {
 
     expect(flags.length, 'the site payload must be flagged as placeholder').toBeGreaterThan(0);
     expect(flags).toContain('nap');
+    expect(flags, 'the promo teaser must be walked by the release gate').toContain('promo');
   });
 
   it('reports placeholders without failing the suite', () => {
