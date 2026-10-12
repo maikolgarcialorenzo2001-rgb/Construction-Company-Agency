@@ -38,10 +38,3 @@ const PLATFORM_NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
  */
 export const platformNavFor = (role: Role | null): readonly NavItem[] =>
   role === null ? [] : PLATFORM_NAV_BY_ROLE[role];
-
-/** @deprecated Temporary alias kept while WU2 migrates the header to `platformNavFor`. */
-export const platformNav: readonly NavItem[] = [
-  { slug: 'feed', label: 'Novedades', path: '/plataforma' },
-  { slug: 'trabajos', label: 'Trabajos', path: '/plataforma/trabajos' },
-  { slug: 'perfil', label: 'Mi perfil', path: '/plataforma/perfil' }
-] as const;
