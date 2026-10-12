@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { FEED_POSTS, JOBS, APPLICATIONS, DEMO_ACCOUNTS } from '../mocks/fixtures';
+import { FEED_POSTS, JOBS, APPLICATIONS, COMMENTS, DEMO_ACCOUNTS } from '../mocks/fixtures';
 import {
   APPLICATIONS_GATEWAY,
   AUTH_GATEWAY,
+  COMMENTS_GATEWAY,
   FEED_GATEWAY,
   JOBS_GATEWAY,
   PROFILES_GATEWAY
@@ -238,6 +239,67 @@ describe('mock gateway adapters', () => {
 
       expect(await gateway.worker('sin-usuario')).toBeNull();
       expect(await gateway.company('sin-empresa')).toBeNull();
+    });
+  });
+
+  describe('CommentsGateway mock', () => {
+    it('lists only the requested post thread, in seeded chronological order', async () => {
+      const gateway = TestBed.inject(COMMENTS_GATEWAY);
+
+      const thread = await gateway.list('post-1');
+
+      expect(thread.map((comment) => comment.id)).toEqual(['comment-1', 'comment-2']);
+      expect(thread.every((comment) => comment.postId === 'post-1')).toBe(true);
+    });
+
+    it('returns an empty thread for a post with no comments', async () => {
+      const gateway = TestBed.inject(COMMENTS_GATEWAY);
+
+      const thread = await gateway.list('post-2');
+
+      expect(thread).toEqual([]);
+    });
+
+    it('returns copies so callers cannot mutate the stored thread', async () => {
+      const gateway = TestBed.inject(COMMENTS_GATEWAY);
+
+      const first = await gateway.list('post-1');
+      first[0].body = 'mutado por el llamado';
+
+      const second = await gateway.list('post-1');
+      expect(second[0].body).toBe(COMMENTS[0].body);
+      expect(second[0].body).not.toBe('mutado por el llamado');
+    });
+
+    it('creates a comment with a synthetic id, ISO timestamp and the demo author', async () => {
+      const gateway = TestBed.inject(COMMENTS_GATEWAY);
+
+      const created = await gateway.create({ postId: 'post-1', body: '  Sumate al avance del lunes  ' });
+
+      expect(created.id).toBe('comment-new-1');
+      expect(created.postId).toBe('post-1');
+      expect(created.body).toBe('Sumate al avance del lunes');
+      expect(created.authorId).toBe('worker-1');
+      expect(created.authorName).toBe('Demo Worker');
+      expect(created.authorRole).toBe('worker');
+      expect(created.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(Number.isNaN(new Date(created.createdAt).getTime())).toBe(false);
+    });
+
+    it('keeps created comments in later reads of the same thread, advancing ids', async () => {
+      const gateway = TestBed.inject(COMMENTS_GATEWAY);
+
+      const first = await gateway.create({ postId: 'post-3', body: 'Aviso confirmado' });
+      const second = await gateway.create({ postId: 'post-3', body: 'Segundo aviso' });
+
+      const thread = await gateway.list('post-3');
+      expect(thread.map((comment) => comment.id)).toContain(first.id);
+      expect(thread.map((comment) => comment.id)).toContain(second.id);
+      expect(thread).toHaveLength(3); // 1 seeded + 2 created
+
+      expect(second.id).not.toBe(first.id);
+      const seq = (id: string) => Number(id.replace('comment-new-', ''));
+      expect(seq(second.id)).toBeGreaterThan(seq(first.id));
     });
   });
 });

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type {
   ApplicationsGateway,
   AuthGateway,
+  CommentsGateway,
   FeedGateway,
   JobsGateway,
   ProfilesGateway
@@ -11,10 +12,12 @@ import type {
 import {
   APPLICATIONS_GATEWAY,
   AUTH_GATEWAY,
+  COMMENTS_GATEWAY,
   FEED_GATEWAY,
   JOBS_GATEWAY,
   PROFILES_GATEWAY
 } from './ports';
+import { MockCommentsGateway } from './mock-comments.gateway';
 
 describe('gateway ports (DI tokens)', () => {
   beforeEach(() => {
@@ -45,6 +48,18 @@ describe('gateway ports (DI tokens)', () => {
     expect(typeof profiles.updateWorker).toBe('function');
     expect(typeof profiles.company).toBe('function');
     expect(typeof profiles.updateCompany).toBe('function');
+
+    const comments = TestBed.inject(COMMENTS_GATEWAY);
+    expect(typeof comments.list).toBe('function');
+    expect(typeof comments.create).toBe('function');
+  });
+
+  it('resolves the comments token to MockCommentsGateway by default', () => {
+    const comments = TestBed.inject(COMMENTS_GATEWAY);
+
+    expect(comments).toBeInstanceOf(MockCommentsGateway);
+    expect(typeof comments.list).toBe('function');
+    expect(typeof comments.create).toBe('function');
   });
 
   it('swaps to an alternative adapter with a provider change only', async () => {
@@ -154,5 +169,41 @@ describe('gateway ports (DI tokens)', () => {
 
     expect(injected).toBe(custom);
     expect((await injected.worker('any'))?.fullName).toBe('Swap');
+  });
+
+  it('swaps the comments adapter with a provider change only', async () => {
+    const custom: CommentsGateway = {
+      list: async (postId) => [
+        {
+          id: 'swap-comment',
+          postId,
+          authorId: 'worker-9',
+          authorName: 'Swap Author',
+          authorRole: 'worker',
+          body: 'Desde un adaptador alternativo',
+          createdAt: '2026-10-01T10:00:00.000Z'
+        }
+      ],
+      create: async (input) => ({
+        id: 'swap-created',
+        postId: input.postId,
+        authorId: 'worker-9',
+        authorName: 'Swap Author',
+        authorRole: 'worker',
+        body: input.body,
+        createdAt: '2026-10-01T10:00:00.000Z'
+      })
+    };
+
+    TestBed.overrideProvider(COMMENTS_GATEWAY, { useValue: custom });
+    const injected = TestBed.inject(COMMENTS_GATEWAY);
+
+    expect(injected).toBe(custom);
+    const comments = await injected.list('post-1');
+    expect(comments[0]?.id).toBe('swap-comment');
+    expect(comments[0]?.body).toBe('Desde un adaptador alternativo');
+    const created = await injected.create({ postId: 'post-1', body: 'Nuevo aporte' });
+    expect(created.id).toBe('swap-created');
+    expect(created.postId).toBe('post-1');
   });
 });

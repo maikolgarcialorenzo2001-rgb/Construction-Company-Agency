@@ -78,6 +78,26 @@ export interface PostInput {
   attachments?: string[];
 }
 
+/**
+ * A comment attached to a feed post. Demo-only for now: there is no OpenAPI
+ * schema behind it, so it deliberately has no `contract-conformance.ts` entry
+ * (a Comment pair there would break `ng build` — see the design guard).
+ */
+export interface Comment {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: Role;
+  body: string;
+  createdAt: string;
+}
+
+export interface CommentInput {
+  postId: string;
+  body: string;
+}
+
 export type JobStatus = 'open' | 'closed';
 
 export interface JobOpening {

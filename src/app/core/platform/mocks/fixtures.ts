@@ -10,6 +10,7 @@
  */
 import type {
   Application,
+  Comment,
   CompanyProfile,
   JobOpening,
   Page,
@@ -60,6 +61,47 @@ const seededPosts = [
 
 /** Seeded timeline entries. */
 export const FEED_POSTS = seededPosts satisfies readonly Post[];
+
+// --- Comments ---------------------------------------------------------------
+
+const seededComments = [
+  {
+    id: 'comment-1',
+    postId: 'post-1',
+    authorId: 'worker-1',
+    authorName: 'Demo Worker',
+    authorRole: 'worker' as const,
+    body: 'Buen punto, comparto la misma inquietud.',
+    createdAt: '2025-10-01T09:15:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    id: 'comment-2',
+    postId: 'post-1',
+    authorId: 'company-1',
+    authorName: 'Constructora Norte',
+    authorRole: 'company' as const,
+    body: 'Te respondemos por interno para coordinar.',
+    createdAt: '2025-10-01T10:00:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    id: 'comment-3',
+    postId: 'post-3',
+    authorId: 'worker-1',
+    authorName: 'Demo Worker',
+    authorRole: 'worker' as const,
+    body: 'Gracias por el aviso.',
+    createdAt: '2025-10-01T11:30:00.000Z',
+    isPlaceholder: true
+  }
+] satisfies readonly Placeholder<Comment>[];
+
+/**
+ * Seeded comment threads: post-1 has 2, post-3 has 1, post-2 has 0 — the
+ * ready and empty store states both get exercised. Ascending `createdAt`.
+ */
+export const COMMENTS = seededComments satisfies readonly Comment[];
 
 // --- Jobs -------------------------------------------------------------------
 

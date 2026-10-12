@@ -4,6 +4,8 @@ import type {
   Application,
   ApplicationInput,
   ApplicationStatus,
+  Comment,
+  CommentInput,
   CompanyProfile,
   CompanyProfileInput,
   JobOpening,
@@ -17,6 +19,7 @@ import type {
 } from '../domain';
 import { MockApplicationsGateway } from './mock-applications.gateway';
 import { MockAuthGateway } from './mock-auth.gateway';
+import { MockCommentsGateway } from './mock-comments.gateway';
 import { MockFeedGateway } from './mock-feed.gateway';
 import { MockJobsGateway } from './mock-jobs.gateway';
 import { MockProfilesGateway } from './mock-profiles.gateway';
@@ -89,6 +92,12 @@ export interface ProfilesGateway {
   updateCompany(companyId: string, input: CompanyProfileInput): Promise<CompanyProfile>;
 }
 
+/** Comment threads are read per post and written one comment at a time. */
+export interface CommentsGateway {
+  list(postId: string): Promise<Comment[]>;
+  create(input: CommentInput): Promise<Comment>;
+}
+
 export const FEED_GATEWAY = new InjectionToken<FeedGateway>('FEED_GATEWAY', {
   providedIn: 'root',
   factory: () => new MockFeedGateway()
@@ -115,4 +124,9 @@ export const AUTH_GATEWAY = new InjectionToken<AuthGateway>('AUTH_GATEWAY', {
 export const PROFILES_GATEWAY = new InjectionToken<ProfilesGateway>('PROFILES_GATEWAY', {
   providedIn: 'root',
   factory: () => new MockProfilesGateway()
+});
+
+export const COMMENTS_GATEWAY = new InjectionToken<CommentsGateway>('COMMENTS_GATEWAY', {
+  providedIn: 'root',
+  factory: () => new MockCommentsGateway()
 });
