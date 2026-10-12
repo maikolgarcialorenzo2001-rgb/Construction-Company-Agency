@@ -311,7 +311,7 @@ describe('PlatformFeedPage', () => {
     expect(textareas).toHaveLength(FEED_POSTS.length);
 
     const ids = textareas.map((textarea) => textarea.id);
-    expect(ids).toEqual(['comment-content-post-1', 'comment-content-post-2', 'comment-content-post-3']);
+    expect(ids).toEqual(FEED_POSTS.map((post) => `comment-content-${post.id}`));
 
     for (const textarea of textareas) {
       const label = element.querySelector(`label[for="${textarea.id}"]`);
