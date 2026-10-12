@@ -123,6 +123,7 @@ describe('HeaderComponent', () => {
     const rows = element.querySelectorAll('[data-testid="header-promo-plans"] li');
 
     expect(rows).toHaveLength(site.promo.plans.length);
+    expect(site.promo.plans.length).toBeGreaterThan(0);
     site.promo.plans.forEach((plan, index) => {
       expect(rows[index].textContent, `plan ${plan.name} name`).toContain(plan.name);
       expect(rows[index].textContent, `plan ${plan.name} price`).toContain(plan.price);
