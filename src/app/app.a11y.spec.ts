@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './app';
 import { routes } from './app.routes';
+import { SESSION_STORAGE_KEY } from './core/platform/auth/session.service';
 
 /**
  * seo-analytics-performance Req 7 (the automated half): every rendered route is scanned
@@ -25,6 +26,9 @@ const TARGET_PATHS = [
   '/testimonios',
   '/nosotros',
   '/presupuesto',
+  '/plataforma',
+  '/plataforma/login',
+  '/plataforma/registro',
   '/pagina-que-no-existe'
 ] as const;
 
@@ -71,6 +75,18 @@ describe('accessibility scan (axe-core)', () => {
 
   beforeEach(async () => {
     vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
+
+    // `/plataforma` is behind `authGuard`: `SessionService` reads the storage at
+    // construction, so seeding BEFORE component creation navigates to the feed
+    // instead of bouncing to `/plataforma/login`.
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: 'mock-token',
+        user: { userId: 'company-1', email: 'norte@demo.test', role: 'company' }
+      })
+    );
+
     TestBed.configureTestingModule({
       imports: [App],
       providers: [provideRouter(routes, withComponentInputBinding())]
@@ -87,6 +103,7 @@ describe('accessibility scan (axe-core)', () => {
 
   afterEach(() => {
     fixture.nativeElement.remove();
+    localStorage.removeItem(SESSION_STORAGE_KEY);
   });
 
   /** Navigates the real shell (chrome + routed page) and flushes the render pass. */
@@ -131,6 +148,16 @@ describe('accessibility scan (axe-core)', () => {
     // Release gate, not a build gate: the same rules keep running on every route.
     console.info(`[a11y] axe-core scan, ${AXE_RULES.length} rules, ${TARGET_PATHS.length} routes:\n${summary.join('\n')}`);
   }, 30000);
+
+  it('scans the authenticated feed on /plataforma, not a login redirect', async () => {
+    await goto('/plataforma');
+
+    // `/plataforma` sits behind `authGuard`; without a seeded session it redirects
+    // to `/plataforma/login` and the scan above would silently audit the login
+    // page twice. This pins the intent: the heading must be the feed's, not the
+    // login's.
+    expect(document.querySelector('h1')?.textContent).toBe('Novedades');
+  });
 
   it('keeps focus order in reading order: no explicit positive tabindex on any route', async () => {
     // axe has no DOM-only rule for WCAG 2.4.3. In a template where the DOM is written in
