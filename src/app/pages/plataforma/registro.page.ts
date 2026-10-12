@@ -5,14 +5,35 @@ import { SessionService } from '../../core/platform/auth/session.service';
 import type { Role } from '../../core/platform/domain';
 
 /**
- * The roles a visitor may self-assign. `admin` exists in the contract enum but is
- * NEVER offered here: it is not a self-service role (platform-identity: "Role
- * model"). The list is the single source the template and the submit path share.
+ * A role a visitor may self-assign. `admin` exists in the contract enum but is NEVER
+ * offered here (platform-identity: "Role model"); narrowing the union to the
+ * self-service roles makes "admin is un-offerable" a compile-time guarantee.
+ */
+type SelfServiceRoleValue = Extract<Role, 'worker' | 'company'>;
+
+/** One role card: the value sent to `register`, plus the title and its es-AR blurb. */
+interface RoleOption {
+  readonly value: SelfServiceRoleValue;
+  readonly title: string;
+  readonly description: string;
+}
+
+/**
+ * The roles a visitor may self-assign. `admin` is deliberately absent. The list is the
+ * single source the template and the submit path share.
  */
 const SELF_SERVICE_ROLES = [
-  { value: 'worker', label: 'Trabajador/a' },
-  { value: 'company', label: 'Empresa' }
-] as const;
+  {
+    value: 'worker',
+    title: 'Trabajador/a',
+    description: 'Acceso para ofrecer servicios y postularse a trabajos.'
+  },
+  {
+    value: 'company',
+    title: 'Empresa',
+    description: 'Acceso para publicar proyectos y contratar profesionales.'
+  }
+] as const satisfies readonly RoleOption[];
 
 /**
  * Platform registration. It creates a local mock session through
@@ -59,20 +80,31 @@ const SELF_SERVICE_ROLES = [
             class="mt-1 w-full rounded-lg border border-ink-900/15 p-3 text-ink-900"
           />
         </div>
-        <div>
-          <label for="registro-role" class="block text-sm font-medium text-ink-900">Me registro como</label>
-          <select
-            id="registro-role"
-            data-testid="registro-role"
-            [value]="role()"
-            (change)="onRole($event)"
-            class="mt-1 w-full rounded-lg border border-ink-900/15 p-3 text-ink-900"
-          >
+        <fieldset
+          data-testid="registro-role"
+          class="mt-1 rounded-lg border border-ink-900/15 p-3"
+        >
+          <legend class="text-sm font-medium text-ink-900">Me registro como</legend>
+          <div class="mt-2 space-y-2">
             @for (option of roles; track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
+              <label class="flex items-start gap-3 rounded-lg border border-ink-900/10 p-3">
+                <input
+                  type="radio"
+                  name="registro-role"
+                  [value]="option.value"
+                  [checked]="role() === option.value"
+                  (change)="onRole(option.value)"
+                  required
+                  class="mt-1"
+                />
+                <span class="flex flex-col">
+                  <span class="font-medium text-ink-900">{{ option.title }}</span>
+                  <span class="text-sm text-ink-600">{{ option.description }}</span>
+                </span>
+              </label>
             }
-          </select>
-        </div>
+          </div>
+        </fieldset>
 
         @if (error()) {
           <p data-testid="registro-error" role="alert" class="text-sm text-ink-900">{{ error() }}</p>
@@ -103,7 +135,7 @@ export class PlatformRegistroPage {
   protected readonly roles = SELF_SERVICE_ROLES;
   protected readonly email = signal('');
   protected readonly password = signal('');
-  protected readonly role = signal<Role>('worker');
+  protected readonly role = signal<SelfServiceRoleValue>('worker');
   protected readonly error = signal<string | null>(null);
 
   protected onEmail(event: Event): void {
@@ -114,8 +146,8 @@ export class PlatformRegistroPage {
     this.password.set((event.target as HTMLInputElement).value);
   }
 
-  protected onRole(event: Event): void {
-    this.role.set((event.target as HTMLSelectElement).value as Role);
+  protected onRole(value: SelfServiceRoleValue): void {
+    this.role.set(value);
   }
 
   protected async submit(event: Event): Promise<void> {
