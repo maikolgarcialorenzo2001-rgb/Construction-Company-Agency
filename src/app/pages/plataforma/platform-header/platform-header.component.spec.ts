@@ -107,6 +107,18 @@ describe('PlatformHeaderComponent', () => {
     expect(navLabels(create())).toEqual(['Novedades', 'Vacantes', 'Mi empresa']);
   });
 
+  it('renders the company nav after a real SessionService.login', async () => {
+    // Real service path: `login` resolves the in-memory `MockAuthGateway`, persists
+    // the session and flips the signal — the same wiring the login page uses.
+    await TestBed.inject(SessionService).login('norte@demo.test', 'demo1234');
+    expect(navLabels(create())).toEqual(['Novedades', 'Vacantes', 'Mi empresa']);
+  });
+
+  it('renders the worker nav after a real SessionService.login', async () => {
+    await TestBed.inject(SessionService).login('lucia@demo.test', 'demo1234');
+    expect(navLabels(create())).toEqual(['Novedades', 'Trabajos', 'Mi perfil']);
+  });
+
   it('removes the work nav when the session is cleared', async () => {
     seedSession('company');
     const fixture = create();
