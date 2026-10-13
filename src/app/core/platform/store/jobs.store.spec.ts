@@ -115,7 +115,7 @@ describe('JobsStore', () => {
   it('loads the existing application for a job into the application signal', async () => {
     const store = TestBed.inject(JobsStore);
 
-    await store.loadApplication(JOBS[0].id);
+    await store.loadApplication(JOBS[0].id, "worker-1");
 
     expect(store.applicationViewStatus()).toBe('ready');
     expect(store.application()?.applicantId).toBe('worker-1');
@@ -125,7 +125,16 @@ describe('JobsStore', () => {
   it('settles on none when the job has no application', async () => {
     const store = TestBed.inject(JobsStore);
 
-    await store.loadApplication(JOBS[2].id);
+    await store.loadApplication(JOBS[2].id, "worker-1");
+
+    expect(store.applicationViewStatus()).toBe('none');
+    expect(store.application()).toBeNull();
+  });
+
+  it('settles on none when no application exists for the given applicant', async () => {
+    const store = TestBed.inject(JobsStore);
+
+    await store.loadApplication(JOBS[1].id);
 
     expect(store.applicationViewStatus()).toBe('none');
     expect(store.application()).toBeNull();

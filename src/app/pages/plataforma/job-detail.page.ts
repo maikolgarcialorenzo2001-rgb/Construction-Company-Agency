@@ -52,7 +52,7 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
         }
       }
 
-      @if (store.application(); as application) {
+      @if (effectiveRole() === 'worker' && store.application(); as application) {
         <p data-testid="application-status" class="mt-6 text-ink-900">
           Estado de tu postulación:
           <strong>{{ applicationStatusLabel(application.status) }}</strong>
@@ -109,7 +109,7 @@ export class PlatformJobDetailPage {
       const id = this.id();
       if (id) {
         void this.store.select(id);
-        void this.store.loadApplication(id);
+        void this.store.loadApplication(id, this.session.currentUser()?.userId);
       }
     });
   }

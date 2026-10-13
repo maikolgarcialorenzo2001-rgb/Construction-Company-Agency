@@ -72,6 +72,13 @@ describe('PlatformJobDetailPage', () => {
   });
 
   it('shows the status of an existing application from the gateway', async () => {
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: 'mock-token',
+        user: { userId: 'worker-1', email: 'lucia@demo.test', role: 'worker' }
+      })
+    );
     const fixture = TestBed.createComponent(PlatformJobDetailPage);
     fixture.componentRef.setInput('id', JOBS[0].id); // job-1 → seeded `accepted`
     fixture.componentRef.setInput('role', 'worker');
@@ -86,17 +93,23 @@ describe('PlatformJobDetailPage', () => {
   });
 
   it('shows a different existing status, from the gateway', async () => {
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: 'mock-token',
+        user: { userId: 'worker-1', email: 'lucia@demo.test', role: 'worker' }
+      })
+    );
     const fixture = TestBed.createComponent(PlatformJobDetailPage);
-    fixture.componentRef.setInput('id', JOBS[1].id); // job-2 → seeded `pending`
+    fixture.componentRef.setInput('id', JOBS[1].id); // job-2 → seeded for worker-2
     fixture.componentRef.setInput('role', 'worker');
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('[data-testid="application-status"]')?.textContent).toContain(
-      'Pendiente'
-    );
+    expect(element.querySelector('[data-testid="application-status"]')).toBeNull();
+    expect(element.querySelector('[data-testid="apply-form"]')).not.toBeNull();
   });
 
   it('lets a worker apply and shows the resulting status', async () => {

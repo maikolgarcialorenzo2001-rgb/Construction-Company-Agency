@@ -67,13 +67,17 @@ export class JobsStore {
   }
 
   /**
-   * Resolves the demo worker's application for a job. The gateway filter is by
-   * `jobId` only (the mock has no session), so the first match is this job's
-   * application; `none` means the worker has not applied yet.
+   * Resolves the application for a job scoped to a specific applicant. When no
+   * applicant id is provided, the result is `none` (never falls back to
+   * `items[0]`).
    */
-  async loadApplication(jobId: string): Promise<void> {
+  async loadApplication(jobId: string, applicantId?: string): Promise<void> {
     this.applicationState.set({ status: 'loading', application: null });
-    const page = await this.applications.list({ jobId });
+    if (applicantId === undefined || applicantId === null || applicantId === '') {
+      this.applicationState.set({ status: 'none', application: null });
+      return;
+    }
+    const page = await this.applications.list({ jobId, applicantId });
     const application = page.items[0] ?? null;
     this.applicationState.set(
       application ? { status: 'ready', application } : { status: 'none', application: null }
