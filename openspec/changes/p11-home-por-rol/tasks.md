@@ -44,11 +44,11 @@ Chain strategy: stacked-to-main
 **Files**: NEW `core/platform/store/applications.store.ts` (+spec); NEW `pages/plataforma/platform-home.page.ts` (+spec).
 **Rollback**: revert WU2; WU1 unaffected.
 
-- [ ] 2.0 RED — `applications.store.spec.ts`: own rows only (`applicantId`), empty state, `.set()` only, skip if same id ready.
-- [ ] 2.1 RED — `platform-home.page.spec.ts`: worker "Mis postulaciones" (own rows + status labels); company `openings().filter(companyId===userId)` + "Publicar novedad"; admin `home-admin-placeholder`, no controls; per-role empty states; one `<h1>Inicio</h1>`.
-- [ ] 2.2 GREEN — `ApplicationsStore` (signals, `load(applicantId)`, idle/loading/ready/empty) mirroring `feed.store`.
-- [ ] 2.3 GREEN — home effect tracks `session.currentUser()`, store calls in `untracked()` (p9 lesson); testids `home-application`/`home-vacancy`/`home-publish`/`home-admin-placeholder`.
-- [ ] 2.4 REFACTOR.
+- [x] 2.0 RED — `applications.store.spec.ts`: own rows only (`applicantId`), empty state, `.set()` only, skip if same id ready.
+- [x] 2.1 RED — `platform-home.page.spec.ts`: worker "Mis postulaciones" (own rows + status labels); company `openings().filter(companyId===userId)` + "Publicar novedad"; admin `home-admin-placeholder`, no controls; per-role empty states; one `<h1>Inicio</h1>`.
+- [x] 2.2 GREEN — `ApplicationsStore` (signals, `load(applicantId)`, idle/loading/ready/empty) mirroring `feed.store`.
+- [x] 2.3 GREEN — home effect tracks `session.currentUser()`, store calls in `untracked()` (p9 lesson); testids `home-application`/`home-vacancy`/`home-publish`/`home-admin-placeholder`.
+- [x] 2.4 REFACTOR.
 
 ## WU3 — Wiring, a11y/release-matrix, docs
 
