@@ -17,12 +17,12 @@ describe('platformNavFor', () => {
     expect(platformNavFor(null)).toEqual([]);
   });
 
-  it('lists the worker work nav in order', () => {
-    expect(labelsFor('worker')).toEqual(['Novedades', 'Trabajos', 'Mi perfil']);
+  it('lists the worker work nav in order, led by Inicio', () => {
+    expect(labelsFor('worker')).toEqual(['Inicio', 'Novedades', 'Trabajos', 'Mi perfil']);
   });
 
-  it('relabels the company work nav but keeps Novedades', () => {
-    expect(labelsFor('company')).toEqual(['Novedades', 'Vacantes', 'Mi empresa']);
+  it('relabels the company work nav but keeps Inicio and Novedades', () => {
+    expect(labelsFor('company')).toEqual(['Inicio', 'Novedades', 'Vacantes', 'Mi empresa']);
   });
 
   it('shares the worker item set with admin (same array reference)', () => {
@@ -31,13 +31,19 @@ describe('platformNavFor', () => {
 
   it('keeps the destination slugs invariant across roles', () => {
     for (const role of ROLES) {
-      expect(platformNavFor(role).map((item) => item.slug)).toEqual(['feed', 'trabajos', 'perfil']);
+      expect(platformNavFor(role).map((item) => item.slug)).toEqual([
+        'inicio',
+        'feed',
+        'trabajos',
+        'perfil'
+      ]);
     }
   });
 
   it('keeps the destination paths invariant across roles', () => {
     for (const role of ROLES) {
       expect(platformNavFor(role).map((item) => item.path)).toEqual([
+        '/plataforma/inicio',
         '/plataforma',
         '/plataforma/trabajos',
         '/plataforma/perfil'

@@ -51,7 +51,7 @@ describe('PlatformLoginPage', () => {
     fixture.detectChanges();
 
     expect(TestBed.inject(SessionService).role()).toBe('company');
-    expect(navigate).toHaveBeenCalledWith('/plataforma');
+    expect(navigate).toHaveBeenCalledWith('/plataforma/inicio');
   });
 
   it('shows the gateway error when credentials are invalid', async () => {

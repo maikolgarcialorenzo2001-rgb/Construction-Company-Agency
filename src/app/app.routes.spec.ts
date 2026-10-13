@@ -24,8 +24,16 @@ const MARKETING_ROUTE_TABLE = [
   { path: 'presupuesto', kind: 'static' }
 ] as const;
 
-/** The six children of the single `plataforma` grouping route, in registration order. */
-const PLATFORM_CHILD_PATHS = ['', 'trabajos', 'trabajos/:id', 'login', 'registro', 'perfil'] as const;
+/** The seven children of the single `plataforma` grouping route, in registration order. */
+const PLATFORM_CHILD_PATHS = [
+  '',
+  'inicio',
+  'trabajos',
+  'trabajos/:id',
+  'login',
+  'registro',
+  'perfil'
+] as const;
 
 /** The es-AR route table, in registration order. `plataforma` sits before `**`. */
 const ROUTE_TABLE = [
@@ -69,7 +77,7 @@ describe('app routes', () => {
       expect(noindex.map((r) => r.path)).toEqual(['plataforma', '**']);
     });
 
-    it('registers the six platform children, each lazy and noindex', () => {
+    it('registers the seven platform children, each lazy and noindex', () => {
       const platform = routes.find((r) => r.path === 'plataforma');
 
       expect(platform, 'plataforma must be a top-level grouping route').toBeDefined();
@@ -133,6 +141,7 @@ describe('app routes', () => {
       ['/nosotros', 'app-about'],
       ['/presupuesto', 'app-quote'],
       ['/plataforma', 'app-platform-feed'],
+      ['/plataforma/inicio', 'app-platform-home'],
       ['/plataforma/trabajos', 'app-platform-jobs-list'],
       ['/plataforma/trabajos/7', 'app-platform-job-detail'],
       ['/plataforma/login', 'app-platform-login'],

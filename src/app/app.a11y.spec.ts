@@ -27,6 +27,7 @@ const TARGET_PATHS = [
   '/nosotros',
   '/presupuesto',
   '/plataforma',
+  '/plataforma/inicio',
   '/plataforma/login',
   '/plataforma/registro',
   '/pagina-que-no-existe'

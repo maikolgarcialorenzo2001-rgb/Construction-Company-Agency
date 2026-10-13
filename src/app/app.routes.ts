@@ -111,6 +111,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/plataforma/feed.page').then((m) => m.PlatformFeedPage)
       },
       {
+        path: 'inicio',
+        canActivate: [authGuard],
+        data: NOINDEX(
+          'Inicio | Plataforma | Constructora Ejemplo',
+          'Tu inicio en la plataforma de Constructora Ejemplo: postulaciones, vacantes y novedades según tu rol. Contenido de demostración.'
+        ),
+        loadComponent: () =>
+          import('./pages/plataforma/platform-home.page').then((m) => m.PlatformHomePage)
+      },
+      {
         path: 'trabajos',
         canActivate: [authGuard],
         data: NOINDEX(

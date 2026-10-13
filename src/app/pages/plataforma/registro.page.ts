@@ -159,7 +159,7 @@ export class PlatformRegistroPage {
         password: this.password(),
         role: this.role()
       });
-      await this.router.navigateByUrl('/plataforma');
+      await this.router.navigateByUrl('/plataforma/inicio');
     } catch (cause) {
       this.error.set(cause instanceof Error ? cause.message : 'No pudimos crear la cuenta.');
     }

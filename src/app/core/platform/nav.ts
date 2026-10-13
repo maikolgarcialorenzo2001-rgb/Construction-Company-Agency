@@ -9,6 +9,7 @@ import type { Role } from './domain';
 
 /** Worker destinations. `admin` reuses this exact table (same array reference). */
 const WORKER_NAV: readonly NavItem[] = [
+  { slug: 'inicio', label: 'Inicio', path: '/plataforma/inicio' },
   { slug: 'feed', label: 'Novedades', path: '/plataforma' },
   { slug: 'trabajos', label: 'Trabajos', path: '/plataforma/trabajos' },
   { slug: 'perfil', label: 'Mi perfil', path: '/plataforma/perfil' }
@@ -16,6 +17,7 @@ const WORKER_NAV: readonly NavItem[] = [
 
 /** Company destinations: same slugs as `WORKER_NAV`, only the two labels change. */
 const COMPANY_NAV: readonly NavItem[] = [
+  { slug: 'inicio', label: 'Inicio', path: '/plataforma/inicio' },
   { slug: 'feed', label: 'Novedades', path: '/plataforma' },
   { slug: 'trabajos', label: 'Vacantes', path: '/plataforma/trabajos' },
   { slug: 'perfil', label: 'Mi empresa', path: '/plataforma/perfil' }

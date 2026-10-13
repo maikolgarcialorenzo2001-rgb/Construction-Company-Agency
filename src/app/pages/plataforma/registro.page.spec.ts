@@ -134,6 +134,6 @@ describe('PlatformRegistroPage', () => {
     fixture.detectChanges();
 
     expect(TestBed.inject(SessionService).role()).toBe('company');
-    expect(navigate).toHaveBeenCalledWith('/plataforma');
+    expect(navigate).toHaveBeenCalledWith('/plataforma/inicio');
   });
 });

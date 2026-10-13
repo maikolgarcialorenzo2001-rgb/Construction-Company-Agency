@@ -95,7 +95,7 @@ export class PlatformLoginPage {
     this.error.set(null);
     try {
       await this.session.login(this.email().trim(), this.password());
-      await this.router.navigateByUrl('/plataforma');
+      await this.router.navigateByUrl('/plataforma/inicio');
     } catch (cause) {
       this.error.set(cause instanceof Error ? cause.message : 'No pudimos ingresar. Probá de nuevo.');
     }
