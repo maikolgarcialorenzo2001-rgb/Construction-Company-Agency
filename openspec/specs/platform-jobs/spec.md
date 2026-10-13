@@ -44,9 +44,9 @@ The jobs board and detail MUST render from a `JobsStore` whose state is signals/
 
 ### Requirement: Applications flow
 
-Applying MUST create an `Application` through an `ApplicationsGateway` port (DI token) and MUST surface the resulting status via signals. `MockApplicationsGateway.list` MUST also filter by `applicantId` when the filter provides one, and `ApplicationsFilter` MUST accept an optional `applicantId`. The `APPLICATIONS_GATEWAY` token MUST have a DI test proving an alternative implementation resolves and is used. No contract change is required.
+Applying MUST create an `Application` through an `ApplicationsGateway` port (DI token) and MUST surface the resulting status via signals. `MockApplicationsGateway.list` MUST also filter by `applicantId` when the filter provides one, and `ApplicationsFilter` MUST accept an optional `applicantId`. `JobsStore.loadApplication` MUST scope its result to one applicant: it MUST call `applications.list({ jobId, applicantId })` with the applicant id supplied by the caller and MUST NOT fall back to `items[0]`. The job-detail application-status block MUST render only when the effective role is `worker` AND an application exists. The `APPLICATIONS_GATEWAY` token MUST have a DI test proving an alternative implementation resolves and is used. No contract change is required.
 
-(Previously: `list` filtered by `jobId`/`status` only, with no applicant filter; the applications swap was not exercised.)
+(Previously: `loadApplication(jobId)` filtered by `jobId` only and took `items[0]`, so any viewer saw another worker's status, and the status block rendered for every role.)
 
 #### Scenario: Apply creates an application
 
@@ -57,9 +57,28 @@ Applying MUST create an `Application` through an `ApplicationsGateway` port (DI 
 
 #### Scenario: Application status is tracked
 
-- GIVEN an existing application with a non-default status
-- WHEN the application view renders
+- GIVEN the worker who applied has an existing application with a non-default status
+- WHEN that worker's job detail renders
 - THEN the status from the gateway is shown
+
+#### Scenario: Worker who applied sees their own status
+
+- GIVEN a `worker` session whose `userId` is `worker-1` with an application on that job
+- WHEN the job detail renders
+- THEN the application-status block shows `worker-1`'s own status
+
+#### Scenario: Worker who did not apply sees the apply form
+
+- GIVEN a `worker` session with no application on that job
+- WHEN the job detail renders
+- THEN no application-status block is shown
+- AND the apply form is visible
+
+#### Scenario: Non-worker sees no status block
+
+- GIVEN a `company` or `admin` session (or anonymous)
+- WHEN the job detail renders
+- THEN no application-status block is shown
 
 #### Scenario: Filter by applicant
 

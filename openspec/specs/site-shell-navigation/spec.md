@@ -51,17 +51,15 @@ The document MUST declare `lang="es-AR"`, and all shipped copy MUST be es-AR.
 - WHEN the root element is inspected
 - THEN its `lang` attribute equals `es-AR`
 
-# Delta for site-shell-navigation
-
-## MODIFIED Requirements
-
 ### Requirement: 3. [B] Header navigation, phone reachability and promo strip
 
 The header MUST render a link to every marketing top-level route and one phone action whose `tel:` target comes from the NAP single source (`content-model`). The header MUST expose a **single** platform entry point linking to `/plataforma` (exactly one `a[href="/plataforma"]`). The header MUST also render a **static promo strip inside the header landmark**, advertising the trial→paid offer (7 días de uso gratis, después planes de pago) with a CTA linking to `/plataforma/registro`. The strip MUST NOT be dismissible and MUST NOT contain any images.
 
-Within the platform chrome, the platform header MUST render a role-aware work navigation. `worker` and `admin` MUST render the same item set: Novedades (`/plataforma`), Trabajos (`/plataforma/trabajos`), Mi perfil (`/plataforma/perfil`). `company` MUST render the same destinations with relabeled items: Novedades (`/plataforma`), Vacantes (`/plataforma/trabajos`), Mi empresa (`/plataforma/perfil`). Destinations (slugs) MUST be identical across roles; only `company` labels change. The work nav MUST NOT render when there is no session, and when the item set is empty the `<nav>` landmark MUST be absent — never an empty landmark. The "Modo demo" pill MUST remain present in all states. The nav MUST react to session changes (login/logout) via the session signals.
+Within the platform chrome, the platform header MUST render a role-aware work navigation led by an "Inicio" item pointing at `/plataforma/inicio`. `worker` and `admin` MUST render: Inicio (`/plataforma/inicio`), Novedades (`/plataforma`), Trabajos (`/plataforma/trabajos`), Mi perfil (`/plataforma/perfil`). `company` MUST render the same destinations with relabeled items: Inicio (`/plataforma/inicio`), Novedades (`/plataforma`), Vacantes (`/plataforma/trabajos`), Mi empresa (`/plataforma/perfil`). Destinations (slugs) MUST be identical across roles; only `company` labels change. The work nav MUST NOT render when there is no session, and when the item set is empty the `<nav>` landmark MUST be absent — never an empty landmark. The "Modo demo" pill MUST remain present in all states. The nav MUST react to session changes (login/logout) via the session signals.
 
-(Previously: the platform chrome rendered one flat, role-agnostic platform nav for every visitor, including anonymous.)
+Entry points MUST land on the home: successful `login` and `registro` MUST navigate to `/plataforma/inicio`.
+
+(Previously: the platform nav had no "Inicio" item and entry points landed on `/plataforma`.)
 
 #### Scenario: Header exposes phone, marketing sections and one platform entry
 
@@ -97,13 +95,13 @@ Within the platform chrome, the platform header MUST render a role-aware work na
 
 - GIVEN a `worker` or an `admin` session
 - WHEN the platform header renders
-- THEN it lists Novedades → `/plataforma`, Trabajos → `/plataforma/trabajos`, Mi perfil → `/plataforma/perfil`
+- THEN it lists Inicio → `/plataforma/inicio` first, then Novedades → `/plataforma`, Trabajos → `/plataforma/trabajos`, Mi perfil → `/plataforma/perfil`
 
 #### Scenario: Company renders the relabeled work nav
 
 - GIVEN a `company` session
 - WHEN the platform header renders
-- THEN it lists Vacantes → `/plataforma/trabajos` and Mi empresa → `/plataforma/perfil`
+- THEN it lists Inicio → `/plataforma/inicio`, Vacantes → `/plataforma/trabajos` and Mi empresa → `/plataforma/perfil`
 - AND Novedades → `/plataforma` is unchanged
 
 #### Scenario: Anonymous renders no work nav
@@ -124,6 +122,12 @@ Within the platform chrome, the platform header MUST render a role-aware work na
 - GIVEN the platform header rendered with a session
 - WHEN the session is cleared
 - THEN the work nav and its `<nav>` landmark disappear
+
+#### Scenario: Entry points land on the home
+
+- GIVEN a successful `login` or `registro`
+- WHEN authentication completes
+- THEN the user lands on `/plataforma/inicio`
 
 #### Scenario: Modo demo pill survives every state
 
