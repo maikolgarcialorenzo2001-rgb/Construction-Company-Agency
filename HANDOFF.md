@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-13** · HEAD `68c27c7` · adelante **80** de `origin/main` (nada pusheado).
+> Última actualización: **2026-10-13 (corte de sesión)** · HEAD `ae7c491` · adelante **81** de `origin/main` (nada pusheado).
 > Este archivo reemplaza al anterior (se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -11,7 +11,7 @@
 - **Strict TDD activo** (`bunx ng test --watch=false`).
 - Gate verde: **578 tests / 62 files** · lint limpio · build verde (21 rutas).
 - `contracts/openapi.yaml` **READ-ONLY**. Roles `worker | company | admin` (sin 4º rol).
-- `git status` limpio (sin pendientes). `HANDOFF.md` ya está trackeado; `angular.json` quedó revertido (el cambio incidental del CLI no se commitea).
+- `git status`: limpio salvo `?? openspec/changes/p12-admin/` (artefactos SDD del cambio en curso, **sin commitear**). `angular.json` revertido (no se commitea).
 - Rutas de plataforma: `/plataforma` = feed; `/plataforma/inicio` = **home por rol** (nuevo en p11).
 - `/plataforma` es **client-only** y detrás de `authGuard`. Solo existe `authGuard`: no hay `roleGuard` ni `data.roles` (el gating por rol queda diferido a `p12-admin`).
 
@@ -51,14 +51,18 @@ con commits locales secuenciales sobre `main` (un work-unit commit por unidad, m
   Capabilities: NEW `platform-home`; MODIFIED `platform-jobs`, `platform-shell`, `site-shell-navigation`.
   Sin cambio de contrato. ⚠️ `roleGuard` sigue diferido a `p12-admin`.
 
-## 4. FALTA — Pasos 7 y 8
+## 4. EN CURSO — retomar acá
 
-Cada uno = su propio cambio SDD. Alcance propuesto abajo (bloques `📝 Instrucciones (usuario)` a completar/validar).
-
-**Paso 7 — Área admin** (`p12-admin`)
-- Alcance: gestión de usuarios/roles + configuración (sólo rol `admin`).
-- Entregable: superficie admin jugable en demo.
-- 📝 Instrucciones (usuario): _(a completar)_
+**Paso 7 — Área admin** (`p12-admin`) — **PLANIFICADO, SIN CÓDIGO TODAVÍA**
+- Planificación **completa en disco** (`openspec/changes/p12-admin/`, **untracked**): `explore.md`, `proposal.md`, `specs/` (5 deltas), `design.md`, `tasks.md`.
+- Fases SDD hechas: explore (#956), propose (#958), spec (#959), design (#960), tasks (#961). Engram project `construction-company-agency`.
+- **FALTA: aplicar WU1 → WU2 → WU3 (stacked-to-main), y después verify + archive.** El primer `sdd-apply` de WU1 quedó **cancelado sin cambios** (no hay apply-progress ni código p12 commiteado).
+  - **WU1** = `roleGuard` (`core/platform/auth/role.guard.ts` + spec) + cuenta admin demo (`admin@demo.test`/`demo1234`/`userId admin-1`; `fixtures.spec.ts:159` 5→6) + copy de login.
+  - **WU2** = capa de datos admin: `DirectoryUser` + `AdminGateway`/token + `MockAdminGateway` (sin `password`) + `AdminStore` + `AdminConfigStore` (+ specs).
+  - **WU3** = `AdminPage` + ruta `/plataforma/admin` (`canActivate: [authGuard, roleGuard]`, `data.roles:['admin']`, índice 2 tras `inicio`) + `ADMIN_NAV` + link en el home admin + specs (`app.routes/auth.guard/a11y/release-matrix/login.page`) + update HANDOFF.
+- Scope demo: **directorio read-only + config local (localStorage)**; SIN mutación de rol. Contrato intacto.
+- ⚠️ R3: `app.a11y.spec.ts` y `app.release-matrix.spec.ts` siembran sesión **company** → cambiar a **admin** para que la fila `/plataforma/admin` no redirija en silencio. ⚠️ NO meter `DirectoryUser`/`AdminGateway` en `contract-conformance.ts`.
+- Forecast: **~460–680 líneas**, riesgo Alto → 3 WUs apilados (ya definidos en `tasks.md`).
 
 **Paso 8 — Modo previa estática** (`p13-modo-previa`)
 - Alcance: switcher de rol (entrar como cualquiera desde fixtures, sin registro) + (opcional) showcase
@@ -72,6 +76,7 @@ Cada uno = su propio cambio SDD. Alcance propuesto abajo (bloques `📝 Instrucc
 |---|---|---|
 | W-NG8107 | p9 | Warning cosmético de template en `comments.store.spec.ts` (`?.` sobre no-nullable). |
 | W-seq | p9 | `MockCommentsGateway.seq` estático/global → sufijos de id sensibles al orden de la suite (mitigado con regex). |
+| W-spawn | proceso | El sub-agente `sdd-apply` falla **intermitente** al spawnear: `Bad Request: {"model":"big-pickle"}`. **Solución: reintentar** el `task`. Un intento parcial puede dejar archivos huérfanos → re-probar RED y reconciliar (pasó en p11 WU2). |
 | W-propose | proceso | El sub-agente `sdd-propose` reportó éxito pero **no persistió** (p10): reescribir inline y **verificar artefactos en disco** tras cada fase. |
 | W-verify | proceso | En p9 el `verify-report.md` no quedó en disco (gap híbrido): verificar persistencia. |
 
@@ -96,5 +101,7 @@ bun run gate                   # gate completo
 
 - Cambios: `sdd/p8-warnings-closure/summary`, `sdd/p9-comentarios/summary`, `sdd/p10-fixtures/summary`, `sdd/p11-home-por-rol/summary`.
 - Fases p11: `explore` (#944), `proposal` (#946), `spec` (#947), `design` (#948), `tasks` (#949), `apply-progress` (#950), `verify-report` (#952), `archive-report` (#953).
+- Fases p12 (en curso): `explore` (#956), `proposal` (#958), `spec` (#959), `design` (#960), `tasks` (#961).
+- Descubrimientos: `platform/role-guard` (#945), #951 (p11 apply), #954 (stray delta scaffolding), #957 (p12 foundation gaps).
 - Protocolo SDD: `sdd-init/{project}` (#783), `skill-registry` (#785).
 - Lección: `openspec/archive-must-stage-artifacts`.
