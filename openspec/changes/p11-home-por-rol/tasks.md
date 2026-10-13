@@ -53,12 +53,12 @@ Chain strategy: stacked-to-main
 ## WU3 — Wiring, a11y/release-matrix, docs
 
 **Goal**: `/plataforma/inicio` reachable + guarded; nav leads with Inicio; login/registro land there.
-**Files**: `app.routes.ts` (+spec); `core/platform/nav.ts` (+spec); `platform-header.component.spec.ts`; `pages/plataforma/login.page.ts` + `registro.page.ts` (+specs); `app.a11y.spec.ts`; `app.release-matrix.spec.ts`; `HANDOFF.md`.
+**Files**: `app.routes.ts` (+spec); `core/platform/nav.ts` (+spec); `platform-header.component.spec.ts`; `pages/plataforma/login.page.ts` + `registro.page.ts` (+specs); `app.a11y.spec.ts`; `app.release-matrix.spec.ts`; `core/platform/auth/auth.guard.spec.ts` (discovered guarded-children pin); `HANDOFF.md`.
 **Rollback**: revert WU3; nav/feed degrade to pre-p11.
 
-- [ ] 3.0 RED — `app.routes.spec.ts:28` insert `'inicio'` at index 1 (order-sensitive) + `it.each` row.
-- [ ] 3.1 RED — `nav.spec.ts:21,25,34,40` + `platform-header.component.spec.ts` (68,76,81-85): Inicio first every role.
-- [ ] 3.2 RED — `login.page.spec.ts:54` / `registro.page.spec.ts:137` expect `/plataforma/inicio`; `app.a11y.spec.ts:19-33` add `/plataforma/inicio` to TARGET_PATHS (`/plataforma` h1 stays `Novedades`); `app.release-matrix.spec.ts:44` add `{ path: '/plataforma/inicio', images: 0, priority: 0, cta: false }`.
-- [ ] 3.3 GREEN — lazy `inicio` child (behind `authGuard`) before `trabajos`; prepend Inicio to `WORKER_NAV` + `COMPANY_NAV`; redirect login/registro.
-- [ ] 3.4 GREEN — `HANDOFF.md:15`: remove false "Hay `roleGuard` con `data.roles`" claim (deferred to `p12-admin`).
-- [ ] 3.5 REFACTOR + full suite green incl. a11y + release-matrix.
+- [x] 3.0 RED — `app.routes.spec.ts:28` insert `'inicio'` at index 1 (order-sensitive) + `it.each` row.
+- [x] 3.1 RED — `nav.spec.ts:21,25,34,40` + `platform-header.component.spec.ts` (68,76,81-85): Inicio first every role.
+- [x] 3.2 RED — `login.page.spec.ts:54` / `registro.page.spec.ts:137` expect `/plataforma/inicio`; `app.a11y.spec.ts:19-33` add `/plataforma/inicio` to TARGET_PATHS (`/plataforma` h1 stays `Novedades`); `app.release-matrix.spec.ts:44` add `{ path: '/plataforma/inicio', images: 0, priority: 0, cta: false }`.
+- [x] 3.3 GREEN — lazy `inicio` child (behind `authGuard`) before `trabajos`; prepend Inicio to `WORKER_NAV` + `COMPANY_NAV`; redirect login/registro.
+- [x] 3.4 GREEN — `HANDOFF.md:15`: remove false "Hay `roleGuard` con `data.roles`" claim (deferred to `p12-admin`).
+- [x] 3.5 REFACTOR + full suite green incl. a11y + release-matrix.
