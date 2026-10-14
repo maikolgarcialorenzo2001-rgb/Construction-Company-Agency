@@ -28,6 +28,7 @@ const TARGET_PATHS = [
   '/presupuesto',
   '/plataforma',
   '/plataforma/inicio',
+  '/plataforma/admin',
   '/plataforma/login',
   '/plataforma/registro',
   '/pagina-que-no-existe'
@@ -77,14 +78,16 @@ describe('accessibility scan (axe-core)', () => {
   beforeEach(async () => {
     vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
 
-    // `/plataforma` is behind `authGuard`: `SessionService` reads the storage at
-    // construction, so seeding BEFORE component creation navigates to the feed
-    // instead of bouncing to `/plataforma/login`.
+    // `/plataforma`, `/plataforma/inicio` and `/plataforma/admin` sit behind
+    // `authGuard` (admin additionally behind `roleGuard`): `SessionService` reads
+    // the storage at construction, so seeding an ADMIN session BEFORE component
+    // creation lets every platform route render its real page instead of bouncing
+    // to login (or, for admin, to `/plataforma/inicio`).
     localStorage.setItem(
       SESSION_STORAGE_KEY,
       JSON.stringify({
         token: 'mock-token',
-        user: { userId: 'company-1', email: 'norte@demo.test', role: 'company' }
+        user: { userId: 'admin-1', email: 'admin@demo.test', role: 'admin' }
       })
     );
 
@@ -158,6 +161,17 @@ describe('accessibility scan (axe-core)', () => {
     // page twice. This pins the intent: the heading must be the feed's, not the
     // login's.
     expect(document.querySelector('h1')?.textContent).toBe('Novedades');
+  });
+
+  it('scans the admin area on /plataforma/admin, not a role redirect', async () => {
+    await goto('/plataforma/admin');
+
+    // `/plataforma/admin` is additionally role-guarded; a non-admin session would
+    // redirect to `/plataforma/inicio` and the scan above would silently audit the
+    // home page instead of the admin area. This pins the intent: the admin page
+    // itself must render.
+    expect(document.querySelector('app-admin')).not.toBeNull();
+    expect(document.querySelector('h1')?.textContent?.trim()).toBe('Admin');
   });
 
   it('keeps focus order in reading order: no explicit positive tabindex on any route', async () => {

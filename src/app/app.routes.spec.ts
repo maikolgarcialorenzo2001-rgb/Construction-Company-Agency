@@ -11,6 +11,12 @@ const COMPANY_SESSION = JSON.stringify({
   user: { userId: 'company-1', email: 'norte@demo.test', role: 'company' }
 });
 
+/** A seeded admin session: `/plataforma/admin` is additionally role-guarded. */
+const ADMIN_SESSION = JSON.stringify({
+  token: 'mock-token-admin-1',
+  user: { userId: 'admin-1', email: 'admin@demo.test', role: 'admin' }
+});
+
 /** The marketing route table, in registration order. */
 const MARKETING_ROUTE_TABLE = [
   { path: '', kind: 'home' },
@@ -24,10 +30,11 @@ const MARKETING_ROUTE_TABLE = [
   { path: 'presupuesto', kind: 'static' }
 ] as const;
 
-/** The seven children of the single `plataforma` grouping route, in registration order. */
+/** The eight children of the single `plataforma` grouping route, in registration order. */
 const PLATFORM_CHILD_PATHS = [
   '',
   'inicio',
+  'admin',
   'trabajos',
   'trabajos/:id',
   'login',
@@ -77,16 +84,31 @@ describe('app routes', () => {
       expect(noindex.map((r) => r.path)).toEqual(['plataforma', '**']);
     });
 
-    it('registers the seven platform children, each lazy and noindex', () => {
+    it('registers the eight platform children, each lazy and noindex', () => {
       const platform = routes.find((r) => r.path === 'plataforma');
 
       expect(platform, 'plataforma must be a top-level grouping route').toBeDefined();
       expect(platform?.children?.map((child) => child.path)).toEqual([...PLATFORM_CHILD_PATHS]);
 
+      // The admin child follows inicio (design: child order inicio → admin).
+      const children = platform?.children ?? [];
+      expect(children.findIndex((child) => child.path === 'admin')).toBe(
+        children.findIndex((child) => child.path === 'inicio') + 1
+      );
+
       for (const child of platform?.children ?? []) {
         expect(child.data?.['seo']?.indexable, `${child.path} must be noindex`).toBe(false);
         expect(typeof child.loadComponent, `${child.path} must be lazy`).toBe('function');
       }
+    });
+
+    it('role-guards the admin child to the admin role only', () => {
+      const admin = routes
+        .find((r) => r.path === 'plataforma')
+        ?.children?.find((child) => child.path === 'admin');
+
+      expect(admin?.data?.['roles']).toEqual(['admin']);
+      expect(admin?.canActivate, 'admin must compose authGuard and roleGuard').toHaveLength(2);
     });
 
     it('leaves the marketing table unguarded: no canActivate, canActivateChild or resolve', () => {
@@ -181,6 +203,42 @@ describe('app routes', () => {
 
       const element = await goto('/proceso');
       expect(element.querySelector('app-process')).toBeTruthy();
+    });
+  });
+
+  describe('admin child navigation', () => {
+    let harness: RouterTestingHarness;
+
+    const goto = async (url: string): Promise<HTMLElement> => {
+      await harness.navigateByUrl(url);
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+      return harness.fixture.nativeElement as HTMLElement;
+    };
+
+    afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
+
+    it('resolves /plataforma/admin to the admin page for an admin session', async () => {
+      localStorage.setItem(SESSION_STORAGE_KEY, ADMIN_SESSION);
+      TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+      harness = await RouterTestingHarness.create();
+
+      const element = await goto('/plataforma/admin');
+
+      expect(TestBed.inject(Router).url).toBe('/plataforma/admin');
+      expect(element.querySelector('app-admin')).toBeTruthy();
+    });
+
+    it('redirects a company session from /plataforma/admin to the platform home', async () => {
+      localStorage.setItem(SESSION_STORAGE_KEY, COMPANY_SESSION);
+      TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+      harness = await RouterTestingHarness.create();
+
+      const element = await goto('/plataforma/admin');
+
+      expect(TestBed.inject(Router).url).toBe('/plataforma/inicio');
+      expect(element.querySelector('app-platform-home')).toBeTruthy();
+      expect(element.querySelector('app-admin')).toBeNull();
     });
   });
 });

@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-13 (corte de sesión)** · HEAD `ae7c491` · adelante **81** de `origin/main` (nada pusheado).
+> Última actualización: **2026-10-14** (p12-admin: WU1–WU3 aplicados localmente; falta verify + archive) · nada pusheado a origin.
 > Este archivo reemplaza al anterior (se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -9,11 +9,11 @@
 
 - Angular 22, static SSR, **zoneless signals**, TS strict, Tailwind v4. **BUN ONLY** (`bunx ng ...`).
 - **Strict TDD activo** (`bunx ng test --watch=false`).
-- Gate verde: **578 tests / 62 files** · lint limpio · build verde (21 rutas).
+- Gate verde: **620 tests / 66 files** · lint limpio · build verde (21 rutas prerenderizadas).
 - `contracts/openapi.yaml` **READ-ONLY**. Roles `worker | company | admin` (sin 4º rol).
-- `git status`: limpio salvo `?? openspec/changes/p12-admin/` (artefactos SDD del cambio en curso, **sin commitear**). `angular.json` revertido (no se commitea).
+- `git status`: limpio tras la aplicación de p12-admin (WU1–WU3); `angular.json` revertido (no se commitea).
 - Rutas de plataforma: `/plataforma` = feed; `/plataforma/inicio` = **home por rol** (nuevo en p11).
-- `/plataforma` es **client-only** y detrás de `authGuard`. Solo existe `authGuard`: no hay `roleGuard` ni `data.roles` (el gating por rol queda diferido a `p12-admin`).
+- `/plataforma` es **client-only** y detrás de `authGuard`. Existe `roleGuard` con `data.roles` (p12-admin); `/plataforma/admin` usa `[authGuard, roleGuard]` con `data.roles: ['admin']`.
 
 ## 2. Cómo leemos el plan
 
@@ -53,16 +53,16 @@ con commits locales secuenciales sobre `main` (un work-unit commit por unidad, m
 
 ## 4. EN CURSO — retomar acá
 
-**Paso 7 — Área admin** (`p12-admin`) — **PLANIFICADO, SIN CÓDIGO TODAVÍA**
-- Planificación **completa en disco** (`openspec/changes/p12-admin/`, **untracked**): `explore.md`, `proposal.md`, `specs/` (5 deltas), `design.md`, `tasks.md`.
-- Fases SDD hechas: explore (#956), propose (#958), spec (#959), design (#960), tasks (#961). Engram project `construction-company-agency`.
-- **FALTA: aplicar WU1 → WU2 → WU3 (stacked-to-main), y después verify + archive.** El primer `sdd-apply` de WU1 quedó **cancelado sin cambios** (no hay apply-progress ni código p12 commiteado).
-  - **WU1** = `roleGuard` (`core/platform/auth/role.guard.ts` + spec) + cuenta admin demo (`admin@demo.test`/`demo1234`/`userId admin-1`; `fixtures.spec.ts:159` 5→6) + copy de login.
-  - **WU2** = capa de datos admin: `DirectoryUser` + `AdminGateway`/token + `MockAdminGateway` (sin `password`) + `AdminStore` + `AdminConfigStore` (+ specs).
-  - **WU3** = `AdminPage` + ruta `/plataforma/admin` (`canActivate: [authGuard, roleGuard]`, `data.roles:['admin']`, índice 2 tras `inicio`) + `ADMIN_NAV` + link en el home admin + specs (`app.routes/auth.guard/a11y/release-matrix/login.page`) + update HANDOFF.
+**Paso 7 — Área admin** (`p12-admin`) — **CÓDIGO COMPLETO (WU1+WU2+WU3); falta verify + archive**
+- Planificación y código en disco (`openspec/changes/p12-admin/`): `explore.md`, `proposal.md`, `specs/` (5 deltas), `design.md`, `tasks.md`.
+- Fases SDD hechas: explore (#956), propose (#958), spec (#959), design (#960), tasks (#961), apply (#963 apply-progress, WU1+WU2+WU3). Engram project `construction-company-agency`.
+- **FALTA: verify + archive** (los 3 WUs ya están aplicados; WU1/WU2 commiteados, WU3 queda para commit del orquestador).
+  - **WU1** = `roleGuard` (`core/platform/auth/role.guard.ts` + spec) + cuenta admin demo (`admin@demo.test`/`demo1234`/`userId admin-1`; `fixtures.spec.ts:159` 5→6) + copy de login. ✅
+  - **WU2** = capa de datos admin: `DirectoryUser` + `AdminGateway`/token + `MockAdminGateway` (sin `password`) + `AdminStore` + `AdminConfigStore` (+ specs). ✅
+  - **WU3** = `AdminPage` + ruta `/plataforma/admin` (`canActivate: [authGuard, roleGuard]`, `data.roles:['admin']`, índice 2 tras `inicio`) + `ADMIN_NAV` + link en el home admin + specs (`app.routes/auth.guard/a11y/release-matrix`) + HANDOFF. ✅
 - Scope demo: **directorio read-only + config local (localStorage)**; SIN mutación de rol. Contrato intacto.
-- ⚠️ R3: `app.a11y.spec.ts` y `app.release-matrix.spec.ts` siembran sesión **company** → cambiar a **admin** para que la fila `/plataforma/admin` no redirija en silencio. ⚠️ NO meter `DirectoryUser`/`AdminGateway` en `contract-conformance.ts`.
-- Forecast: **~460–680 líneas**, riesgo Alto → 3 WUs apilados (ya definidos en `tasks.md`).
+- ✅ R3 resuelto: `app.a11y.spec.ts` y `app.release-matrix.spec.ts` siembran sesión **admin** y tienen un pin que exige `app-admin` (evita el redirect silencioso). ⚠️ NO meter `DirectoryUser`/`AdminGateway` en `contract-conformance.ts`.
+- Forecast: **~460–680 líneas**, riesgo Alto → 3 WUs apilados.
 
 **Paso 8 — Modo previa estática** (`p13-modo-previa`)
 - Alcance: switcher de rol (entrar como cualquiera desde fixtures, sin registro) + (opcional) showcase

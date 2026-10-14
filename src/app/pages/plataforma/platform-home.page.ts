@@ -23,7 +23,8 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
  *               session `userId`, with each job title resolved from `JobsStore`.
  * - `company` → "Mis vacantes" filtered client-side by `companyId === userId`,
  *               plus a "Publicar novedad" affordance.
- * - `admin`   → a minimal overview placeholder (full tooling deferred to `p12-admin`).
+ * - `admin`   → a short overview plus a link into `/plataforma/admin` (full tooling
+ *               lives in the admin area, not on the home).
  *
  * A single `effect` tracks `session.currentUser()`; the store calls run inside
  * `untracked()` so their signal reads/writes never feed back into the effect
@@ -97,9 +98,15 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
         }
         @case ('admin') {
           <p data-testid="home-admin-placeholder" class="mt-8 text-ink-600">
-            Panel de administración en preparación. Las herramientas de gestión llegan en la
-            próxima iteración.
+            Desde el área de administración gestionás las cuentas de demo y la configuración local de
+            la plataforma.
           </p>
+          <a
+            data-testid="home-admin-link"
+            routerLink="/plataforma/admin"
+            class="mt-4 inline-block rounded-lg bg-ink-900 px-4 py-2 font-medium text-white"
+            >Ir al área de administración</a
+          >
         }
       }
     </section>

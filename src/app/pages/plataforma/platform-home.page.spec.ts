@@ -71,6 +71,7 @@ describe('PlatformHomePage', () => {
     // The role fork must not leak another role's section.
     expect(element.textContent).not.toContain('Mis vacantes');
     expect(element.querySelector('[data-testid="home-admin-placeholder"]')).toBeNull();
+    expect(element.querySelector('a[href="/plataforma/admin"]')).toBeNull();
   });
 
   it('shows the worker empty state when the worker has no applications', async () => {
@@ -118,6 +119,7 @@ describe('PlatformHomePage', () => {
     expect(publish?.textContent).toContain('Publicar novedad');
 
     expect(element.textContent).not.toContain('Mis postulaciones');
+    expect(element.querySelector('a[href="/plataforma/admin"]')).toBeNull();
   });
 
   it('shows the company empty state while keeping the publish affordance', async () => {
@@ -140,7 +142,7 @@ describe('PlatformHomePage', () => {
     expect(element.querySelector('[data-testid="home-publish"]')).not.toBeNull();
   });
 
-  it('renders a minimal admin placeholder with no management controls', async () => {
+  it('renders the admin overview with a link into the admin area', async () => {
     seedSession('admin', 'admin-1');
     const fixture = TestBed.createComponent(PlatformHomePage);
     fixture.detectChanges();
@@ -152,6 +154,10 @@ describe('PlatformHomePage', () => {
     expect(element.querySelectorAll('[data-testid="home-application"]')).toHaveLength(0);
     expect(element.querySelectorAll('[data-testid="home-vacancy"]')).toHaveLength(0);
     expect(element.querySelector('[data-testid="home-publish"]')).toBeNull();
+
+    const link = element.querySelector('a[href="/plataforma/admin"]');
+    expect(link).not.toBeNull();
+    expect(link?.textContent?.trim().length).toBeGreaterThan(0);
 
     const headings = element.querySelectorAll('h1');
     expect(headings).toHaveLength(1);

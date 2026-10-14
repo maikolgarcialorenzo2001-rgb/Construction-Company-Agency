@@ -7,10 +7,10 @@ import { App } from './app';
 import { routes } from './app.routes';
 import { SESSION_STORAGE_KEY } from './core/platform/auth/session.service';
 
-/** A seeded company session: the platform working pages are guarded since S5. */
-const COMPANY_SESSION = JSON.stringify({
-  token: 'mock-token-company-1',
-  user: { userId: 'company-1', email: 'norte@demo.test', role: 'company' }
+/** A seeded admin session: it satisfies the platform `authGuard` and the admin `roleGuard`. */
+const ADMIN_SESSION = JSON.stringify({
+  token: 'mock-token-admin-1',
+  user: { userId: 'admin-1', email: 'admin@demo.test', role: 'admin' }
 });
 
 /**
@@ -43,6 +43,7 @@ const ROUTE_CONTRACTS: readonly RouteContract[] = [
   { path: '/presupuesto', images: 0, priority: 0, cta: false },
   { path: '/plataforma', images: 0, priority: 0, cta: false },
   { path: '/plataforma/inicio', images: 0, priority: 0, cta: false },
+  { path: '/plataforma/admin', images: 0, priority: 0, cta: false },
   { path: '/plataforma/trabajos', images: 0, priority: 0, cta: false },
   { path: '/plataforma/trabajos/7', images: 0, priority: 0, cta: false },
   { path: '/plataforma/login', images: 0, priority: 0, cta: false },
@@ -56,9 +57,10 @@ describe('release matrix', () => {
   let router: Router;
 
   beforeEach(async () => {
-    // The platform working pages are guarded since S5: seed a session so every
-    // row renders its real page instead of redirecting to the login screen.
-    localStorage.setItem(SESSION_STORAGE_KEY, COMPANY_SESSION);
+    // The platform working pages are guarded since S5, and `/plataforma/admin`
+    // since p12: seed an ADMIN session so every row renders its real page (admin
+    // satisfies both `authGuard` and the admin `roleGuard`).
+    localStorage.setItem(SESSION_STORAGE_KEY, ADMIN_SESSION);
     TestBed.configureTestingModule({
       imports: [App],
       // `withComponentInputBinding` is how a detail page receives its `:slug`, exactly
@@ -98,6 +100,16 @@ describe('release matrix', () => {
       expect(first?.classList.contains('skip-link'), `${path} skip link class`).toBe(true);
       expect(first?.getAttribute('href'), `${path} skip link target`).toBe('#main');
     }
+  });
+
+  it('renders the admin area on its matrix row, not a role redirect', async () => {
+    const element = await goto('/plataforma/admin');
+
+    // The admin row is role-guarded; a non-admin session would redirect to
+    // `/plataforma/inicio` and the matrix above would silently audit the home page
+    // in the admin row's place. Pin the real page.
+    expect(element.querySelector('app-admin')).toBeTruthy();
+    expect(main(element).querySelector('h1')?.textContent?.trim()).toBe('Admin');
   });
 
   it('gives every route exactly one h1, inside the routed content', async () => {

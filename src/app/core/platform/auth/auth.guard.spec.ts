@@ -88,7 +88,7 @@ describe('authGuard', () => {
     const children = platform?.children ?? [];
 
     const guarded = children.filter((child) => child.canActivate).map((child) => child.path);
-    expect(guarded).toEqual(['', 'inicio', 'trabajos', 'trabajos/:id', 'perfil']);
+    expect(guarded).toEqual(['', 'inicio', 'admin', 'trabajos', 'trabajos/:id', 'perfil']);
 
     for (const open of children.filter((child) => child.path === 'login' || child.path === 'registro')) {
       expect(open.canActivate, `${open.path} must stay open`).toBeUndefined();

@@ -24,13 +24,26 @@ const COMPANY_NAV: readonly NavItem[] = [
 ];
 
 /**
+ * Admin destinations: the worker items plus a **leading** `Admin` item. It is its
+ * own literal table on purpose (design D9 / R4): the spec forbids admin sharing the
+ * `worker` navigation table, so admin never references `WORKER_NAV`.
+ */
+const ADMIN_NAV: readonly NavItem[] = [
+  { slug: 'admin', label: 'Admin', path: '/plataforma/admin' },
+  { slug: 'inicio', label: 'Inicio', path: '/plataforma/inicio' },
+  { slug: 'feed', label: 'Novedades', path: '/plataforma' },
+  { slug: 'trabajos', label: 'Trabajos', path: '/plataforma/trabajos' },
+  { slug: 'perfil', label: 'Mi perfil', path: '/plataforma/perfil' }
+];
+
+/**
  * Exhaustive role table: a future 4th `Role` becomes a compile error here, not a
- * silent runtime gap. `admin` intentionally points at the worker table.
+ * silent runtime gap.
  */
 const PLATFORM_NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
   worker: WORKER_NAV,
   company: COMPANY_NAV,
-  admin: WORKER_NAV
+  admin: ADMIN_NAV
 };
 
 /**

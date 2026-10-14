@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from './core/platform/auth/auth.guard';
+import { roleGuard } from './core/platform/auth/role.guard';
 import { PLATFORM_PREFIX } from './core/platform/platform-paths';
 
 /**
@@ -119,6 +120,18 @@ export const routes: Routes = [
         ),
         loadComponent: () =>
           import('./pages/plataforma/platform-home.page').then((m) => m.PlatformHomePage)
+      },
+      {
+        path: 'admin',
+        canActivate: [authGuard, roleGuard],
+        data: {
+          roles: ['admin'],
+          ...NOINDEX(
+            'Admin | Plataforma | Constructora Ejemplo',
+            'Área de administración de la plataforma de Constructora Ejemplo: directorio de cuentas y configuración de demo.'
+          )
+        },
+        loadComponent: () => import('./pages/plataforma/admin.page').then((m) => m.AdminPage)
       },
       {
         path: 'trabajos',

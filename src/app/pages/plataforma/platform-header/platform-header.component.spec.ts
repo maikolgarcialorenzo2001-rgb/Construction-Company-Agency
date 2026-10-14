@@ -68,8 +68,14 @@ describe('PlatformHeaderComponent', () => {
     expect(navLabels(create('worker'))).toEqual(['Inicio', 'Novedades', 'Trabajos', 'Mi perfil']);
   });
 
-  it('renders the worker labels for an admin role', () => {
-    expect(navLabels(create('admin'))).toEqual(['Inicio', 'Novedades', 'Trabajos', 'Mi perfil']);
+  it('renders the admin labels with Admin leading the worker destinations', () => {
+    expect(navLabels(create('admin'))).toEqual([
+      'Admin',
+      'Inicio',
+      'Novedades',
+      'Trabajos',
+      'Mi perfil'
+    ]);
   });
 
   it('renders the relabeled company work nav', () => {

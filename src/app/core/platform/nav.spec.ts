@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { platformNavFor } from './nav';
 
-/** The three roles the session can resolve. `null` is the anonymous visitor. */
-const ROLES = ['worker', 'company', 'admin'] as const;
-
-const labelsFor = (role: (typeof ROLES)[number]): string[] =>
+const labelsFor = (role: 'worker' | 'company' | 'admin'): string[] =>
   platformNavFor(role).map((item) => item.label);
 
 /**
@@ -25,12 +22,13 @@ describe('platformNavFor', () => {
     expect(labelsFor('company')).toEqual(['Inicio', 'Novedades', 'Vacantes', 'Mi empresa']);
   });
 
-  it('shares the worker item set with admin (same array reference)', () => {
-    expect(platformNavFor('admin')).toBe(platformNavFor('worker'));
+  it('gives admin its own item table, not the worker array', () => {
+    expect(platformNavFor('admin')).not.toBe(platformNavFor('worker'));
+    expect(labelsFor('admin')).toEqual(['Admin', 'Inicio', 'Novedades', 'Trabajos', 'Mi perfil']);
   });
 
-  it('keeps the destination slugs invariant across roles', () => {
-    for (const role of ROLES) {
+  it('keeps the destination slugs invariant across worker and company', () => {
+    for (const role of ['worker', 'company'] as const) {
       expect(platformNavFor(role).map((item) => item.slug)).toEqual([
         'inicio',
         'feed',
@@ -40,8 +38,18 @@ describe('platformNavFor', () => {
     }
   });
 
-  it('keeps the destination paths invariant across roles', () => {
-    for (const role of ROLES) {
+  it('leads the admin slugs with the admin destination', () => {
+    expect(platformNavFor('admin').map((item) => item.slug)).toEqual([
+      'admin',
+      'inicio',
+      'feed',
+      'trabajos',
+      'perfil'
+    ]);
+  });
+
+  it('keeps the destination paths invariant across worker and company', () => {
+    for (const role of ['worker', 'company'] as const) {
       expect(platformNavFor(role).map((item) => item.path)).toEqual([
         '/plataforma/inicio',
         '/plataforma',
@@ -49,5 +57,15 @@ describe('platformNavFor', () => {
         '/plataforma/perfil'
       ]);
     }
+  });
+
+  it('leads the admin paths with /plataforma/admin', () => {
+    expect(platformNavFor('admin').map((item) => item.path)).toEqual([
+      '/plataforma/admin',
+      '/plataforma/inicio',
+      '/plataforma',
+      '/plataforma/trabajos',
+      '/plataforma/perfil'
+    ]);
   });
 });
