@@ -184,6 +184,23 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'previa',
+    data: NOINDEX(
+      'Modo previa | Constructora Ejemplo',
+      'Recorrido de demostración de la plataforma de Constructora Ejemplo: novedades, búsquedas y perfiles de ejemplo, sin registro y fuera de buscadores.'
+    ),
+    children: [
+      {
+        path: '',
+        data: NOINDEX(
+          'Así se ve la plataforma | Constructora Ejemplo',
+          'Vista previa de la plataforma de Constructora Ejemplo con datos de ejemplo: feed de obra, búsquedas laborales abiertas y perfiles de demostración.'
+        ),
+        loadComponent: () => import('./pages/previa/previa.page').then((m) => m.PreviaPage)
+      }
+    ]
+  },
+  {
     path: '**',
     data: NOINDEX(
       'Página no encontrada | Constructora Ejemplo',

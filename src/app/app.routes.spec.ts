@@ -42,10 +42,11 @@ const PLATFORM_CHILD_PATHS = [
   'perfil'
 ] as const;
 
-/** The es-AR route table, in registration order. `plataforma` sits before `**`. */
+/** The es-AR route table, in registration order. `plataforma` and `previa` sit before `**`. */
 const ROUTE_TABLE = [
   ...MARKETING_ROUTE_TABLE,
   { path: 'plataforma', kind: 'platform' },
+  { path: 'previa', kind: 'preview' },
   { path: '**', kind: 'not-found' }
 ] as const;
 
@@ -75,13 +76,14 @@ describe('app routes', () => {
     });
 
     it('marks marketing routes indexable and the platform subtree plus wildcard noindex', () => {
-      const marketing = routes.filter((r) => r.path !== 'plataforma' && r.path !== '**');
+      const noindexPaths = new Set(['plataforma', 'previa', '**']);
+      const marketing = routes.filter((r) => !noindexPaths.has(r.path ?? ''));
       for (const route of marketing) {
         expect(route.data?.['seo']?.indexable, `${route.path} must be indexable`).toBe(true);
       }
 
       const noindex = routes.filter((r) => r.data?.['seo']?.indexable === false);
-      expect(noindex.map((r) => r.path)).toEqual(['plataforma', '**']);
+      expect(noindex.map((r) => r.path)).toEqual(['plataforma', 'previa', '**']);
     });
 
     it('registers the eight platform children, each lazy and noindex', () => {
@@ -102,6 +104,26 @@ describe('app routes', () => {
       }
     });
 
+    it('registers the preview grouping with a single lazy, noindex, unguarded default child', () => {
+      const previa = routes.find((r) => r.path === 'previa');
+
+      expect(previa, 'previa must be a top-level grouping route').toBeDefined();
+      expect(previa?.data?.['seo']?.indexable).toBe(false);
+      expect(previa?.children?.map((child) => child.path)).toEqual(['']);
+
+      expect(previa?.canActivate, 'previa must stay unguarded').toBeUndefined();
+      expect(previa?.canActivateChild).toBeUndefined();
+      expect(previa?.resolve).toBeUndefined();
+
+      for (const child of previa?.children ?? []) {
+        expect(child.data?.['seo']?.indexable, `${child.path} must be noindex`).toBe(false);
+        expect(typeof child.loadComponent, `${child.path} must be lazy`).toBe('function');
+        expect(child.canActivate, `${child.path} must stay unguarded`).toBeUndefined();
+        expect(child.canActivateChild).toBeUndefined();
+        expect(child.resolve).toBeUndefined();
+      }
+    });
+
     it('role-guards the admin child to the admin role only', () => {
       const admin = routes
         .find((r) => r.path === 'plataforma')
@@ -111,7 +133,7 @@ describe('app routes', () => {
       expect(admin?.canActivate, 'admin must compose authGuard and roleGuard').toHaveLength(2);
     });
 
-    it('leaves the marketing table unguarded: no canActivate, canActivateChild or resolve', () => {
+    it('leaves the marketing and preview tables unguarded: no canActivate, canActivateChild or resolve', () => {
       for (const route of routes.filter((candidate) => candidate.path !== 'plataforma')) {
         expect(route.canActivate).toBeUndefined();
         expect(route.canActivateChild).toBeUndefined();
@@ -162,6 +184,7 @@ describe('app routes', () => {
       ['/testimonios', 'app-testimonials'],
       ['/nosotros', 'app-about'],
       ['/presupuesto', 'app-quote'],
+      ['/previa', 'app-previa'],
       ['/plataforma', 'app-platform-feed'],
       ['/plataforma/inicio', 'app-platform-home'],
       ['/plataforma/trabajos', 'app-platform-jobs-list'],

@@ -41,6 +41,7 @@ const ROUTE_CONTRACTS: readonly RouteContract[] = [
   { path: '/testimonios', images: 0, priority: 0, cta: true },
   { path: '/nosotros', images: 0, priority: 0, cta: true },
   { path: '/presupuesto', images: 0, priority: 0, cta: false },
+  { path: '/previa', images: 0, priority: 0, cta: false },
   { path: '/plataforma', images: 0, priority: 0, cta: false },
   { path: '/plataforma/inicio', images: 0, priority: 0, cta: false },
   { path: '/plataforma/admin', images: 0, priority: 0, cta: false },
@@ -100,6 +101,21 @@ describe('release matrix', () => {
       expect(first?.classList.contains('skip-link'), `${path} skip link class`).toBe(true);
       expect(first?.getAttribute('href'), `${path} skip link target`).toBe('#main');
     }
+  });
+
+  it('locks the marketing chrome on /previa, never the platform header', async () => {
+    const element = await goto('/previa');
+
+    expect(element.querySelector('app-previa')).toBeTruthy();
+    // R2 (accepted): `/previa` is a public site page, so it keeps the marketing chrome.
+    expect(
+      element.querySelector('app-header'),
+      '/previa must keep the marketing header'
+    ).not.toBeNull();
+    expect(
+      element.querySelector('app-platform-header'),
+      '/previa must not swap to the platform header'
+    ).toBeNull();
   });
 
   it('renders the admin area on its matrix row, not a role redirect', async () => {

@@ -26,6 +26,7 @@ const TARGET_PATHS = [
   '/testimonios',
   '/nosotros',
   '/presupuesto',
+  '/previa',
   '/plataforma',
   '/plataforma/inicio',
   '/plataforma/admin',
@@ -152,6 +153,15 @@ describe('accessibility scan (axe-core)', () => {
     // Release gate, not a build gate: the same rules keep running on every route.
     console.info(`[a11y] axe-core scan, ${AXE_RULES.length} rules, ${TARGET_PATHS.length} routes:\n${summary.join('\n')}`);
   }, 30000);
+
+  it('scans the preview showcase on /previa, not the 404 route', async () => {
+    await goto('/previa');
+
+    // Without the `previa` route the wildcard would answer `/previa` and the scan above
+    // would silently audit the 404 page twice. This pins the intent: the showcase must render.
+    expect(document.querySelector('app-previa')).not.toBeNull();
+    expect(document.querySelector('h1')?.textContent?.trim()).toBe('Modo previa');
+  });
 
   it('scans the authenticated feed on /plataforma, not a login redirect', async () => {
     await goto('/plataforma');

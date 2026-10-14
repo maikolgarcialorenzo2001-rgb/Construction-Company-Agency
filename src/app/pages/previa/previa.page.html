@@ -1,0 +1,101 @@
+<section class="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+  <h1 class="text-display font-semibold text-ink-900">Modo previa</h1>
+
+  <div class="mt-6">
+    <app-section-heading [title]="heading.title" [lead]="heading.lead" />
+  </div>
+
+  @switch (vm().role) {
+    @case ('worker') {
+      <section class="mt-10" aria-labelledby="previa-worker-heading">
+        <h2 id="previa-worker-heading" class="text-xl font-semibold text-ink-900">
+          Postulaciones de un trabajador
+        </h2>
+        <ul data-testid="previa-applications" class="mt-4 flex list-none flex-col gap-3 p-0">
+          @for (row of vm().applications; track row.application.id) {
+            <li data-testid="previa-application" class="surface-card p-4">
+              <p class="font-medium text-ink-900">{{ row.label }}</p>
+              @if (row.application.message) {
+                <p class="mt-1 text-sm text-ink-600">{{ row.application.message }}</p>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @case ('company') {
+      <section class="mt-10" aria-labelledby="previa-company-heading">
+        <h2 id="previa-company-heading" class="text-xl font-semibold text-ink-900">
+          Vacantes publicadas por una empresa
+        </h2>
+        <ul data-testid="previa-vacancies" class="mt-4 flex list-none flex-col gap-3 p-0">
+          @for (vacancy of vm().vacancies; track vacancy.id) {
+            <li data-testid="previa-vacancy" class="surface-card p-4">
+              <p class="font-medium text-ink-900">{{ vacancy.title }}</p>
+              @if (vacancy.location) {
+                <p class="mt-1 text-sm text-ink-600">{{ vacancy.location }}</p>
+              }
+              <p class="mt-1 text-sm font-medium text-accent-700">
+                {{ vacancy.status === 'open' ? 'Abierta' : 'Cerrada' }}
+              </p>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @case ('admin') {
+      <section class="mt-10" aria-labelledby="previa-admin-heading">
+        <h2 id="previa-admin-heading" class="text-xl font-semibold text-ink-900">
+          Directorio de cuentas de demostración
+        </h2>
+        <ul data-testid="previa-directory" class="mt-4 flex list-none flex-col gap-3 p-0">
+          @for (row of vm().directory; track row.userId) {
+            <li data-testid="previa-directory-row" class="surface-card p-4">
+              <p class="font-medium text-ink-900">{{ row.email }}</p>
+              <p class="mt-1 text-sm text-ink-600">{{ roleLabel(row.role) }}</p>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @default {
+      <section class="mt-10" aria-labelledby="previa-feed-heading">
+        <h2 id="previa-feed-heading" class="text-xl font-semibold text-ink-900">Novedades de obra</h2>
+        <ul class="mt-4 flex list-none flex-col gap-3 p-0">
+          @for (post of vm().feed; track post.id) {
+            <li data-testid="previa-feed-post" class="surface-card p-4">
+              <p class="text-ink-700">{{ post.content }}</p>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="mt-10" aria-labelledby="previa-jobs-heading">
+        <h2 id="previa-jobs-heading" class="text-xl font-semibold text-ink-900">
+          Búsquedas laborales abiertas
+        </h2>
+        <ul class="mt-4 flex list-none flex-col gap-3 p-0">
+          @for (job of vm().jobs; track job.id) {
+            <li data-testid="previa-job" class="surface-card p-4">
+              <p class="font-medium text-ink-900">{{ job.title }}</p>
+              @if (job.location) {
+                <p class="mt-1 text-sm text-ink-600">{{ job.location }}</p>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="mt-10 grid gap-6 sm:grid-cols-2" aria-label="Perfiles de ejemplo">
+        <div data-testid="previa-worker" class="surface-card p-6">
+          <h2 class="text-lg font-semibold text-ink-900">{{ vm().worker?.fullName }}</h2>
+          <p class="mt-1 text-sm text-ink-600">{{ vm().worker?.bio }}</p>
+        </div>
+        <div data-testid="previa-company" class="surface-card p-6">
+          <h2 class="text-lg font-semibold text-ink-900">{{ vm().company?.name }}</h2>
+          <p class="mt-1 text-sm text-ink-600">{{ vm().company?.description }}</p>
+        </div>
+      </section>
+    }
+  }
+</section>
