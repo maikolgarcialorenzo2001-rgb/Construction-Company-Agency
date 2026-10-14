@@ -104,12 +104,12 @@ describe('app routes', () => {
       }
     });
 
-    it('registers the preview grouping with a single lazy, noindex, unguarded default child', () => {
+    it('registers the preview grouping with lazy, noindex, unguarded default and :role children', () => {
       const previa = routes.find((r) => r.path === 'previa');
 
       expect(previa, 'previa must be a top-level grouping route').toBeDefined();
       expect(previa?.data?.['seo']?.indexable).toBe(false);
-      expect(previa?.children?.map((child) => child.path)).toEqual(['']);
+      expect(previa?.children?.map((child) => child.path)).toEqual(['', ':role']);
 
       expect(previa?.canActivate, 'previa must stay unguarded').toBeUndefined();
       expect(previa?.canActivateChild).toBeUndefined();
@@ -185,6 +185,7 @@ describe('app routes', () => {
       ['/nosotros', 'app-about'],
       ['/presupuesto', 'app-quote'],
       ['/previa', 'app-previa'],
+      ['/previa/worker', 'app-previa'],
       ['/plataforma', 'app-platform-feed'],
       ['/plataforma/inicio', 'app-platform-home'],
       ['/plataforma/trabajos', 'app-platform-jobs-list'],

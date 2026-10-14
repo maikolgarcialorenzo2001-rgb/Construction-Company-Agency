@@ -197,6 +197,14 @@ export const routes: Routes = [
           'Vista previa de la plataforma de Constructora Ejemplo con datos de ejemplo: feed de obra, búsquedas laborales abiertas y perfiles de demostración.'
         ),
         loadComponent: () => import('./pages/previa/previa.page').then((m) => m.PreviaPage)
+      },
+      {
+        path: ':role',
+        data: NOINDEX(
+          'Así se ve la plataforma | Constructora Ejemplo',
+          'Vista previa por rol de la plataforma de Constructora Ejemplo con datos de ejemplo: postulaciones, vacantes o directorio, fuera de buscadores.'
+        ),
+        loadComponent: () => import('./pages/previa/previa.page').then((m) => m.PreviaPage)
       }
     ]
   },

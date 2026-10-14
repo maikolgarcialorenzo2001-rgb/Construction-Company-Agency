@@ -1,0 +1,51 @@
+<section
+  data-testid="preview-role-switcher"
+  class="mt-12 border-t border-ink-900/10 pt-8"
+  aria-labelledby="preview-role-switcher-heading"
+>
+  <h2 id="preview-role-switcher-heading" class="text-xl font-semibold text-ink-900">
+    Entrá con una cuenta de demostración
+  </h2>
+  <p class="mt-2 max-w-2xl text-ink-600">
+    Elegí una cuenta para recorrer la plataforma con datos de ejemplo. No se crea ninguna cuenta y
+    no se envía nada a un servidor.
+  </p>
+
+  <ul data-testid="preview-account-list" class="mt-6 flex list-none flex-col gap-3 p-0">
+    @for (account of accounts; track account.userId) {
+      <li
+        data-testid="preview-account"
+        class="surface-card flex flex-wrap items-center justify-between gap-4 p-4"
+      >
+        <div>
+          <p class="font-medium text-ink-900">{{ account.email }}</p>
+          <p class="text-sm text-ink-600">{{ roleLabel(account.role) }}</p>
+        </div>
+        <button
+          type="button"
+          data-testid="preview-enter"
+          class="rounded-lg bg-ink-900 px-4 py-2 font-medium text-white"
+          [attr.aria-label]="'Entrar como ' + account.email"
+          (click)="enter(account)"
+        >
+          Entrar
+        </button>
+      </li>
+    }
+  </ul>
+
+  <nav class="mt-8" aria-label="Vistas de la previa por rol">
+    <ul class="flex list-none flex-wrap gap-4 p-0">
+      @for (role of roles; track role) {
+        <li>
+          <a
+            data-testid="preview-role-link"
+            [href]="'/previa/' + role"
+            class="font-medium text-ink-900 underline-offset-4 hover:underline"
+            >Ver como {{ roleLabel(role) }}</a
+          >
+        </li>
+      }
+    </ul>
+  </nav>
+</section>

@@ -42,18 +42,18 @@ Rollback boundary: remove `preview/*` + `pages/previa/*`, restore `app.routes.ts
 
 ### WU2 — `/previa/:role` child + server param + client-only role switcher
 **Goal:** Per-role prerendered HTML (JS-off safe) via a `:role` child + explicit `previa/:role` server entry, plus a client-only switcher over the 6 demo accounts. Reverts to WU1's static no-switcher preview.
-**Base:** WU1 | **Independently revertible:** Yes | **Lines forecast:** ~300–400 | **Status:** pending
+**Base:** WU1 | **Independently revertible:** Yes | **Lines forecast:** ~300–400 | **Status:** implemented (awaiting verify)
 
 Tasks:
-- [ ] RED: create `src/app/pages/previa/preview-role-switcher.component.spec.ts` — 6 accounts, no password rendered; click → `SessionService.login(email, 'demo1234')` + navigate `/plataforma/inicio`; no `register`; anchors to `/previa/{worker,company,admin}`; render performs no write.
-- [ ] GREEN: create `src/app/pages/previa/preview-role-switcher.component.ts` (`app-preview-role-switcher`, `.html`) — client-only demo-login controls over `DEMO_ACCOUNTS` + plain anchors; `login` + `Router.navigate`; inert during prerender.
-- [ ] Modify `src/app/app.routes.ts` — add `{ path: ':role' }` child (`NOINDEX`, lazy `PreviaPage`) to the `previa` grouping.
-- [ ] Modify `src/app/app.routes.spec.ts` — nav `/previa/worker` → `app-previa`; `:role` child lazy/noindex/unguarded.
-- [ ] RED: modify `src/app/app.routes.server.spec.ts` — `expectedCount = STATIC_BROWSER_PATHS.length + PREVIEW_ROLES.length + services.length + projects.length`; focused `previa/:role` test (Prerender + Client fallback + params === `PREVIEW_ROLES`).
-- [ ] GREEN: modify `src/app/app.routes.server.ts` — explicit `{ path: 'previa/:role', renderMode: Prerender, fallback: PrerenderFallback.Client, getPrerenderParams: () => Promise.resolve(previewRoleParams()) }`.
-- [ ] Modify `src/app/pages/previa/previa.page.spec.ts` — switcher present + labelled controls; `:role` variant renders its section.
-- [ ] Modify `src/app/app.a11y.spec.ts` — add `/previa/worker` to `TARGET_PATHS`.
-- [ ] Verify WU2 (runnable): focused specs → `bunx ng test --watch=false` (full), `bunx ng lint`, `bunx ng build` + `bun run verify:prerender`.
+- [x] RED: create `src/app/pages/previa/preview-role-switcher.component.spec.ts` — 6 accounts, no password rendered; click → `SessionService.login(email, 'demo1234')` + navigate `/plataforma/inicio`; no `register`; anchors to `/previa/{worker,company,admin}`; render performs no write.
+- [x] GREEN: create `src/app/pages/previa/preview-role-switcher.component.ts` (`app-preview-role-switcher`, `.html`) — client-only demo-login controls over `DEMO_ACCOUNTS` + plain anchors; `login` + `Router.navigate`; inert during prerender.
+- [x] Modify `src/app/app.routes.ts` — add `{ path: ':role' }` child (`NOINDEX`, lazy `PreviaPage`) to the `previa` grouping.
+- [x] Modify `src/app/app.routes.spec.ts` — nav `/previa/worker` → `app-previa`; `:role` child lazy/noindex/unguarded.
+- [x] RED: modify `src/app/app.routes.server.spec.ts` — `expectedCount = STATIC_BROWSER_PATHS.length + PREVIEW_ROLES.length + services.length + projects.length`; focused `previa/:role` test (Prerender + Client fallback + params === `PREVIEW_ROLES`).
+- [x] GREEN: modify `src/app/app.routes.server.ts` — explicit `{ path: 'previa/:role', renderMode: Prerender, fallback: PrerenderFallback.Client, getPrerenderParams: () => Promise.resolve(previewRoleParams()) }`.
+- [x] Modify `src/app/pages/previa/previa.page.spec.ts` — switcher present + labelled controls; `:role` variant renders its section.
+- [x] Modify `src/app/app.a11y.spec.ts` — add `/previa/worker` to `TARGET_PATHS`.
+- [x] Verify WU2 (runnable): focused specs → `bunx ng test --watch=false` (full), `bunx ng lint`, `bunx ng build` + `bun run verify:prerender`.
 
 Files — **NEW**: `preview-role-switcher.component.ts`, `preview-role-switcher.component.spec.ts`, `preview-role-switcher.component.html`. **MODIFIED**: `app.routes.ts`, `app.routes.spec.ts`, `app.routes.server.ts`, `app.routes.server.spec.ts`, `previa.page.*`, `app.a11y.spec.ts`. **UNCHANGED**: `scripts/verify-prerender.ts`.
 
@@ -91,4 +91,4 @@ User pre-authorized the split (no `size:exception`). Each WU ≤ 400 targeted; k
 - engram_capture_prompt: false
 
 ## next_recommended
-- sdd-apply, starting WU1 (static `/previa` + sync VM + route/spec edits)
+- sdd-verify (WU1 + WU2 implemented; gate green)

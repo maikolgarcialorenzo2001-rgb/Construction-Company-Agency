@@ -27,6 +27,7 @@ const TARGET_PATHS = [
   '/nosotros',
   '/presupuesto',
   '/previa',
+  '/previa/worker',
   '/plataforma',
   '/plataforma/inicio',
   '/plataforma/admin',

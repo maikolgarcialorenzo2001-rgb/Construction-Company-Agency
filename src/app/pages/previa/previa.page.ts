@@ -6,6 +6,7 @@ import {
   previewViewModelFor,
   resolvePreviewRole
 } from '../../core/platform/preview/preview-fixtures';
+import { PreviewRoleSwitcherComponent } from './preview-role-switcher.component';
 
 /**
  * The public, prerenderable preview at `/previa` (design D4: R1 de-risk).
@@ -17,12 +18,13 @@ import {
  * falls back to the default view.
  *
  * The page is anonymous and NOINDEX: it renders fixture data only, adds no guard and
- * writes nothing.
+ * writes nothing. The client-only `PreviewRoleSwitcherComponent` provides the demo-login
+ * affordance and the plain anchors to the prerendered role pages.
  */
 @Component({
   selector: 'app-previa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SectionHeadingComponent],
+  imports: [SectionHeadingComponent, PreviewRoleSwitcherComponent],
   templateUrl: './previa.page.html'
 })
 export class PreviaPage {

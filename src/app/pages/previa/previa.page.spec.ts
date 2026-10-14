@@ -127,4 +127,23 @@ describe('PreviaPage', () => {
     // generated `id="rootN"` (harness bookkeeping, not page output).
     expect(first.innerHTML).toBe(second.innerHTML);
   });
+
+  it('renders the client-only role switcher with one labelled control per demo account', () => {
+    const element = renderSync();
+
+    expect(element.querySelector('[data-testid="preview-role-switcher"]')).not.toBeNull();
+
+    const controls = element.querySelectorAll('[data-testid="preview-enter"]');
+    expect(controls).toHaveLength(DEMO_ACCOUNTS.length);
+    for (const control of controls) {
+      expect(control.getAttribute('aria-label')?.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps the switcher on the role variant, alongside the role section', () => {
+    const element = renderAs('worker');
+
+    expect(element.querySelector('[data-testid="preview-role-switcher"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="previa-applications"]')).not.toBeNull();
+  });
 });

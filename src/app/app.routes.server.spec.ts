@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { projects } from '../content/projects';
 import { services } from '../content/services';
+import { PREVIEW_ROLES } from './core/platform/preview/preview-fixtures';
 import { routes } from './app.routes';
 import { serverRoutes } from './app.routes.server';
 
@@ -58,9 +59,11 @@ describe('app.routes.server', () => {
     }
 
     // Content-derived expectation: static browser routes + services.length +
-    // projects.length. A new slug in src/content changes this count with zero spec
-    // edits (Req 1, Scenario: Enumeration guard).
-    const expectedCount = STATIC_BROWSER_PATHS.length + services.length + projects.length;
+    // projects.length + one entry per preview role. A new slug in src/content or a
+    // new preview role changes this count with zero spec edits (Req 1, Scenario:
+    // Enumeration guard).
+    const expectedCount =
+      STATIC_BROWSER_PATHS.length + PREVIEW_ROLES.length + services.length + projects.length;
 
     expect(expanded).toHaveLength(expectedCount);
     // Each public path is emitted exactly once — no overlapping route definitions.
@@ -138,6 +141,26 @@ describe('app.routes.server', () => {
 
     const params = await route.getPrerenderParams();
     expect(params.map((param) => param['slug'])).toEqual(projects.map((project) => project.slug));
+  });
+
+  it('prerenders previa/:role over every preview role with a client fallback', async () => {
+    const route = serverRoutes.find((candidate) => candidate.path === 'previa/:role');
+
+    expect(route).toBeDefined();
+    if (!route) {
+      return;
+    }
+
+    expect(isPrerenderWithParams(route)).toBe(true);
+    if (!isPrerenderWithParams(route)) {
+      return;
+    }
+
+    expect(route.renderMode).toBe(RenderMode.Prerender);
+    expect(route.fallback).toBe(PrerenderFallback.Client);
+
+    const params = await route.getPrerenderParams();
+    expect(params.map((param) => param['role'])).toEqual([...PREVIEW_ROLES]);
   });
 
   it('uses PrerenderFallback.Client on every param route (R5: static host has no runtime)', () => {
