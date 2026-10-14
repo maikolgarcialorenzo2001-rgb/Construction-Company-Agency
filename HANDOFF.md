@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-14** (p12-admin: WU1–WU3 aplicados localmente; falta verify + archive) · nada pusheado a origin.
+> Última actualización: **2026-10-14** (p12-admin archivado: verify PASS + spec sync) · nada pusheado a origin.
 > Este archivo reemplaza al anterior (se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -9,9 +9,9 @@
 
 - Angular 22, static SSR, **zoneless signals**, TS strict, Tailwind v4. **BUN ONLY** (`bunx ng ...`).
 - **Strict TDD activo** (`bunx ng test --watch=false`).
-- Gate verde: **620 tests / 66 files** · lint limpio · build verde (21 rutas prerenderizadas).
+- Gate verde: **621 tests / 67 files** · lint limpio · build verde (21 rutas prerenderizadas).
 - `contracts/openapi.yaml` **READ-ONLY**. Roles `worker | company | admin` (sin 4º rol).
-- `git status`: limpio tras la aplicación de p12-admin (WU1–WU3); `angular.json` revertido (no se commitea).
+- `git status`: p12-admin archivado (specs canónicas sincronizadas + carpeta movida a `archive/`) listo para commit del orquestador; `angular.json` revertido (no se commitea).
 - Rutas de plataforma: `/plataforma` = feed; `/plataforma/inicio` = **home por rol** (nuevo en p11).
 - `/plataforma` es **client-only** y detrás de `authGuard`. Existe `roleGuard` con `data.roles` (p12-admin); `/plataforma/admin` usa `[authGuard, roleGuard]` con `data.roles: ['admin']`.
 
@@ -35,6 +35,7 @@ con commits locales secuenciales sobre `main` (un work-unit commit por unidad, m
 | **p9-comentarios** | ✅ archivado (con spec sync) | `c5919a6`, `cbc8048`, `0859ae1`, `bf628d8` |
 | **p10-fixtures** | ✅ archivado (sin spec sync) | `fd28696`, `38f3725`, `0cc2d98` |
 | **p11-home-por-rol** | ✅ archivado (con spec sync) | `163887d`, `9a0745a`, `40b909c`, `09286bf`, `8e55e7e`, `fb1bc76`, `68c27c7` |
+| **p12-admin** | ✅ archivado (con spec sync) | `f4fe721`, `5b478e2`, `0f8ff7d`, `c81acef` |
 
 - **p8**: cerró warnings de p6/p7 — CTA del header bindeada a `site.promo.ctaPath`; rutas de plataforma
   (`/plataforma`, `/login`, `/registro`) agregadas al scan a11y con sesión sembrada; guard de planes;
@@ -49,20 +50,16 @@ con commits locales secuenciales sobre `main` (un work-unit commit por unidad, m
   company "Mis vacantes", admin placeholder), `login`/`registro` redirigen ahí, nav gana "Inicio". Nueva
   `ApplicationsStore` y **fix W1-p10**: `loadApplication(jobId, applicantId?)` + bloque de estado sólo para worker.
   Capabilities: NEW `platform-home`; MODIFIED `platform-jobs`, `platform-shell`, `site-shell-navigation`.
-  Sin cambio de contrato. ⚠️ `roleGuard` sigue diferido a `p12-admin`.
+  Sin cambio de contrato. `roleGuard` se difirió y llegó en p12-admin (abajo).
+- **p12**: área admin con `roleGuard` (`data.roles`) + cuenta demo admin (`admin@demo.test`/`demo1234`/`admin-1`);
+  `/plataforma/admin` con `[authGuard, roleGuard]` (`data.roles: ['admin']`), directorio read-only (sin `password`)
+  + config local en `localStorage`; `ADMIN_NAV` propio (con `Admin`) y link en el home admin. Capabilities:
+  NEW `platform-admin`; MODIFIED `platform-home`, `platform-identity`, `platform-shell`, `site-shell-navigation`.
+  Sin cambio de contrato.
 
 ## 4. EN CURSO — retomar acá
 
-**Paso 7 — Área admin** (`p12-admin`) — **CÓDIGO COMPLETO (WU1+WU2+WU3); falta verify + archive**
-- Planificación y código en disco (`openspec/changes/p12-admin/`): `explore.md`, `proposal.md`, `specs/` (5 deltas), `design.md`, `tasks.md`.
-- Fases SDD hechas: explore (#956), propose (#958), spec (#959), design (#960), tasks (#961), apply (#963 apply-progress, WU1+WU2+WU3). Engram project `construction-company-agency`.
-- **FALTA: verify + archive** (los 3 WUs ya están aplicados; WU1/WU2 commiteados, WU3 queda para commit del orquestador).
-  - **WU1** = `roleGuard` (`core/platform/auth/role.guard.ts` + spec) + cuenta admin demo (`admin@demo.test`/`demo1234`/`userId admin-1`; `fixtures.spec.ts:159` 5→6) + copy de login. ✅
-  - **WU2** = capa de datos admin: `DirectoryUser` + `AdminGateway`/token + `MockAdminGateway` (sin `password`) + `AdminStore` + `AdminConfigStore` (+ specs). ✅
-  - **WU3** = `AdminPage` + ruta `/plataforma/admin` (`canActivate: [authGuard, roleGuard]`, `data.roles:['admin']`, índice 2 tras `inicio`) + `ADMIN_NAV` + link en el home admin + specs (`app.routes/auth.guard/a11y/release-matrix`) + HANDOFF. ✅
-- Scope demo: **directorio read-only + config local (localStorage)**; SIN mutación de rol. Contrato intacto.
-- ✅ R3 resuelto: `app.a11y.spec.ts` y `app.release-matrix.spec.ts` siembran sesión **admin** y tienen un pin que exige `app-admin` (evita el redirect silencioso). ⚠️ NO meter `DirectoryUser`/`AdminGateway` en `contract-conformance.ts`.
-- Forecast: **~460–680 líneas**, riesgo Alto → 3 WUs apilados.
+Paso 7 (`p12-admin`) ✅ **DONE / archivado** (ver §3 y §8). Queda **sólo** el Paso 8.
 
 **Paso 8 — Modo previa estática** (`p13-modo-previa`)
 - Alcance: switcher de rol (entrar como cualquiera desde fixtures, sin registro) + (opcional) showcase
@@ -99,9 +96,9 @@ bun run gate                   # gate completo
 
 ## 8. Refs Engram (project: construction-company-agency)
 
-- Cambios: `sdd/p8-warnings-closure/summary`, `sdd/p9-comentarios/summary`, `sdd/p10-fixtures/summary`, `sdd/p11-home-por-rol/summary`.
+- Cambios: `sdd/p8-warnings-closure/summary`, `sdd/p9-comentarios/summary`, `sdd/p10-fixtures/summary`, `sdd/p11-home-por-rol/summary`. Archivado p12: `sdd/p12-admin/archive-report` (#972).
 - Fases p11: `explore` (#944), `proposal` (#946), `spec` (#947), `design` (#948), `tasks` (#949), `apply-progress` (#950), `verify-report` (#952), `archive-report` (#953).
-- Fases p12 (en curso): `explore` (#956), `proposal` (#958), `spec` (#959), `design` (#960), `tasks` (#961).
+- Fases p12 (archivado): `explore` (#956), `proposal` (#958), `spec` (#959), `design` (#960), `tasks` (#961), `apply-progress` (#963), `verify-report` (#969), `archive-report` (#972).
 - Descubrimientos: `platform/role-guard` (#945), #951 (p11 apply), #954 (stray delta scaffolding), #957 (p12 foundation gaps).
 - Protocolo SDD: `sdd-init/{project}` (#783), `skill-registry` (#785).
 - Lección: `openspec/archive-must-stage-artifacts`.

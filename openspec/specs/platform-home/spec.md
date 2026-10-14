@@ -64,13 +64,21 @@ For a `company` role, the home MUST list only the current company's own job open
 - WHEN the home renders
 - THEN a "Publicar novedad" affordance is present
 
-### Requirement: Admin home — minimal overview placeholder
+### Requirement: Admin home — overview linking to the admin area
 
-For an `admin` role, the home MUST render a minimal overview placeholder. Full admin tooling is out of scope and deferred to `p12-admin`.
+For an `admin` role, the home MUST render a short overview (retaining the `data-testid="home-admin-placeholder"` element) and MUST expose a link into `/plataforma/admin`. The home MUST NOT be limited to a "no controls" placeholder: the link into the admin area is required. Full admin tooling lives at `/plataforma/admin`, not on the home.
 
-#### Scenario: Admin sees a placeholder overview
+(Previously: the admin home was a minimal "en preparación" placeholder with no controls and no link.)
+
+#### Scenario: Admin sees the overview and the area link
 
 - GIVEN an `admin` session
 - WHEN the home renders
-- THEN a minimal overview placeholder is shown
-- AND no admin management controls are rendered
+- THEN a short overview is shown (the `home-admin-placeholder` element is present)
+- AND a link to `/plataforma/admin` is present
+
+#### Scenario: Non-admin never sees the admin link
+
+- GIVEN a `worker` or `company` session
+- WHEN the home renders
+- THEN no link to `/plataforma/admin` is present

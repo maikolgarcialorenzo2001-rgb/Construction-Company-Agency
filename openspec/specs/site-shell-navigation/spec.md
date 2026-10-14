@@ -55,11 +55,11 @@ The document MUST declare `lang="es-AR"`, and all shipped copy MUST be es-AR.
 
 The header MUST render a link to every marketing top-level route and one phone action whose `tel:` target comes from the NAP single source (`content-model`). The header MUST expose a **single** platform entry point linking to `/plataforma` (exactly one `a[href="/plataforma"]`). The header MUST also render a **static promo strip inside the header landmark**, advertising the trial→paid offer (7 días de uso gratis, después planes de pago) with a CTA linking to `/plataforma/registro`. The strip MUST NOT be dismissible and MUST NOT contain any images.
 
-Within the platform chrome, the platform header MUST render a role-aware work navigation led by an "Inicio" item pointing at `/plataforma/inicio`. `worker` and `admin` MUST render: Inicio (`/plataforma/inicio`), Novedades (`/plataforma`), Trabajos (`/plataforma/trabajos`), Mi perfil (`/plataforma/perfil`). `company` MUST render the same destinations with relabeled items: Inicio (`/plataforma/inicio`), Novedades (`/plataforma`), Vacantes (`/plataforma/trabajos`), Mi empresa (`/plataforma/perfil`). Destinations (slugs) MUST be identical across roles; only `company` labels change. The work nav MUST NOT render when there is no session, and when the item set is empty the `<nav>` landmark MUST be absent — never an empty landmark. The "Modo demo" pill MUST remain present in all states. The nav MUST react to session changes (login/logout) via the session signals.
+Within the platform chrome, the platform header MUST render a role-aware work navigation led by an "Inicio" item pointing at `/plataforma/inicio`. `worker` MUST render: Inicio (`/plataforma/inicio`), Novedades (`/plataforma`), Trabajos (`/plataforma/trabajos`), Mi perfil (`/plataforma/perfil`). `company` MUST render the same destinations with relabeled items: Inicio (`/plataforma/inicio`), Novedades (`/plataforma`), Vacantes (`/plataforma/trabajos`), Mi empresa (`/plataforma/perfil`). `admin` MUST render its own navigation — the worker destinations PLUS a leading `Admin` item pointing at `/plataforma/admin` — and MUST NOT share the `worker` navigation table. Destinations (slugs) MUST be identical across roles; only `company` labels change. The work nav MUST NOT render when there is no session, and when the item set is empty the `<nav>` landmark MUST be absent — never an empty landmark. The "Modo demo" pill MUST remain present in all states. The nav MUST react to session changes (login/logout) via the session signals.
 
 Entry points MUST land on the home: successful `login` and `registro` MUST navigate to `/plataforma/inicio`.
 
-(Previously: the platform nav had no "Inicio" item and entry points landed on `/plataforma`.)
+(Previously: `admin` shared the exact `worker` navigation array; there was no `Admin` item or admin-area link.)
 
 #### Scenario: Header exposes phone, marketing sections and one platform entry
 
@@ -91,11 +91,19 @@ Entry points MUST land on the home: successful `login` and `registro` MUST navig
 - THEN the platform header provides platform navigation independently of the marketing nav
 - AND the marketing promo strip is absent
 
-#### Scenario: Worker and admin render the shared work nav
+#### Scenario: Worker renders the work nav
 
-- GIVEN a `worker` or an `admin` session
+- GIVEN a `worker` session
 - WHEN the platform header renders
 - THEN it lists Inicio → `/plataforma/inicio` first, then Novedades → `/plataforma`, Trabajos → `/plataforma/trabajos`, Mi perfil → `/plataforma/perfil`
+
+#### Scenario: Admin renders the work nav plus an Admin entry
+
+- GIVEN an `admin` session
+- WHEN the platform header renders
+- THEN its navigation includes an `Admin` item → `/plataforma/admin`
+- AND it still lists Inicio → `/plataforma/inicio`, Novedades → `/plataforma`, Trabajos → `/plataforma/trabajos`, Mi perfil → `/plataforma/perfil`
+- AND its item table is not the `worker` table
 
 #### Scenario: Company renders the relabeled work nav
 
