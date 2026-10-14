@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-14** (p13-modo-previa archivado: verify PASS WITH WARNINGS + spec sync; queda en branch `feature/p13-modo-previa`, **sin mergear a `main`**) · nada pusheado a origin.
+> Última actualización: **2026-10-14** (p13-modo-previa archivado + **mergeado a `main`** y pusheado; branch eliminada). Plan Pasos 1–8 **completos**. Quedan 2 WARNINGs de verify (W-p13-1, W-p13-2), no bloqueantes.
 > Este archivo reemplaza al anterior (se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -11,7 +11,7 @@
 - **Strict TDD activo** (`bunx ng test --watch=false`).
 - Gate verde: **652 tests / 70 files** · lint limpio · build verde (**25 rutas prerenderizadas**) · `verify:prerender` PASS.
 - `contracts/openapi.yaml` **READ-ONLY**. Roles `worker | company | admin` (sin 4º rol).
-- `git status`: p13-modo-previa archivado (spec sync) pero **pendiente de commit** (lo hace el orquestador); vive en branch `feature/p13-modo-previa` (`5c639a3`), **no mergeado a `main`**. `angular.json` revertido (no se commitea).
+- `git status`: limpio. p13-modo-previa archivado (spec sync) + **mergeado a `main`** (`b0ee223`) y **pusheado** a `origin/main`; branch `feature/p13-modo-previa` **eliminada** (solo queda `main`). `angular.json` revertido (no se commitea).
 - Rutas de plataforma: `/plataforma` = feed; `/plataforma/inicio` = **home por rol** (nuevo en p11).
 - `/plataforma` es **client-only** y detrás de `authGuard`. Existe `roleGuard` con `data.roles` (p12-admin); `/plataforma/admin` usa `[authGuard, roleGuard]` con `data.roles: ['admin']`.
 
@@ -19,12 +19,12 @@
 
 Plan de registro: **§10 de la versión anterior del HANDOFF** (Paso 1–8). Cada paso = **un cambio SDD chico**,
 con commits locales secuenciales sobre `main` (un work-unit commit por unidad, mensaje termina en `(nombre-cambio)`).
-**Paso 1 y 2 ya están hechos** (p1–p7). Meta: una **previa estática presentable** de `/plataforma` con datos falsos.
+**Pasos 1–8 completos.** Meta (**lograda en p13**): una **previa estática presentable** de `/plataforma` con datos falsos.
 
 ### Decisiones bloqueadas (no volver a preguntar)
 - Modo de ejecución: **`auto`** (correr fases sin frenar).
 - Artifact store: **híbrido** (`openspec/` + Engram).
-- Delivery: **`ask-on-risk`** · Chain: **`stacked-to-main`** (commits locales encadenados, **sin branches/PRs/push**).
+- Delivery: **`ask-on-risk`** · Chain: **`stacked-to-main`**. Estado real: se pushea a `origin/main`; branches sólo cuando el usuario lo pide (p13 se aisló en `feature/p13-modo-previa` y luego se **mergeó a `main` + se eliminó**).
 - 4º rol / moderación: **descartado**. Pasos 5/6 pierden la parte de moderación; **Paso 6 se elimina**.
 
 ## 3. Hecho en esta tanda
@@ -36,7 +36,7 @@ con commits locales secuenciales sobre `main` (un work-unit commit por unidad, m
 | **p10-fixtures** | ✅ archivado (sin spec sync) | `fd28696`, `38f3725`, `0cc2d98` |
 | **p11-home-por-rol** | ✅ archivado (con spec sync) | `163887d`, `9a0745a`, `40b909c`, `09286bf`, `8e55e7e`, `fb1bc76`, `68c27c7` |
 | **p12-admin** | ✅ archivado (con spec sync) | `f4fe721`, `5b478e2`, `0f8ff7d`, `c81acef` |
-| **p13-modo-previa** | ✅ archivado (con spec sync) — branch `feature/p13-modo-previa` (**no mergeado a `main`**) | `75c0132`, `512d366`, `5c639a3` |
+| **p13-modo-previa** | ✅ archivado (con spec sync) — **mergeado a `main`** + pusheado | `75c0132`, `512d366`, `5c639a3`, `b0ee223` |
 
 - **p8**: cerró warnings de p6/p7 — CTA del header bindeada a `site.promo.ctaPath`; rutas de plataforma
   (`/plataforma`, `/login`, `/registro`) agregadas al scan a11y con sesión sembrada; guard de planes;
@@ -62,19 +62,19 @@ con commits locales secuenciales sobre `main` (un work-unit commit por unidad, m
   segmento; **switcher de rol client-only** que entra a la plataforma con cualquiera de las 6 cuentas demo
   (`SessionService.login(email,'demo1234')`, sin registro). `/previa` es `NOINDEX` y `scripts/verify-prerender.ts`
   queda **sin tocar** (`previa` fuera de `STATIC_PATHS`). Capabilities: NEW `platform-preview`; MODIFIED
-  `platform-shell`, `server-rendering`, `platform-identity`. Sin cambio de contrato. ⚠️ Vive en branch
-  `feature/p13-modo-previa`, **no mergeado a `main`**.
+  `platform-shell`, `server-rendering`, `platform-identity`. Sin cambio de contrato. **Mergeado a `main`** (ff)
+  + pusheado; branch `feature/p13-modo-previa` eliminada.
 
 ## 4. EN CURSO — retomar acá
 
 Paso 7 (`p12-admin`) ✅ **DONE / archivado** (ver §3 y §8).
-Paso 8 (`p13-modo-previa`) ✅ **DONE / archivado** en branch `feature/p13-modo-previa` (**no mergeado a `main`** — ver §3 y §8).
+Paso 8 (`p13-modo-previa`) ✅ **DONE / archivado** + **mergeado a `main`** y pusheado (ver §3 y §8).
 
 **Paso 8 — Modo previa estática** (`p13-modo-previa`) — ✅ **DONE**
 - Alcance cumplido: switcher de rol (entrar como cualquiera desde fixtures, sin registro) + showcase
   `/previa` prerenderizado (top-level, hosteable sin app). Los perfiles extra de p10 quedan **alcanzables acá**.
 - Entregable: previa navegable/publicable con datos falsos → `dist/.../browser/previa/{index,worker,company,admin}.html`.
-- ⚠️ Vive **sólo** en `feature/p13-modo-previa` (`5c639a3`); **decisión de merge pendiente** (no está en `main`).
+- ✅ **Mergeado a `main`** (`b0ee223`) y pusheado; branch `feature/p13-modo-previa` eliminada.
 
 ## 5. Warnings / arrastres vivos
 
@@ -110,7 +110,7 @@ bun run gate                   # gate completo
 - Cambios: `sdd/p8-warnings-closure/summary`, `sdd/p9-comentarios/summary`, `sdd/p10-fixtures/summary`, `sdd/p11-home-por-rol/summary`. Archivado p12: `sdd/p12-admin/archive-report` (#972). Archivado p13: `sdd/p13-modo-previa/archive-report`.
 - Fases p11: `explore` (#944), `proposal` (#946), `spec` (#947), `design` (#948), `tasks` (#949), `apply-progress` (#950), `verify-report` (#952), `archive-report` (#953).
 - Fases p12 (archivado): `explore` (#956), `proposal` (#958), `spec` (#959), `design` (#960), `tasks` (#961), `apply-progress` (#963), `verify-report` (#969), `archive-report` (#972).
-- Fases p13 (archivado, branch `feature/p13-modo-previa`): `explore` (#977), `proposal` (#979), `spec` (#980), `design` (#981), `tasks` (#982), `apply-progress` (#983, WU2+fix), `verify-report` (#986), `archive-report` (`sdd/p13-modo-previa/archive-report`).
+- Fases p13 (archivado, **mergeado a `main`**): `explore` (#977), `proposal` (#979), `spec` (#980), `design` (#981), `tasks` (#982), `apply-progress` (#983, WU2+fix), `verify-report` (#986), `archive-report` (`sdd/p13-modo-previa/archive-report`).
 - Descubrimientos: `platform/role-guard` (#945), #951 (p11 apply), #954 (stray delta scaffolding), #957 (p12 foundation gaps).
 - Protocolo SDD: `sdd-init/{project}` (#783), `skill-registry` (#785).
 - Lección: `openspec/archive-must-stage-artifacts`.
