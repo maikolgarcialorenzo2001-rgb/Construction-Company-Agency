@@ -136,6 +136,19 @@ export interface ApplicationInput {
   message?: string;
 }
 
+/**
+ * A read-only directory row of the admin area (design D4): the demo account
+ * *without* its credential. The type deliberately has no `password` field, so a
+ * password cannot leak through it. Demo-only: there is no OpenAPI schema behind
+ * it, so it has no `contract-conformance.ts` binding either (a `DirectoryUser`
+ * entry there would break `ng build` — same guard as `Comment`, see D5/R7).
+ */
+export interface DirectoryUser {
+  userId: string;
+  email: string;
+  role: Role;
+}
+
 export interface Pagination {
   page: number;
   pageSize: number;

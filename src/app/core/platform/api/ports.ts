@@ -8,6 +8,7 @@ import type {
   CommentInput,
   CompanyProfile,
   CompanyProfileInput,
+  DirectoryUser,
   JobOpening,
   Page,
   Post,
@@ -17,6 +18,7 @@ import type {
   WorkerProfile,
   WorkerProfileInput
 } from '../domain';
+import { MockAdminGateway } from './mock-admin.gateway';
 import { MockApplicationsGateway } from './mock-applications.gateway';
 import { MockAuthGateway } from './mock-auth.gateway';
 import { MockCommentsGateway } from './mock-comments.gateway';
@@ -98,6 +100,14 @@ export interface CommentsGateway {
   create(input: CommentInput): Promise<Comment>;
 }
 
+/**
+ * Read-only admin directory (design D3/D4). No writes and no contract change:
+ * the port returns `DirectoryUser[]`, so a password can never travel through it.
+ */
+export interface AdminGateway {
+  listUsers(): Promise<DirectoryUser[]>;
+}
+
 export const FEED_GATEWAY = new InjectionToken<FeedGateway>('FEED_GATEWAY', {
   providedIn: 'root',
   factory: () => new MockFeedGateway()
@@ -129,4 +139,9 @@ export const PROFILES_GATEWAY = new InjectionToken<ProfilesGateway>('PROFILES_GA
 export const COMMENTS_GATEWAY = new InjectionToken<CommentsGateway>('COMMENTS_GATEWAY', {
   providedIn: 'root',
   factory: () => new MockCommentsGateway()
+});
+
+export const ADMIN_GATEWAY = new InjectionToken<AdminGateway>('ADMIN_GATEWAY', {
+  providedIn: 'root',
+  factory: () => new MockAdminGateway()
 });
