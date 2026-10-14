@@ -4,9 +4,9 @@
 
 ### Requirement: Platform subtree route table
 
-The app MUST register exactly one top-level route, `plataforma`, whose children are `/plataforma` (feed), `/plataforma/inicio` (role-aware home), `/plataforma/admin` (admin-only area), `/plataforma/trabajos`, `/plataforma/trabajos/:id`, `/plataforma/login`, `/plataforma/registro` and `/plataforma/perfil`. Each child MUST be lazy `loadComponent`. `/plataforma/inicio` and `/plataforma/admin` MUST sit with the other platform siblings in the declared child order, with `admin` following `inicio`. The subtree MUST NOT alter the marketing route table or its order.
+The app MUST register `plataforma` as a top-level grouping route whose children are `/plataforma` (feed), `/plataforma/inicio` (role-aware home), `/plataforma/admin` (admin-only area), `/plataforma/trabajos`, `/plataforma/trabajos/:id`, `/plataforma/login`, `/plataforma/registro` and `/plataforma/perfil`. Each child MUST be lazy `loadComponent`. The app MUST additionally register a top-level `previa` preview route (with an optional `:role` param) outside the platform subtree. `/plataforma/inicio` and `/plataforma/admin` MUST sit with the other platform siblings in the declared child order, with `admin` following `inicio`. The subtree MUST NOT alter the marketing route table or its order.
 
-(Previously: the child set had no `/plataforma/admin` admin route.)
+(Previously: `plataforma` was the only top-level grouping route and the top-level table was `[...marketing, 'plataforma', '**']`.)
 
 #### Scenario: Every platform path resolves
 
@@ -22,11 +22,24 @@ The app MUST register exactly one top-level route, `plataforma`, whose children 
 - THEN `/plataforma/admin` is present among the platform children
 - AND it follows `/plataforma/inicio`
 
+#### Scenario: Top-level table gains the preview route
+
+- GIVEN the router configuration
+- WHEN top-level paths are read
+- THEN `previa` is present after `plataforma` and before `**`
+- AND the marketing order is unchanged
+
 #### Scenario: Marketing routes are unchanged
 
 - GIVEN the router configuration
 - WHEN the marketing top-level paths are read
-- THEN they match the baseline order with `plataforma` inserted before `**`
+- THEN they match the baseline order with `plataforma` and `previa` inserted before `**`
+
+#### Scenario: Preview and platform are structurally separate
+
+- GIVEN the router configuration
+- WHEN `/previa` and its `:role` param are inspected
+- THEN neither is a child of `plataforma`
 
 ### Requirement: Platform chrome and CTA suppression
 
@@ -94,9 +107,9 @@ Every `/plataforma/**` route MUST declare `data.seo.indexable === false`.
 
 ### Requirement: Guarded platform children
 
-Platform children other than `login` and `registro` MUST be protected by an auth guard; `login` and `registro` MUST remain reachable without a session; the marketing routes MUST remain unguarded (no `canActivate`, `canActivateChild`, or `resolve`). The `/plataforma/admin` child MUST additionally be protected by a `roleGuard` reading `data.roles`, composed as `[authGuard, roleGuard]` with `data.roles` equal to `['admin']`.
+Platform children other than `login` and `registro` MUST be protected by an auth guard; `login` and `registro` MUST remain reachable without a session; the marketing routes MUST remain unguarded (no `canActivate`, `canActivateChild`, or `resolve`). The top-level `previa` route and its `:role` param MUST also remain unguarded. The `/plataforma/admin` child MUST additionally be protected by a `roleGuard` reading `data.roles`, composed as `[authGuard, roleGuard]` with `data.roles` equal to `['admin']`.
 
-(Previously: children were only auth-guarded; no role-guarded child existed.)
+(Previously: only the marketing routes were declared unguarded; the preview route did not exist.)
 
 #### Scenario: Protected child redirects anonymous users
 
@@ -117,10 +130,10 @@ Platform children other than `login` and `registro` MUST be protected by an auth
 - WHEN `/plataforma/login` or `/plataforma/registro` is navigated to
 - THEN the page renders without redirect
 
-#### Scenario: Marketing routes stay unguarded
+#### Scenario: Marketing and preview routes stay unguarded
 
 - GIVEN the route table
-- WHEN marketing routes are inspected
+- WHEN marketing routes and `/previa` are inspected
 - THEN none declares `canActivate`, `canActivateChild`, or `resolve`
 
 ### Requirement: Platform release-matrix rows
