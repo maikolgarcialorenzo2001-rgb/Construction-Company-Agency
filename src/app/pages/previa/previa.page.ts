@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SectionHeadingComponent } from '../../components/section-heading/section-heading.component';
-import type { Role } from '../../core/platform/domain';
 import {
   previewViewModelFor,
-  resolvePreviewRole
+  resolvePreviewRole,
+  roleLabel as previewRoleLabel
 } from '../../core/platform/preview/preview-fixtures';
 import { PreviewRoleSwitcherComponent } from './preview-role-switcher.component';
 
@@ -40,7 +40,6 @@ export class PreviaPage {
     lead: 'Recorrido público de la herramienta: novedades de obra, búsquedas laborales abiertas y perfiles de demostración. No hace falta registrarse y ningún dato es real.'
   } as const;
 
-  /** es-AR directory role label. */
-  protected readonly roleLabel = (role: Role): string =>
-    role === 'worker' ? 'Trabajador' : role === 'company' ? 'Empresa' : 'Administración';
+  /** es-AR directory role label (shared with the client switcher). */
+  protected readonly roleLabel = previewRoleLabel;
 }

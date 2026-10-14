@@ -5,7 +5,8 @@ import {
   PREVIEW_ROLES,
   previewRoleParams,
   previewViewModelFor,
-  resolvePreviewRole
+  resolvePreviewRole,
+  roleLabel
 } from './preview-fixtures';
 import {
   APPLICATIONS,
@@ -47,6 +48,12 @@ describe('preview fixtures selector', () => {
         { role: 'company' },
         { role: 'admin' }
       ]);
+    });
+
+    it('labels every role in es-AR, shared by the directory and the switcher', () => {
+      expect(roleLabel('worker')).toBe('Trabajador');
+      expect(roleLabel('company')).toBe('Empresa');
+      expect(roleLabel('admin')).toBe('Administración');
     });
   });
 

@@ -36,6 +36,10 @@ export const resolvePreviewRole = (raw: string | null | undefined): PreviewRole 
 export const previewRoleParams = (): readonly Record<string, string>[] =>
   PREVIEW_ROLES.map((role) => ({ role }));
 
+/** es-AR label for a role, shared by the preview directory and the client switcher. */
+export const roleLabel = (role: Role): string =>
+  role === 'worker' ? 'Trabajador' : role === 'company' ? 'Empresa' : 'Administración';
+
 /** A demo account directory row: the account WITHOUT its credential (design D7). */
 export interface DirectoryRow {
   readonly userId: string;

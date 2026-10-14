@@ -4,7 +4,11 @@ import { Router } from '@angular/router';
 import { SessionService } from '../../core/platform/auth/session.service';
 import type { Role } from '../../core/platform/domain';
 import { DEMO_ACCOUNTS } from '../../core/platform/mocks/fixtures';
-import { PREVIEW_ROLES, type PreviewRole } from '../../core/platform/preview/preview-fixtures';
+import {
+  PREVIEW_ROLES,
+  roleLabel as previewRoleLabel,
+  type PreviewRole
+} from '../../core/platform/preview/preview-fixtures';
 
 /** A seeded demo account as the switcher needs it: credentials stay in state, never in markup. */
 interface SwitcherAccount {
@@ -42,9 +46,8 @@ export class PreviewRoleSwitcherComponent {
   /** The prerendered role views, in the shared preview order. */
   protected readonly roles: readonly PreviewRole[] = PREVIEW_ROLES;
 
-  /** es-AR label for a role, used for the account rows and the role anchors. */
-  protected readonly roleLabel = (role: Role): string =>
-    role === 'worker' ? 'Trabajador' : role === 'company' ? 'Empresa' : 'Administración';
+  /** es-AR label for a role, used for the account rows and the role anchors (shared with the page). */
+  protected readonly roleLabel = previewRoleLabel;
 
   /** Enters the live platform as the chosen demo account (login + navigate, never register). */
   protected async enter(account: SwitcherAccount): Promise<void> {
