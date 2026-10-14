@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { COMMENTS_GATEWAY } from '../api/ports';
 import type { Comment } from '../domain';
 import { COMMENTS } from '../mocks/fixtures';
-import { CommentsStore } from './comments.store';
+import { CommentsStore, type CommentsState } from './comments.store';
 
 /**
  * Zoneless paint harness (same contract as `feed.store.spec.ts`): a single
@@ -33,7 +33,7 @@ import { CommentsStore } from './comments.store';
 class CommentsHarness {
   readonly store = inject(CommentsStore);
   postId = 'post-1';
-  readonly postState = computed(() => this.store.state()[this.postId]);
+  readonly postState = computed<CommentsState | undefined>(() => this.store.state()[this.postId]);
 }
 
 describe('CommentsStore', () => {

@@ -9,9 +9,9 @@
 
 - Angular 22, static SSR, **zoneless signals**, TS strict, Tailwind v4. **BUN ONLY** (`bunx ng ...`).
 - **Strict TDD activo** (`bunx ng test --watch=false`).
-- Gate verde: **621 tests / 67 files** · lint limpio · build verde (21 rutas prerenderizadas).
+- Gate verde: **622 tests / 67 files** · lint limpio · build verde (21 rutas prerenderizadas).
 - `contracts/openapi.yaml` **READ-ONLY**. Roles `worker | company | admin` (sin 4º rol).
-- `git status`: p12-admin archivado (specs canónicas sincronizadas + carpeta movida a `archive/`) listo para commit del orquestador; `angular.json` revertido (no se commitea).
+- `git status`: p12-admin archivado y commiteado (`9887731`); `angular.json` revertido (no se commitea).
 - Rutas de plataforma: `/plataforma` = feed; `/plataforma/inicio` = **home por rol** (nuevo en p11).
 - `/plataforma` es **client-only** y detrás de `authGuard`. Existe `roleGuard` con `data.roles` (p12-admin); `/plataforma/admin` usa `[authGuard, roleGuard]` con `data.roles: ['admin']`.
 
@@ -71,11 +71,11 @@ Paso 7 (`p12-admin`) ✅ **DONE / archivado** (ver §3 y §8). Queda **sólo** e
 
 | ID | Origen | Item |
 |---|---|---|
-| W-NG8107 | p9 | Warning cosmético de template en `comments.store.spec.ts` (`?.` sobre no-nullable). |
-| W-seq | p9 | `MockCommentsGateway.seq` estático/global → sufijos de id sensibles al orden de la suite (mitigado con regex). |
 | W-spawn | proceso | El sub-agente `sdd-apply` falla **intermitente** al spawnear: `Bad Request: {"model":"big-pickle"}`. **Solución: reintentar** el `task`. Un intento parcial puede dejar archivos huérfanos → re-probar RED y reconciliar (pasó en p11 WU2). |
 | W-propose | proceso | El sub-agente `sdd-propose` reportó éxito pero **no persistió** (p10): reescribir inline y **verificar artefactos en disco** tras cada fase. |
 | W-verify | proceso | En p9 el `verify-report.md` no quedó en disco (gap híbrido): verificar persistencia. |
+
+**Cerrados (2026-10-14, commit de limpieza):** `W-NG8107` — el `?.` del harness en `comments.store.spec.ts` está justificado ahora que `postState` se tipa `CommentsState | undefined` (la causa raíz real es que no está activo `noUncheckedIndexedAccess`; queda como ticket aparte). `W-seq` — `MockCommentsGateway.seq` ahora es contador **por instancia** (como los otros mocks); ids determinísticos sin depender del orden de la suite.
 
 ## 6. Gotchas operativos (ya nos mordieron)
 

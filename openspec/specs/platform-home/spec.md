@@ -4,7 +4,7 @@
 
 ### Requirement: Role-aware entry home
 
-The platform MUST render a dedicated entry home at `/plataforma/inicio`. Successful `login` and `registro` flows MUST land the user on `/plataforma/inicio`. The home route MUST sit behind `authGuard`; role gating is NOT part of this change (`roleGuard` deferred to `p12-admin`). `/plataforma` MUST keep rendering the feed.
+The platform MUST render a dedicated entry home at `/plataforma/inicio`. Successful `login` and `registro` flows MUST land the user on `/plataforma/inicio`. The home route MUST sit behind `authGuard`; role gating for the admin area is defined in the `platform-shell` specification (`roleGuard` + `data.roles`). `/plataforma` MUST keep rendering the feed.
 
 #### Scenario: Login lands on the home
 

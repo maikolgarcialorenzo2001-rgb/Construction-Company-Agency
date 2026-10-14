@@ -10,7 +10,7 @@ import type { CommentsGateway } from './ports';
  * paint the gateway result into a signal).
  */
 export class MockCommentsGateway implements CommentsGateway {
-  private static seq = 0;
+  private sequence = 0;
   private readonly comments: Comment[] = [...COMMENTS];
 
   async list(postId: string): Promise<Comment[]> {
@@ -21,7 +21,7 @@ export class MockCommentsGateway implements CommentsGateway {
 
   async create(input: CommentInput): Promise<Comment> {
     const comment: Comment = {
-      id: `comment-new-${++MockCommentsGateway.seq}`,
+      id: `comment-new-${++this.sequence}`,
       postId: input.postId,
       // The mock has no session: composer runs as the demo worker (see fixtures).
       authorId: 'worker-1',

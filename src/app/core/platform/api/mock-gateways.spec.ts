@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FEED_POSTS, JOBS, APPLICATIONS, COMMENTS, DEMO_ACCOUNTS } from '../mocks/fixtures';
+import { MockCommentsGateway } from './mock-comments.gateway';
 import {
   APPLICATIONS_GATEWAY,
   AUTH_GATEWAY,
@@ -296,6 +297,17 @@ describe('mock gateway adapters', () => {
       expect(created.authorRole).toBe('worker');
       expect(created.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
       expect(Number.isNaN(new Date(created.createdAt).getTime())).toBe(false);
+    });
+
+    it('scopes synthetic ids per instance so a fresh gateway restarts at 1', async () => {
+      const first = new MockCommentsGateway();
+      const second = new MockCommentsGateway();
+
+      const a = await first.create({ postId: 'post-1', body: 'primero' });
+      const b = await second.create({ postId: 'post-1', body: 'segundo' });
+
+      expect(a.id).toBe('comment-new-1');
+      expect(b.id).toBe('comment-new-1');
     });
 
     it('keeps created comments in later reads of the same thread, advancing ids', async () => {
