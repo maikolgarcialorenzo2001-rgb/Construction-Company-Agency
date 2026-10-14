@@ -37,6 +37,17 @@ describe('PlatformLoginPage', () => {
     ).toContain('demo');
   });
 
+  it('lists the admin demo credential alongside the existing demo accounts', () => {
+    const fixture = TestBed.createComponent(PlatformLoginPage);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const copy = element.querySelector('[data-testid="demo-credentials"]')?.textContent ?? '';
+    expect(copy).toContain('admin@demo.test');
+    expect(copy).toContain('lucia@demo.test');
+    expect(copy).toContain('demo1234');
+  });
+
   it('logs in with demo credentials, persists the session and enters the platform', async () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);

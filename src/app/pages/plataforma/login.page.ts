@@ -61,9 +61,9 @@ import { SessionService } from '../../core/platform/auth/session.service';
         </button>
       </form>
 
-      <p class="mt-6 text-sm text-ink-600">
-        Cuentas de demo: <code>lucia@demo.test</code> o <code>norte@demo.test</code> · contraseña
-        <code>demo1234</code>
+      <p data-testid="demo-credentials" class="mt-6 text-sm text-ink-600">
+        Cuentas de demo: <code>lucia@demo.test</code>, <code>norte@demo.test</code> o
+        <code>admin@demo.test</code> · contraseña <code>demo1234</code>
       </p>
       <p class="mt-2 text-sm text-ink-600">
         ¿No tenés cuenta?

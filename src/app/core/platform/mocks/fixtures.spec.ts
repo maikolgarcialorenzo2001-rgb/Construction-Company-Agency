@@ -156,16 +156,26 @@ describe('profile and account fixtures', () => {
     expect(new Set(allSkills).size).toBeGreaterThan(WORKER_PROFILES.length);
   });
 
-  it('seeds five demo accounts, all with the shared demo password', () => {
+  it('seeds six demo accounts, all with the shared demo password', () => {
     expect(DEMO_ACCOUNTS.map((account) => account.userId)).toEqual([
       'worker-1',
       'company-1',
       'worker-2',
       'worker-3',
-      'company-2'
+      'company-2',
+      'admin-1'
     ]);
     expect(DEMO_ACCOUNTS.every((account) => account.password === 'demo1234')).toBe(true);
     expect(DEMO_ACCOUNTS.every((account) => account.isPlaceholder === true)).toBe(true);
+  });
+
+  it('seeds exactly one admin demo account for the platform area', () => {
+    const admins = DEMO_ACCOUNTS.filter((account) => account.role === 'admin');
+
+    expect(admins).toHaveLength(1);
+    expect(admins[0].userId).toBe('admin-1');
+    expect(admins[0].email).toBe('admin@demo.test');
+    expect(admins[0].password).toBe('demo1234');
   });
 
   it('gives every seeded profile a matching demo account', () => {

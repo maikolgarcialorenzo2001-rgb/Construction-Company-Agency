@@ -531,13 +531,21 @@ const seededAccounts = [
     password: 'demo1234',
     role: 'company' as const,
     isPlaceholder: true
+  },
+  {
+    userId: 'admin-1',
+    email: 'admin@demo.test',
+    password: 'demo1234',
+    role: 'admin' as const,
+    isPlaceholder: true
   }
 ] satisfies readonly Placeholder<DemoAccount>[];
 
 /**
- * Seeded mock credentials, one per seeded profile. Every password is the
- * obvious `demo1234`: this is a local mock with no network, the auth screens
- * say "Modo demo". Reachability from the login screen is not wired yet
+ * Seeded mock credentials, one per seeded profile, plus the single `admin`
+ * account that gates `/plataforma/admin`. Every password is the obvious
+ * `demo1234`: this is a local mock with no network, the auth screens say
+ * "Modo demo". Reachability from the login screen is not wired yet
  * (the role switcher lands in a later step) — these accounts are seeded so the
  * profile data resolves once it is.
  */
