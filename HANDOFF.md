@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-14** (p13-modo-previa archivado + **mergeado a `main`** y pusheado; branch eliminada). Plan Pasos 1–8 **completos**. Quedan 2 WARNINGs de verify (W-p13-1, W-p13-2), no bloqueantes.
+> Última actualización: **2026-10-14** (p13-modo-previa archivado + **mergeado a `main`** y pusheado; branch eliminada). Plan Pasos 1–8 **completos**. Los 2 WARNINGs de verify (W-p13-1, W-p13-2) quedaron **cerrados**.
 > Este archivo reemplaza al anterior (se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -83,8 +83,8 @@ Paso 8 (`p13-modo-previa`) ✅ **DONE / archivado** + **mergeado a `main`** y pu
 | W-spawn | proceso | El sub-agente `sdd-apply` falla **intermitente** al spawnear: `Bad Request: {"model":"big-pickle"}`. **Solución: reintentar** el `task`. Un intento parcial puede dejar archivos huérfanos → re-probar RED y reconciliar (pasó en p11 WU2). |
 | W-propose | proceso | El sub-agente `sdd-propose` reportó éxito pero **no persistió** (p10): reescribir inline y **verificar artefactos en disco** tras cada fase. |
 | W-verify | proceso | En p9 el `verify-report.md` no quedó en disco (gap híbrido): verificar persistencia. |
-| **W-p13-1** | verify p13 | **Sin aserción automática de que el HTML construido de `/previa*.html` no esté vacío**: el escenario *"Prerendered HTML is non-empty"* sólo se cubre a nivel componente y `scripts/verify-prerender.ts` **no** incluye `previa` en `STATIC_PATHS` (pinned por diseño — NOINDEX emite JSON-LD). No-emptiness verificada a mano. Fix mínimo: spec `node:fs` post-build que lea `dist/.../browser/previa/index.html` y valide contenido de fixtures + meta `noindex`, **sin** tocar `STATIC_PATHS`. |
-| W-p13-2 | verify p13 | Evidencia TDD no consolidada: `apply-progress` (#983) cubre WU2 (+ fix W1) pero sin tabla RED/GREEN/TRIANGULATE/SAFETY-NET/REFACTOR; WU1 no tiene observación propia. Fix mínimo: upsert de `sdd/p13-modo-previa/apply-progress` con una tabla TDD que abarque WU1+WU2. |
+
+**Cerrados (p13):** `W-p13-1` — **no-emptiness del HTML construido** ahora con aserción automática: `scripts/verify-previa.ts` (nuevo) + script `verify:previa`, cableado al `gate`. Lee `dist/.../browser/previa/{index,worker,company,admin}.html` y exige, por página: **conteo exacto de filas** (`previa-feed-post`/`previa-job`/`previa-application`/`previa-vacancy`/`previa-directory-row`), **contenido de cada fila** derivado de fixtures, heading, `robots=noindex`, ausencia de `demo1234` y ausencia de leak `plataforma`; roles iterados desde `PREVIEW_ROLES` (sin lista duplicada) con `default` que **falla ruidosamente** ante un rol sin rama de verificación. **Sin tocar `verify-prerender.ts` ni `STATIC_PATHS`.** Camino de falla probado (raíz `dist` ausente → FAIL; HTML vacío/shell → FAIL; filas con conteo correcto pero contenido vacío → FAIL; build real → PASS). *Corrección al plan original:* el "spec `node:fs`" no servía — un spec de vitest rompería cuando `dist` no existe; un script post-build espeja el patrón de `verify-prerender.ts`. `W-p13-2` — evidencia TDD consolidada en `sdd/p13-modo-previa/apply-progress` con tabla RED/GREEN/TRIANGULATE/SAFETY-NET/REFACTOR que abarca WU1+WU2.
 
 **Cerrados (2026-10-14, commit de limpieza):** `W-NG8107` — el `?.` del harness en `comments.store.spec.ts` está justificado ahora que `postState` se tipa `CommentsState | undefined` (la causa raíz real es que no está activo `noUncheckedIndexedAccess`; queda como ticket aparte). `W-seq` — `MockCommentsGateway.seq` ahora es contador **por instancia** (como los otros mocks); ids determinísticos sin depender del orden de la suite.
 

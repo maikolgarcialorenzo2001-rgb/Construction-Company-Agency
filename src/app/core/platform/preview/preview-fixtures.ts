@@ -63,7 +63,7 @@ export interface PreviewViewModel {
 }
 
 /** Label used when an application's job no longer exists in the fixtures. */
-const FALLBACK_VACANCY_LABEL = 'Vacante no disponible';
+export const FALLBACK_VACANCY_LABEL = 'Vacante no disponible';
 
 /**
  * Builds the preview view model from the seeded fixtures. Pure and deterministic
