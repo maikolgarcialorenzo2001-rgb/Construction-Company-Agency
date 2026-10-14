@@ -2,11 +2,15 @@
 
 ## metadata
 - change_id: p13-modo-previa
-- status: pending
+- status: archived (verify PASS WITH WARNINGS, 0 CRITICAL; both warnings closed post-archive)
 - delivery_strategy: ask-on-risk
 - chain_strategy: stacked-to-main
 - approach: Camino A, 2 stacked work units (WU2 depends on WU1)
-- branch: `feature/p13-modo-previa`, commit suffix `(p13-modo-previa)`; no `main` changes
+- branch: `feature/p13-modo-previa`, commit suffix `(p13-modo-previa)`; both WUs merged to `main` (`b0ee223`) and the branch deleted
+
+> **Post-archive status sync (2026-10-14):** the `status`/`branch`/`Location`/`next_recommended`
+> fields below were updated after merge to `main` so the archived artifact no longer reports
+> `pending`. Task bodies and the review forecast are left as authored.
 
 ## Pinned test expectations (must satisfy)
 - `src/app/app.routes.spec.ts` — top-level table `[...marketing, 'plataforma', 'previa', '**']`; noindex partition exactly `['plataforma', 'previa', '**']`; marketing filter excludes `previa`.
@@ -19,7 +23,7 @@
 
 ### WU1 — static `/previa` + synchronous selector/VM + route/spec edits
 **Goal:** A prerenderable, anonymous top-level `/previa` rendered synchronously from fixtures (all role branches in the VM; default page only). Invariant stays green; no shared-helper change.
-**Base:** `main` | **Independently revertible:** Yes | **Lines forecast:** ~330–420 | **Status:** pending
+**Base:** `main` | **Independently revertible:** Yes | **Lines forecast:** ~330–420 | **Status:** done (merged to `main` via `75c0132`)
 
 Tasks (Strict TDD — RED first where a test is new/edited):
 - [x] RED: create `src/app/core/platform/preview/preview-fixtures.spec.ts` — role order; resolver known/unknown/empty; `previewViewModelFor(null)` = feed + open jobs + first worker + first company; determinism (two calls deep-equal); directory rows carry no `password`.
@@ -42,7 +46,7 @@ Rollback boundary: remove `preview/*` + `pages/previa/*`, restore `app.routes.ts
 
 ### WU2 — `/previa/:role` child + server param + client-only role switcher
 **Goal:** Per-role prerendered HTML (JS-off safe) via a `:role` child + explicit `previa/:role` server entry, plus a client-only switcher over the 6 demo accounts. Reverts to WU1's static no-switcher preview.
-**Base:** WU1 | **Independently revertible:** Yes | **Lines forecast:** ~300–400 | **Status:** implemented (awaiting verify)
+**Base:** WU1 | **Independently revertible:** Yes | **Lines forecast:** ~300–400 | **Status:** done (merged to `main` via `5c639a3`; archived in `b0ee223`)
 
 Tasks:
 - [x] RED: create `src/app/pages/previa/preview-role-switcher.component.spec.ts` — 6 accounts, no password rendered; click → `SessionService.login(email, 'demo1234')` + navigate `/plataforma/inicio`; no `register`; anchors to `/previa/{worker,company,admin}`; render performs no write.
@@ -84,11 +88,11 @@ Chain strategy: stacked-to-main
 User pre-authorized the split (no `size:exception`). Each WU ≤ 400 targeted; keep the page template compact (reuse `SectionHeadingComponent`) to hold WU1 under the ceiling.
 
 ## artifacts
-- file: openspec/changes/p13-modo-previa/tasks.md (disk)
+- file: openspec/changes/archive/2026-10-14-p13-modo-previa/tasks.md (disk)
 - engram_topic_key: sdd/p13-modo-previa/tasks
 - engram_type: architecture
 - engram_project: construction-company-agency
 - engram_capture_prompt: false
 
 ## next_recommended
-- sdd-verify (WU1 + WU2 implemented; gate green)
+- none — change archived; `main` at `b0ee223`, both WU verify warnings closed post-archive
