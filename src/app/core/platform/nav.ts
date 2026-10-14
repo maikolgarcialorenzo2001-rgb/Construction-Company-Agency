@@ -7,7 +7,7 @@ import type { Role } from './domain';
  * own destinations. `path` is absolute, matching the `routerLink` contract.
  */
 
-/** Worker destinations. `admin` reuses this exact table (same array reference). */
+/** Worker destinations only. `admin` has its own separate table below (`ADMIN_NAV`) — it never references this array. */
 const WORKER_NAV: readonly NavItem[] = [
   { slug: 'inicio', label: 'Inicio', path: '/plataforma/inicio' },
   { slug: 'feed', label: 'Novedades', path: '/plataforma' },

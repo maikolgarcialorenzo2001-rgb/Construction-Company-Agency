@@ -65,6 +65,28 @@ describe('SessionService', () => {
     expect(session.role()).toBe('company');
   });
 
+  it('logs the seeded admin demo account in as admin and survives a reload', async () => {
+    const session = TestBed.inject(SessionService);
+
+    const user = await session.login('admin@demo.test', 'demo1234');
+
+    expect(user.role).toBe('admin');
+    expect(user.userId).toBe('admin-1');
+    expect(session.currentUser()?.role).toBe('admin');
+    expect(session.currentUser()?.userId).toBe('admin-1');
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()]
+    });
+
+    const reloaded = TestBed.inject(SessionService);
+
+    expect(reloaded.currentUser()?.role).toBe('admin');
+    expect(reloaded.currentUser()?.userId).toBe('admin-1');
+    expect(reloaded.role()).toBe('admin');
+  });
+
   it('clears the session and the stored payload on logout', async () => {
     const session = TestBed.inject(SessionService);
     await session.login('norte@demo.test', 'demo1234');
