@@ -1,0 +1,103 @@
+<article data-testid="post" class="rounded-xl border border-ink-900/10 p-4">
+  @let following = store.isFollowing(viewerId(), post().authorId);
+
+  <header data-testid="post-header" class="flex items-start justify-between gap-3">
+    <div>
+      <p data-testid="post-author-name" class="font-medium text-ink-900">
+        {{ post().authorName }}
+      </p>
+      <p data-testid="post-author-role" class="text-sm text-ink-600">
+        {{ roleLabel(post().authorRole) }}
+      </p>
+    </div>
+
+    <button
+      type="button"
+      data-testid="post-follow"
+      class="shrink-0 rounded-lg border border-ink-900/20 px-3 py-1.5 text-sm font-medium text-ink-900"
+      [attr.aria-pressed]="following"
+      [attr.aria-label]="(following ? 'Siguiendo a ' : 'Seguir a ') + post().authorName"
+      (click)="onFollow()"
+    >
+      {{ following ? 'Siguiendo' : 'Seguir' }}
+    </button>
+  </header>
+
+  <div data-testid="post-body" class="mt-3 text-ink-900">
+    <ng-content select="[postBody]">
+      <p>{{ post().content }}</p>
+    </ng-content>
+  </div>
+
+  @if (visibleAttachments().length > 0) {
+    <div data-testid="post-media" class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+      @for (attachment of visibleAttachments(); track $index) {
+        @if (attachment.trim() !== '') {
+          <img
+            [src]="attachment"
+            [attr.alt]="mediaAlt"
+            loading="lazy"
+            class="aspect-video w-full rounded-lg object-cover"
+          />
+        } @else {
+          <div
+            data-testid="post-media-placeholder"
+            class="flex aspect-video w-full items-center justify-center rounded-lg bg-ink-900/5 text-sm text-ink-600"
+          >
+            Imagen no disponible
+          </div>
+        }
+      }
+    </div>
+  }
+
+  @if (overflowCount() > 0) {
+    <p data-testid="post-media-overflow" class="mt-2 text-sm text-ink-600">
+      +{{ overflowCount() }}
+    </p>
+  }
+
+  <div
+    data-testid="post-actions"
+    class="mt-3 flex flex-wrap gap-2 border-t border-ink-900/10 pt-3"
+  >
+    <button
+      type="button"
+      data-testid="post-like"
+      class="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-900"
+      [attr.aria-pressed]="store.isLiked(viewerId(), post().id)"
+      (click)="onLike()"
+    >
+      Me gusta
+    </button>
+
+    <button
+      type="button"
+      data-testid="post-share"
+      class="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-900"
+      (click)="onShare()"
+    >
+      Reenviar
+    </button>
+
+    <button
+      type="button"
+      data-testid="post-save"
+      class="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-900"
+      [attr.aria-pressed]="store.isSaved(viewerId(), post().id)"
+      (click)="onSave()"
+    >
+      Guardar
+    </button>
+  </div>
+
+  @if (shareFeedback() !== '') {
+    <p data-testid="post-share-feedback" role="status" class="mt-2 text-sm text-ink-600">
+      {{ shareFeedback() }}
+    </p>
+  }
+
+  <div data-testid="post-extra">
+    <ng-content select="[postExtra]" />
+  </div>
+</article>
