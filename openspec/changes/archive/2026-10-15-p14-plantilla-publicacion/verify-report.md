@@ -218,3 +218,97 @@ None.
 **PASS WITH WARNINGS**
 
 All build/test/lint/gate evidence is green and independently reproduced (706/706, 25 prerendered routes, full `gate` PASS); 18/19 spec scenarios are backed by passing covering tests; all five design invariants (frozen contract, conformance blindness, unstaged `angular.json`, deferrals absent, no manual CD) hold; and the `feed.page.spec.ts` rewrite removed zero assertions. The three WARNINGs are process/asset-quality gaps — none blocks archive, but W-2 (review budget) warrants an explicit size decision and W-1/W-3 are worth closing before `/plataforma` is shown to a real user.
+
+---
+
+## Addendum — WU5 re-verification
+
+**Scope**: targeted re-verification of WU5 (late "posts are never empty" requirement) only.
+**Mode**: Strict TDD · **Runner**: `bunx ng test --watch=false` (BUN ONLY)
+**Verified revision**: `feature/p14-plantilla-publicacion` @ `30634b8` (WU5), diff vs pre-WU5 baseline `b2715b9`
+**Verifier**: fresh-context adversarial verify (independent execution; apply report not trusted)
+
+### Verdict (WU5): PASS — CRITICAL 0 · WARNING 0 · SUGGESTION 4
+
+All three gates executed by this verifier: **tests 716/716 (74 files)** · **build ✅ 25 prerendered routes** · **lint ✅ all files pass**.
+All 4 new spec scenarios COMPLIANT; prior 19 scenarios unchanged (22 COMPLIANT + 1 PARTIAL = 23/23 accounted); W-1/W-2/W-3 untouched by WU5 — not re-opened, not closed.
+
+### Gates (executed, not reported)
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Tests | `bunx ng test --watch=false` | ✅ 716 passed / 0 failed (74 files) — matches claim exactly (706 prior + 10 new) |
+| Build | `bunx ng build` | ✅ 25 static routes prerendered, bundle complete |
+| Lint | `bunx ng lint` | ✅ "All files pass linting." |
+| Coverage | — | ➖ no reporter configured (informational) |
+
+### Scenario trace (a)–(e)
+
+| # | Scenario | Evidence | Result |
+|---|----------|----------|--------|
+| a | text-only → text renders, NO media | `post-template.component.spec.ts:280` (`post-media` + overflow toBeNull, body contains text); media guard `post-template.component.html:34`; survives filter via `post-views.spec.ts:107` | ✅ COMPLIANT |
+| b | image-only → media renders, NO `post-body`/phantom `<p>` | `post-template.component.spec.ts:290` (`post-body` toBeNull — whole region incl. `<p>` gone; exactly 1 img); predicate `post-views.spec.ts:111` | ✅ COMPLIANT |
+| c | neither → never rendered/rejected | feed filter `feed.page.spec.ts:178` (hollow `'   '` post, no `attachments` key → mapper `?? []` at `post-views.ts:52` → 1 card only, survivor identity asserted); composer gate `feed.page.spec.ts:326` (whitespace `'   '` → post count unchanged) + non-empty companion at `:320`; predicate `post-views.spec.ts:127` | ✅ COMPLIANT |
+| d | both → both render | `post-template.component.spec.ts:314`; predicate `post-views.spec.ts:119` | ✅ COMPLIANT |
+| e | whitespace-only content = blank | template `post-template.component.spec.ts:301` (`'  \n  '` → no body, card intact); predicate `post-views.spec.ts:131` (`'  \n  '` and `'   '` → false); feed hollow `'   '` rejected | ✅ COMPLIANT |
+
+Spec compliance (new requirement): **4/4 scenarios COMPLIANT** — scenario 3's composer clause is covered by the pre-existing `does not publish an empty post` test (`feed.page.spec.ts:326`, executed green).
+
+### `[postBody]` projection interaction — judgment
+
+The body region guard (`post-template.component.html:26`) keys on `post().content` only, so a future kind projecting `[postBody]` into a blank-content post would render nothing in that region. **Judgment: acceptable, documented consequence — NOT a defect for the current scope.** Rationale: (1) `PostKind = 'standard'` is the only kind; no production host projects `[postBody]`; (2) the R4 projection test (`post-template.component.spec.ts:433`) uses non-blank content and passes; (3) `[postExtra]` (the design-sanctioned D7 extension point, `post-template.component.html:102-104`) stays unconditional; (4) the trade-off is documented in the component doc comment (`post-template.component.ts:34-40`) and the apply decision record; (5) a future kind would hit it loudly in its own TDD. See S-6.
+
+### TDD compliance (WU5)
+
+| Check | Result | Details |
+|-------|--------|---------|
+| TDD Evidence reported | ✅ | Batch-5 cycle table (5.1–5.5) present in apply-progress |
+| All tasks have tests | ✅ | 5.1→component spec (+4), 5.2→post-views spec (+5), 5.3→feed spec (+1), 5.4→existing test, 5.5→gates |
+| RED confirmed (structurally) | ✅ | 3/3 RED cycles provably fail pre-WU5: (5.2) `isRenderablePostView` export absent at `b2715b9` → build error; (5.1) body `<div>` unconditional pre-WU5 → `post-body` not null; (5.3) no filter pre-WU5 → 2 cards ≠ `toHaveLength(1)` |
+| RED replayable from history | ⚠️ | Not replayable — spec+impl+tests squashed into one commit `30634b8` (same limitation as pre-existing S-3; unchanged) |
+| GREEN confirmed | ✅ | 716/716 executed by this verifier; per-file counts match claims exactly (23/12/24) |
+| Triangulation adequate | ✅ | 5.1: 4 cases · 5.2: 5 cases (true+false variance) · 5.3: 1 test with 2 asserted paths + companion timeline test |
+| Safety net | ✅ | Arithmetic exact: 706 baseline + 10 new = 716 executed |
+| Assertions weakened / coverage dropped | ✅ None | `git diff b2715b9..30634b8 -- '*spec.ts'` deletions = only 2 import lines (widened); zero test/assertion deletions; WU1–WU4 suites byte-intact and green |
+| Assertion quality | ✅ | No tautologies, no ghost loops, no smoke-only tests; empty-count assertions have non-empty companions (`feed.page.spec.ts:320` vs `:344`) |
+
+**Test layers (10 new tests)**: Unit/pure 5 (`post-views.spec.ts`) · Unit/component 4 (`post-template.component.spec.ts`) · Integration 1 (`feed.page.spec.ts`) + 1 pre-existing composer integration test · E2E 0.
+
+### Invariants (adversarial audit)
+
+| Invariant | Evidence | Result |
+|-----------|----------|--------|
+| `angular.json` not committed in WU5 | `git diff b2715b9..30634b8 --stat -- angular.json` empty; worktree mod = same 4+/1− vs HEAD AND vs `b2715b9` (blob unchanged between baselines) → byte-identical pre-WU5 state, modified-but-unstaged | ✅ |
+| `contracts/openapi.yaml` zero diff vs `b2715b9` | `--numstat` empty | ✅ |
+| `contract-conformance.ts` zero diff vs `b2715b9` | `--numstat` empty; grep: no `PostView`/`PostKind`/`hasVisibleText`/`isRenderablePostView` | ✅ |
+| No scope creep | WU5 diff = exactly the 10 claimed files, 275+/19− = 294 lines (within 400 budget); worktree clean except `angular.json` | ✅ |
+| Filter doesn't swallow image-only posts | `post-views.spec.ts:111` — the exact predicate (`post-views.ts:71-72`) used at `feed.page.ts:177` returns `true` for image-only | ✅ |
+| Template iterates the filtered list only | `feed.page.ts:85` `@for (view of views())`; no raw `store.posts()` render path (other use is the comment-hydration effect, see S-8) | ✅ |
+| Live spec = archived delta copy | Both blobs identical (`462236a..ec08db9`); requirement + 4 scenarios in both; `tasks.md` Phase 5, 5.1–5.5 all `[x]` | ✅ |
+
+### Probe results (gaps)
+
+| Probe | Behavior | Verdict |
+|-------|----------|---------|
+| `content` null/undefined | `content.trim()` at `post-views.ts:62` would throw TypeError | Unreachable: `PostView.content: string`, contract `FeedPost.content minLength: 1`, mapper passes through — S-7 |
+| content = only newlines/tabs | `trim()` covers `\n`/`\t`; test `'  \n  '` proves it → blank | ✅ covered |
+| attachments `['']` (all blank) | `attachments.some(hasVisibleText)` → `false` → **not** an image → rejected (`post-views.spec.ts:131`) | ✅ correct |
+| Image-only + blank-URL placeholder | `{content:'', attachments:['']}` filtered out at feed (placeholder is not an image); text + `['']` survives and renders the R2 placeholder (`post-template.component.html:37-51`) — placeholder semantics unchanged | ✅ consistent |
+| Hollow post's comment thread | Filter removes the whole `li` (thread page-side inside it) → no thread paints; but hydration effect (`feed.page.ts:192-199`) still loads its comments (invisible, demo-only waste) | S-8 |
+
+### Issues found (WU5)
+
+**CRITICAL**: None.
+**WARNING**: None.
+**SUGGESTION**:
+- S-6: `[postBody]` projected into a blank-content post renders nothing (region guard keys on content only). Acceptable + documented for current scope — revisit when `PostKind`s 2/3 arrive (`post-template.component.html:26`, `post-template.component.ts:34-40`).
+- S-7: `hasVisibleText` would throw on null/undefined content — unreachable under current types/contract; note if the data source ever widens (`post-views.ts:62`).
+- S-8: comment-thread hydration effect still loads threads for feed-filtered hollow posts — invisible, demo-only waste; consider filtering there too (`feed.page.ts:192-199`).
+- S-9: "image-only survives the filter" is proven at the unit layer (the exact predicate) but no feed-level integration case renders an image-only post end-to-end (`post-views.spec.ts:111` only).
+- Carry-over unchanged: prior S-3 (RED not replayable from squashed commits) still applies.
+
+**Prior warnings W-1/W-2/W-3**: WU5 did not touch engagement R2 coverage, the WU2 budget report, or fixture URLs → all three remain exactly as recorded above; not re-opened, not closed.
+
+### Verdict (WU5)
+
+**PASS** — three green gates executed independently, 4/4 new scenarios backed by passing tests, zero weakened/dropped assertions, all invariants hold, composer rule verified complete for the current text-only composer.
