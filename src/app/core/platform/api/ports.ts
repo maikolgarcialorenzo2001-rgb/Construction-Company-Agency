@@ -22,6 +22,7 @@ import { MockAdminGateway } from './mock-admin.gateway';
 import { MockApplicationsGateway } from './mock-applications.gateway';
 import { MockAuthGateway } from './mock-auth.gateway';
 import { MockCommentsGateway } from './mock-comments.gateway';
+import { MockEngagementGateway } from './mock-engagement.gateway';
 import { MockFeedGateway } from './mock-feed.gateway';
 import { MockJobsGateway } from './mock-jobs.gateway';
 import { MockProfilesGateway } from './mock-profiles.gateway';
@@ -101,6 +102,32 @@ export interface CommentsGateway {
 }
 
 /**
+ * Demo-only follow/like/save persistence (p14, design D3). Follow is a stored
+ * viewer→author edge with no counts; like/save key by viewer + post. Share
+ * stays a component concern and never reaches this port.
+ *
+ * Each `toggle*` resolves the FULL `EngagementState`, so the adapter owns both
+ * the flip and the persistence and the store only lands it via `.set()`. A
+ * future HTTP swap therefore stays provider-only: same four methods, same
+ * resolved shape.
+ */
+export interface EngagementSnapshot {
+  following: string[];
+  liked: string[];
+  saved: string[];
+}
+
+/** `viewerId` → the three id sets that viewer has engaged with. */
+export type EngagementState = Record<string, EngagementSnapshot>;
+
+export interface EngagementGateway {
+  load(): Promise<EngagementState>;
+  toggleFollow(viewerId: string, authorId: string): Promise<EngagementState>;
+  toggleLike(viewerId: string, postId: string): Promise<EngagementState>;
+  toggleSave(viewerId: string, postId: string): Promise<EngagementState>;
+}
+
+/**
  * Read-only admin directory (design D3/D4). No writes and no contract change:
  * the port returns `DirectoryUser[]`, so a password can never travel through it.
  */
@@ -144,4 +171,9 @@ export const COMMENTS_GATEWAY = new InjectionToken<CommentsGateway>('COMMENTS_GA
 export const ADMIN_GATEWAY = new InjectionToken<AdminGateway>('ADMIN_GATEWAY', {
   providedIn: 'root',
   factory: () => new MockAdminGateway()
+});
+
+export const ENGAGEMENT_GATEWAY = new InjectionToken<EngagementGateway>('ENGAGEMENT_GATEWAY', {
+  providedIn: 'root',
+  factory: () => new MockEngagementGateway()
 });
