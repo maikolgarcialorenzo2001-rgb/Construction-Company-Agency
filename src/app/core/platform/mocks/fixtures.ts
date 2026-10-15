@@ -78,7 +78,7 @@ const seededPosts = [
     authorId: 'company-2',
     content:
       'Buscamos pintores para una planta industrial en Quilmes. La obra arranca la semana próxima.',
-    attachments: ['planta-quilmes-antes.jpg', 'planta-quilmes-despues.jpg'],
+    attachments: ['https://images.example.com/plataforma/planta-quilmes-01.webp', 'https://images.example.com/plataforma/planta-quilmes-02.webp', 'https://images.example.com/plataforma/planta-quilmes-03.webp', 'https://images.example.com/plataforma/planta-quilmes-04.webp', 'https://images.example.com/plataforma/planta-quilmes-05.webp', 'https://images.example.com/plataforma/planta-quilmes-06.webp', 'https://images.example.com/plataforma/planta-quilmes-07.webp', 'https://images.example.com/plataforma/planta-quilmes-08.webp', 'https://images.example.com/plataforma/planta-quilmes-09.webp', 'https://images.example.com/plataforma/planta-quilmes-10.webp'],
     createdAt: '2026-10-08T11:40:00.000Z',
     isPlaceholder: true
   },
@@ -103,7 +103,7 @@ const seededPosts = [
     authorId: 'company-1',
     content:
       'Arrancamos el cimado de un multifamiliar en San Isidro. Sumamos dos oficiales al equipo.',
-    attachments: ['obra-san-isidro.jpg'],
+    attachments: ['https://images.example.com/plataforma/obra-san-isidro-01.webp'],
     createdAt: '2026-10-11T08:50:00.000Z',
     isPlaceholder: true
   }

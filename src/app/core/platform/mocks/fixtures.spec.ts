@@ -188,3 +188,23 @@ describe('profile and account fixtures', () => {
     expect(profileIds.every((id) => accountIds.has(id))).toBe(true);
   });
 });
+
+describe('fixture media URLs (p14)', () => {
+  it('uses absolute https attachment URLs for all attachments', () => {
+    for (const post of FEED_POSTS) {
+      for (const url of post.attachments ?? []) {
+        expect(url.startsWith('https://')).toBe(true);
+      }
+    }
+  });
+
+  it('covers attachment counts spanning 1 through 10', () => {
+    const counts = FEED_POSTS.map((post) => (post.attachments ?? []).length).filter((c) => c > 0);
+    expect(counts.length).toBeGreaterThan(0);
+    const min = Math.min(...counts);
+    const max = Math.max(...counts);
+    expect(min).toBe(1);
+    expect(max).toBe(10);
+    expect(max).toBeGreaterThanOrEqual(min);
+  });
+});

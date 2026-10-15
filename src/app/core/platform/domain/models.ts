@@ -79,6 +79,31 @@ export interface PostInput {
 }
 
 /**
+ * Discriminated tag for the feed view-model (design D1). Only `standard` exists
+ * today; future post types (worker job-request, company vacancy) extend the base
+ * template through `[postBody]`/`[postExtra]` without widening the contract `Post`.
+ */
+export type PostKind = 'standard';
+
+/**
+ * A denormalized, render-ready feed post consumed by `PostTemplateComponent`
+ * (design D1/D2): the template reads a resolved `authorName`/`authorRole` and
+ * never a raw `authorId`. Demo-only: there is no OpenAPI schema behind it, so it
+ * deliberately has NO `contract-conformance.ts` entry (a `PostView` pair there
+ * would break `ng build` — same guard as `Comment`/`DirectoryUser`).
+ */
+export interface PostView {
+  id: string;
+  kind: PostKind;
+  authorId: string;
+  authorName: string;
+  authorRole: Role;
+  content: string;
+  attachments: string[];
+  createdAt: string;
+}
+
+/**
  * A comment attached to a feed post. Demo-only for now: there is no OpenAPI
  * schema behind it, so it deliberately has no `contract-conformance.ts` entry
  * (a Comment pair there would break `ng build` — see the design guard).
