@@ -1,10 +1,12 @@
 /**
- * Pure mapper from the contract-shaped `Post` to the demo-only `PostView`
- * (design D2): the feed template never sees a raw `authorId`. Author names and
- * roles are denormalized from the seeded profiles by key — `WORKER_PROFILES`
- * (by `userId`) then `COMPANY_PROFILES` (by `companyId`) — mirroring the
- * `preview-fixtures` join precedent. No Angular imports, no side effects, so
- * this stays trivially testable and usable from a `computed()`.
+ * Pure view-model helpers for the demo feed (design D2): the mapper from the
+ * contract-shaped `Post` to the demo-only `PostView` denormalizes the author
+ * from the seeded profiles by key — `WORKER_PROFILES` (by `userId`) then
+ * `COMPANY_PROFILES` (by `companyId`) — mirroring the `preview-fixtures` join
+ * precedent, so the feed template never sees a raw `authorId`. The
+ * `hasVisibleText`/`isRenderablePostView` predicates own the never-empty rule
+ * (WU5) at the same layer. No Angular imports, no side effects, so this stays
+ * trivially testable and usable from a `computed()`.
  */
 import type { Post, PostView, Role } from '../domain';
 import { COMPANY_PROFILES, WORKER_PROFILES } from './fixtures';
@@ -51,3 +53,20 @@ export const toPostView = (post: Post): PostView => {
     createdAt: post.createdAt
   };
 };
+
+/**
+ * True when `content` carries visible text: whitespace-only counts as blank
+ * (p14 WU5 — "posts with no text have no text"). Shared by the template's
+ * body-region guard and `isRenderablePostView` so both can never drift apart.
+ */
+export const hasVisibleText = (content: string): boolean => content.trim() !== '';
+
+/**
+ * Never-empty invariant (p14 WU5): a view is renderable only with text, a
+ * real image URL, or both. Text-only and image-only are legitimate shapes;
+ * only "neither" is invalid, so the feed filters those views out before they
+ * can render an empty card. Blank URL entries (`''`) are placeholders, not
+ * images, so they do not count toward the invariant.
+ */
+export const isRenderablePostView = (view: PostView): boolean =>
+  hasVisibleText(view.content) || view.attachments.some((url) => hasVisibleText(url));

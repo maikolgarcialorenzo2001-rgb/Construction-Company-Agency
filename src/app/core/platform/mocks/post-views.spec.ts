@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Post } from '../domain';
+import type { Post, PostView } from '../domain';
 import { FEED_POSTS } from './fixtures';
-import { toPostView } from './post-views';
+import { isRenderablePostView, toPostView } from './post-views';
 
 /**
  * Strict-mode RED for p14 WU1: `post-views.ts` does not exist yet, so every
@@ -81,5 +81,55 @@ describe('toPostView mapper (p14 WU1)', () => {
       expect(view.authorName, view.id).not.toBe(view.authorId);
       expect(view.authorName, view.id).not.toBe('Perfil no disponible');
     }
+  });
+});
+
+/**
+ * Never-empty invariant (p14 WU5): a post is renderable only with text, an
+ * image, or both — "neither" is invalid. Text-only and image-only are both
+ * legitimate shapes (future PostKinds 2/3 will carry them). Strict-mode RED:
+ * `isRenderablePostView` does not exist yet, so every scenario fails to
+ * resolve the named export.
+ */
+describe('isRenderablePostView (p14 WU5)', () => {
+  const view = (overrides: Partial<PostView> = {}): PostView => ({
+    id: 'post-x',
+    kind: 'standard',
+    authorId: 'worker-1',
+    authorName: 'Lucía Fernández',
+    authorRole: 'worker',
+    content: 'Contenido de prueba',
+    attachments: [],
+    createdAt: '2026-10-01T00:00:00.000Z',
+    ...overrides
+  });
+
+  it('accepts a text-only view with no attachments', () => {
+    expect(isRenderablePostView(view({ attachments: [] }))).toBe(true);
+  });
+
+  it('accepts an image-only view whose content is blank', () => {
+    expect(
+      isRenderablePostView(
+        view({ content: '', attachments: ['https://cdn.example.test/posts/x/img.webp'] })
+      )
+    ).toBe(true);
+  });
+
+  it('accepts a view carrying both text and an image', () => {
+    expect(
+      isRenderablePostView(
+        view({ attachments: ['https://cdn.example.test/posts/x/img.webp'] })
+      )
+    ).toBe(true);
+  });
+
+  it('rejects a view with neither text nor image', () => {
+    expect(isRenderablePostView(view({ content: '', attachments: [] }))).toBe(false);
+  });
+
+  it('treats whitespace-only content and blank-only URL entries as empty', () => {
+    expect(isRenderablePostView(view({ content: '  \n  ', attachments: [] }))).toBe(false);
+    expect(isRenderablePostView(view({ content: '   ', attachments: [''] }))).toBe(false);
   });
 });

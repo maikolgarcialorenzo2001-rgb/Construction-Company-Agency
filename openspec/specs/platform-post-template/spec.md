@@ -88,3 +88,34 @@ Template controls MUST satisfy the gated axe rules on `/plataforma`: `button-nam
 - GIVEN a seeded session on `/plataforma`
 - WHEN the a11y spec runs axe
 - THEN no gated violation fires and every control has an accessible name
+
+### Requirement: Posts are never empty; optional blocks are omitted, not left blank
+
+A post SHALL carry text, an image, or both — never neither. The body paragraph MUST render only when `content` has visible text (whitespace counts as blank) and the media block MUST render only when at least one attachment exists, so a text-only post shows no media and an image-only post shows no empty text block; the feed MUST NOT render a card for a view with neither, and the composer MUST reject a submission with no text (its only input — it has no image field).
+
+#### Scenario: Text-only post renders text and no media block
+
+- GIVEN a post with non-blank content and no attachments
+- WHEN the template renders
+- THEN the body paragraph shows the content
+- AND no `post-media` block exists
+
+#### Scenario: Image-only post renders media and no text block
+
+- GIVEN a post with blank content and one attachment
+- WHEN the template renders
+- THEN the media grid shows the image
+- AND no `post-body` block renders (no empty paragraph)
+
+#### Scenario: A post with neither text nor image is rejected and not rendered
+
+- GIVEN a feed post with whitespace-only content and no attachments
+- WHEN the feed renders the timeline
+- THEN no `feed-post` card renders for that post
+- AND the composer's blank-text publish is rejected by the never-empty gate
+
+#### Scenario: A post with both renders both blocks
+
+- GIVEN a post with non-blank content and attachments
+- WHEN the template renders
+- THEN the body paragraph and the media grid both render

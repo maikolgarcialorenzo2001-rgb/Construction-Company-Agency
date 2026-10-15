@@ -173,6 +173,49 @@ describe('PlatformFeedPage', () => {
     expect(posts[0].querySelector('[data-testid="post-media"]')).toBeNull();
   });
 
+  // --- Never-empty invariant (WU5) -------------------------------------------
+
+  it('never renders a card for a post with neither text nor image', async () => {
+    TestBed.overrideProvider(FEED_GATEWAY, {
+      useValue: {
+        timeline: async (): Promise<Page<Post>> => ({
+          items: [
+            {
+              id: 'post-renderable',
+              authorId: 'worker-1',
+              content: 'Avance real con contenido visible.',
+              attachments: ['https://cdn.example.test/posts/wu5/avance.webp'],
+              createdAt: '2026-10-15T10:00:00.000Z'
+            },
+            {
+              id: 'post-hollow',
+              authorId: 'worker-1',
+              content: '   ',
+              createdAt: '2026-10-15T11:00:00.000Z'
+            }
+          ],
+          meta: { page: 1, pageSize: 20, total: 2 }
+        }),
+        create: async () => {
+          throw new Error('not under test');
+        }
+      }
+    });
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const posts = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="feed-post"]'
+    );
+    // The renderable post shows; the one with neither text nor image is
+    // filtered out before any card (or comment thread) paints for it.
+    expect(posts).toHaveLength(1);
+    expect(posts[0].textContent).toContain('Avance real con contenido visible.');
+  });
+
   it('wires the session viewer into the engagement controls', async () => {
     seedSession('worker');
     const fixture = TestBed.createComponent(PlatformFeedPage);

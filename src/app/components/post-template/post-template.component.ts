@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 
 import type { PostView } from '../../core/platform/domain';
+import { hasVisibleText } from '../../core/platform/mocks/post-views';
 import { PLATFORM_PREFIX } from '../../core/platform/platform-paths';
 import { roleLabel } from '../../core/platform/preview/preview-fixtures';
 import { EngagementStore } from '../../core/platform/store/engagement.store';
@@ -30,9 +31,12 @@ const postPermalink = (postId: string): string =>
  * attachments carry no intrinsic size, so `NgOptimizedImage` is off the table); an
  * empty URL degrades to a labeled es-AR placeholder instead of a broken image.
  *
- * `[postBody]`/`[postExtra]` are the extension points for future `PostKind`s: with
- * nothing projected the standard body renders, so types 2/3 extend the shell
- * without editing it (the per-post comment thread stays page-side in the `li`).
+ * `[postBody]`/`[postExtra]` are the extension points for future `PostKind`s
+ * (the design-sanctioned one is `[postExtra]`, which always renders), so types
+ * 2/3 extend the shell without editing it (the per-post comment thread stays
+ * page-side in the `li`). The standard body region itself renders only when
+ * its text is non-blank (WU5): text-only and image-only posts are legitimate
+ * shapes and must not leave a phantom empty block.
  */
 @Component({
   selector: 'app-post-template',
@@ -62,6 +66,13 @@ export class PostTemplateComponent {
   protected readonly overflowCount = computed(() =>
     Math.max(0, this.post().attachments.length - MAX_MEDIA)
   );
+
+  /**
+   * The body region renders only when the standard body has visible text
+   * (WU5 — whitespace-only counts as blank): a text-less post must not leave
+   * an empty paragraph or a phantom block behind.
+   */
+  protected readonly hasBody = computed(() => hasVisibleText(this.post().content));
 
   protected onFollow(): void {
     const viewerId = this.viewerId();

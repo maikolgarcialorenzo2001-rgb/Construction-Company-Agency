@@ -12,7 +12,7 @@ import {
 import { PostTemplateComponent } from '../../components/post-template/post-template.component';
 import { SessionService } from '../../core/platform/auth/session.service';
 import type { Role } from '../../core/platform/domain';
-import { toPostView } from '../../core/platform/mocks/post-views';
+import { toPostView, isRenderablePostView } from '../../core/platform/mocks/post-views';
 import { CommentsStore } from '../../core/platform/store/comments.store';
 import { EngagementStore } from '../../core/platform/store/engagement.store';
 import { FeedStore } from '../../core/platform/store/feed.store';
@@ -166,8 +166,16 @@ export class PlatformFeedPage {
   /** The engaged viewer: the session user id, or `null` when anonymous. */
   protected readonly viewerId = computed(() => this.session.currentUser()?.userId ?? null);
 
-  /** Denormalized view-models (design D2): the template never sees a raw `authorId`. */
-  protected readonly views = computed(() => this.store.posts().map(toPostView));
+  /**
+   * Denormalized view-models (design D2): the template never sees a raw
+   * `authorId`. The list is filtered by the never-empty invariant (WU5) so a
+   * post with neither text nor image can never paint an empty card.
+   */
+  protected readonly views = computed(() =>
+    this.store.posts()
+      .map(toPostView)
+      .filter(isRenderablePostView)
+  );
 
   protected readonly draft = signal('');
 
@@ -199,6 +207,8 @@ export class PlatformFeedPage {
     event.preventDefault();
     const form = event.target as HTMLFormElement;
     const content = this.draft().trim();
+    // The composer has no image field, so the never-empty invariant (WU5)
+    // reduces here to a non-blank text gate: no text and no images is rejected.
     if (!content) {
       return;
     }

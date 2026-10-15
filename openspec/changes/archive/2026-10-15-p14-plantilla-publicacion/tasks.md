@@ -56,3 +56,13 @@ PR1 view-model+mapper+fixtures (→main) → PR2 port+adapter+store (stack PR1) 
 - [x] 4.3 RED: extend a11y spec — axe `/plataforma`: `button-name`, `nested-interactive`, `list`, `label` clean.
 - [x] 4.4 GREEN: fix regressions (accessible names, `aria-pressed`).
 - [x] 4.5 Full gate: `bunx ng test --watch=false` + `bunx ng build` + `bunx ng lint`.
+
+## Phase 5: Never-empty posts (WU5 — post-archive follow-up)
+
+Late requirement: a post must have text OR image, never neither; optional blocks are omitted, not left blank.
+
+- [x] 5.1 RED/GREEN: `components/post-template/post-template.component.spec.ts` — text-only keeps the body and hides media; image-only and whitespace-only drop `post-body`; both renders both blocks.
+- [x] 5.2 RED/GREEN: `mocks/post-views.spec.ts` + `mocks/post-views.ts` — `hasVisibleText`/`isRenderablePostView` (text-only, image-only, both accepted; neither rejected; whitespace and blank-URL edges).
+- [x] 5.3 RED/GREEN: `pages/plataforma/feed.page.spec.ts` + `pages/plataforma/feed.page.ts` — `views` filtered by `isRenderablePostView`, so a post with neither renders no card.
+- [x] 5.4 Composer coherence: `publish()` blank-text gate verified against the never-empty rule (the composer has no image field, so the text gate is the whole rule).
+- [x] 5.5 Full gate: `bunx ng test --watch=false` + `bunx ng build` + `bunx ng lint`.

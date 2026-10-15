@@ -274,6 +274,55 @@ describe('PostTemplateComponent', () => {
     });
   });
 
+  // --- Never-empty posts: optional blocks omitted (p14 WU5) ------------------
+
+  describe('optional body and media omission', () => {
+    it('renders the text and no media block for a text-only post', async () => {
+      const fixture = await render(postView({ attachments: [] }));
+
+      expect(q(fixture, 'post-body')?.textContent).toContain(
+        'Avance de obra: terminamos la losa del primer piso.'
+      );
+      expect(q(fixture, 'post-media')).toBeNull();
+      expect(q(fixture, 'post-media-overflow')).toBeNull();
+    });
+
+    it('renders the image and no body block at all for an image-only post', async () => {
+      const fixture = await render(
+        postView({ content: '', attachments: attachmentsOf(1) })
+      );
+
+      expect(q(fixture, 'post-body')).toBeNull();
+      expect(
+        rootOf(fixture).querySelectorAll('[data-testid="post-media"] img')
+      ).toHaveLength(1);
+    });
+
+    it('treats whitespace-only content as blank: no body block renders, the card stays intact', async () => {
+      const fixture = await render(
+        postView({ content: '  \n  ', attachments: attachmentsOf(1) })
+      );
+
+      expect(q(fixture, 'post-body')).toBeNull();
+      expect(q(fixture, 'post-header')).not.toBeNull();
+      expect(q(fixture, 'post-actions')).not.toBeNull();
+      expect(
+        rootOf(fixture).querySelectorAll('[data-testid="post-media"] img')
+      ).toHaveLength(1);
+    });
+
+    it('renders both blocks when the post carries text and images', async () => {
+      const fixture = await render(postView({ attachments: attachmentsOf(2) }));
+
+      expect(q(fixture, 'post-body')?.textContent).toContain(
+        'Avance de obra: terminamos la losa del primer piso.'
+      );
+      expect(
+        rootOf(fixture).querySelectorAll('[data-testid="post-media"] img')
+      ).toHaveLength(2);
+    });
+  });
+
   describe('actions', () => {
     it('renders the three es-AR action labels', async () => {
       const fixture = await render(postView());
