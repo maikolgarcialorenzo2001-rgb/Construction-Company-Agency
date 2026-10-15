@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { ENGAGEMENT_STORAGE_KEY } from '../../core/platform/api/mock-engagement.gateway';
+import type { EngagementState } from '../../core/platform/api/ports';
 import { COMMENTS_GATEWAY, FEED_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import type { Comment, Page, Post } from '../../core/platform/domain';
@@ -17,6 +19,12 @@ const seedSession = (role: 'worker' | 'company'): void =>
     })
   );
 
+/** The persisted engagement envelope (`{v:1, state}`), as the adapter writes it. */
+const persistedEngagement = (): EngagementState => {
+  const raw = localStorage.getItem(ENGAGEMENT_STORAGE_KEY);
+  return raw ? (JSON.parse(raw) as { state: EngagementState }).state : {};
+};
+
 /**
  * Zoneless page tests: every scenario drives `detectChanges` + `whenStable`
  * exactly like the store harness, because the page fires `load()` on creation
@@ -25,10 +33,14 @@ const seedSession = (role: 'worker' | 'company'): void =>
 describe('PlatformFeedPage', () => {
   beforeEach(() => {
     localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
     TestBed.configureTestingModule({});
   });
 
-  afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
+  afterEach(() => {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
+  });
 
   it('renders the timeline once the gateway resolves', async () => {
     const fixture = TestBed.createComponent(PlatformFeedPage);
@@ -94,6 +106,120 @@ describe('PlatformFeedPage', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('No hay novedades todavía');
   });
+
+  // --- Shared post template (WU4) --------------------------------------------
+
+  it('renders each post through the shared PostTemplateComponent inside the feed-post li', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const items = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="feed-post"]'
+    );
+    expect(items).toHaveLength(FEED_POSTS.length);
+
+    for (const item of items) {
+      const templates = item.querySelectorAll('app-post-template');
+      expect(templates, 'one template per feed-post').toHaveLength(1);
+      expect(item.querySelector('[data-testid="post-header"]')).not.toBeNull();
+      expect(item.querySelector('[data-testid="post-actions"]')).not.toBeNull();
+      expect(item.querySelector('[data-testid="post-follow"]')?.textContent?.trim()).toBe('Seguir');
+    }
+  });
+
+  it('shows the denormalized author name and role instead of the raw authorId', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const posts = element.querySelectorAll('[data-testid="feed-post"]');
+
+    // post-1 is authored by company-1 → profile name + es-AR role label.
+    expect(posts[0].textContent).toContain('Constructora Norte SAC');
+    expect(posts[0].textContent).toContain('Empresa');
+
+    // post-3 is authored by worker-1 → profile name + es-AR role label.
+    expect(posts[2].textContent).toContain('Lucía Fernández');
+    expect(posts[2].textContent).toContain('Trabajador');
+
+    // No seeded author id may surface as text anywhere in the feed.
+    for (const authorId of ['company-1', 'company-2', 'worker-1', 'worker-2', 'worker-3']) {
+      expect(element.textContent ?? '').not.toContain(authorId);
+    }
+  });
+
+  it('renders the media grid from the fixture attachments', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const posts = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="feed-post"]'
+    );
+
+    // post-6 seeds exactly 10 attachments: the full grid, no overflow hint.
+    expect(posts[5].querySelectorAll('[data-testid="post-media"] img')).toHaveLength(10);
+    expect(posts[5].querySelector('[data-testid="post-media-overflow"]')).toBeNull();
+
+    // post-9 seeds 1 attachment: a single image.
+    expect(posts[8].querySelectorAll('[data-testid="post-media"] img')).toHaveLength(1);
+
+    // post-1 seeds none: the media block hides entirely.
+    expect(posts[0].querySelector('[data-testid="post-media"]')).toBeNull();
+  });
+
+  it('wires the session viewer into the engagement controls', async () => {
+    seedSession('worker');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const posts = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="feed-post"]'
+    );
+    const like = posts[0].querySelector('[data-testid="post-like"]') as HTMLButtonElement;
+    expect(like.getAttribute('aria-pressed')).toBe('false');
+
+    like.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(like.getAttribute('aria-pressed')).toBe('true');
+    // The session viewer (worker-1) is the one recorded, end to end through
+    // the store and the adapter's persistence.
+    expect(persistedEngagement()['worker-1'].liked).toContain('post-1');
+  });
+
+  it('never engages an anonymous visitor', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const posts = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="feed-post"]'
+    );
+    (posts[0].querySelector('[data-testid="post-like"]') as HTMLButtonElement).click();
+    (posts[0].querySelector('[data-testid="post-follow"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(posts[0].querySelector('[data-testid="post-like"]')?.getAttribute('aria-pressed')).toBe(
+      'false'
+    );
+    expect(
+      posts[0].querySelector('[data-testid="post-follow"]')?.getAttribute('aria-pressed')
+    ).toBe('false');
+    expect(persistedEngagement()).toEqual({});
+  });
+
+  // --- Composer gating & publishing ------------------------------------------
 
   it('shows the composer only for the company role', async () => {
     const fixture = TestBed.createComponent(PlatformFeedPage);

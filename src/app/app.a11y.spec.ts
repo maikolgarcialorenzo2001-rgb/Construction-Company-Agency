@@ -174,6 +174,33 @@ describe('accessibility scan (axe-core)', () => {
     expect(document.querySelector('h1')?.textContent).toBe('Novedades');
   });
 
+  it('scans the post-template engagement controls on /plataforma', async () => {
+    await goto('/plataforma');
+
+    // The feed must embed the shared template (not inline post markup) before
+    // the gate can mean anything: every feed post hosts one `app-post-template`.
+    const templates = document.querySelectorAll('app-post-template');
+    expect(templates.length).toBeGreaterThan(0);
+
+    const results = await axe.run(document, {
+      runOnly: {
+        type: 'rule',
+        values: ['button-name', 'nested-interactive', 'list', 'label']
+      }
+    });
+    expect(results.violations.map((violation) => violation.id), 'engagement a11y rules').toEqual([]);
+
+    // Each template control must carry a non-empty accessible name.
+    for (const template of templates) {
+      for (const testid of ['post-follow', 'post-like', 'post-share', 'post-save']) {
+        const control = template.querySelector(`[data-testid="${testid}"]`);
+        expect(control, `${testid} control`).not.toBeNull();
+        const name = control?.getAttribute('aria-label') ?? control?.textContent?.trim();
+        expect(name, `${testid} accessible name`).toBeTruthy();
+      }
+    }
+  });
+
   it('scans the admin area on /plataforma/admin, not a role redirect', async () => {
     await goto('/plataforma/admin');
 

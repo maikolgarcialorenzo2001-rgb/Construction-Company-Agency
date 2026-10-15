@@ -42,7 +42,9 @@ const ROUTE_CONTRACTS: readonly RouteContract[] = [
   { path: '/nosotros', images: 0, priority: 0, cta: true },
   { path: '/presupuesto', images: 0, priority: 0, cta: false },
   { path: '/previa', images: 0, priority: 0, cta: false },
-  { path: '/plataforma', images: 0, priority: 0, cta: false },
+  // `/plataforma` renders the post template's fixture media: post-6 (10) + post-9 (1)
+  // absolute https attachments, every one lazy — the feed carries no LCP hero.
+  { path: '/plataforma', images: 11, priority: 0, cta: false },
   { path: '/plataforma/inicio', images: 0, priority: 0, cta: false },
   { path: '/plataforma/admin', images: 0, priority: 0, cta: false },
   { path: '/plataforma/trabajos', images: 0, priority: 0, cta: false },

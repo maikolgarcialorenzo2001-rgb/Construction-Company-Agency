@@ -9,9 +9,12 @@ import {
   untracked
 } from '@angular/core';
 
+import { PostTemplateComponent } from '../../components/post-template/post-template.component';
 import { SessionService } from '../../core/platform/auth/session.service';
 import type { Role } from '../../core/platform/domain';
+import { toPostView } from '../../core/platform/mocks/post-views';
 import { CommentsStore } from '../../core/platform/store/comments.store';
+import { EngagementStore } from '../../core/platform/store/engagement.store';
 import { FeedStore } from '../../core/platform/store/feed.store';
 
 /**
@@ -19,10 +22,17 @@ import { FeedStore } from '../../core/platform/store/feed.store';
  * zoneless: the page never calls `ApplicationRef`/`detectChanges` on itself;
  * every state change arrives through a `.set()` in the store.
  *
+ * Each post renders through the shared `PostTemplateComponent` fed by the
+ * demo-only view-model (design D2/D4): `views = computed(map(toPostView))`
+ * denormalizes the author, so the template never sees a raw `authorId`, and the
+ * session's user id flows in as `viewerId` for the engagement controls.
+ *
  * Each post carries an inline comment thread from the per-post `CommentsStore`
- * (design: "indexed by post"): the view reads `comments.state()[post.id]`
+ * (design D7 — the thread stays page-side in the `li`, leaving `[postExtra]`
+ * free for future `PostKind`s): the view reads `comments.state()[view.id]`
  * directly — never a per-post `computed` inside the `@for`. An `effect` calls
- * the guarded `load(postId)` once per rendered post.
+ * the guarded `load(postId)` once per rendered post, and the constructor
+ * triggers the guarded one-shot `EngagementStore.load()`.
  *
  * The post composer is gated to `company`; the per-post comment composer is
  * gated to any authenticated role (`effectiveRole() !== null`), so a worker or
@@ -31,6 +41,7 @@ import { FeedStore } from '../../core/platform/store/feed.store';
 @Component({
   selector: 'app-platform-feed',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PostTemplateComponent],
   template: `
     <section class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 class="text-section font-semibold text-ink-900">Novedades</h1>
@@ -71,15 +82,14 @@ import { FeedStore } from '../../core/platform/store/feed.store';
         }
         @case ('ready') {
           <ul class="mt-6 space-y-4">
-            @for (post of store.posts(); track post.id) {
-              <li data-testid="feed-post" class="rounded-xl border border-ink-900/10 p-4">
-                <p class="text-ink-900">{{ post.content }}</p>
-                <p class="mt-2 text-sm text-ink-600">{{ post.authorId }}</p>
+            @for (view of views(); track view.id) {
+              <li data-testid="feed-post">
+                <app-post-template [post]="view" [viewerId]="viewerId()" />
 
-                <div class="mt-4 border-t border-ink-900/10 pt-3">
+                <div class="mt-3 rounded-xl border border-ink-900/10 p-4">
                   <p class="text-sm font-medium text-ink-900">Comentarios</p>
 
-                  @let thread = comments.state()[post.id];
+                  @let thread = comments.state()[view.id];
 
                   <ul
                     data-testid="comment-thread"
@@ -108,15 +118,15 @@ import { FeedStore } from '../../core/platform/store/feed.store';
                     <form
                       data-testid="comment-composer"
                       class="mt-3"
-                      (submit)="postComment($event, post.id)"
+                      (submit)="postComment($event, view.id)"
                     >
                       <label
-                        [attr.for]="'comment-content-' + post.id"
+                        [attr.for]="'comment-content-' + view.id"
                         class="block text-sm font-medium text-ink-900"
                         >Escribir un comentario</label
                       >
                       <textarea
-                        [attr.id]="'comment-content-' + post.id"
+                        [attr.id]="'comment-content-' + view.id"
                         name="body"
                         rows="2"
                         required
@@ -144,6 +154,7 @@ import { FeedStore } from '../../core/platform/store/feed.store';
 export class PlatformFeedPage {
   protected readonly store = inject(FeedStore);
   protected readonly comments = inject(CommentsStore);
+  protected readonly engagement = inject(EngagementStore);
   private readonly session = inject(SessionService);
 
   /** Authenticated role; `null` is an anonymous visitor. */
@@ -152,10 +163,18 @@ export class PlatformFeedPage {
   /** The session role, unless the explicit input overrides it (test/preview). */
   protected readonly effectiveRole = computed(() => this.role() ?? this.session.role());
 
+  /** The engaged viewer: the session user id, or `null` when anonymous. */
+  protected readonly viewerId = computed(() => this.session.currentUser()?.userId ?? null);
+
+  /** Denormalized view-models (design D2): the template never sees a raw `authorId`. */
+  protected readonly views = computed(() => this.store.posts().map(toPostView));
+
   protected readonly draft = signal('');
 
   constructor() {
     void this.store.load();
+    // Guarded one-shot engagement hydration (design: "page ctor → store.load()").
+    void this.engagement.load();
     // Load each thread once posts arrive. The loop deliberately tracks only
     // `store.posts()`: `comments.load` reads and writes `comments.state`, so
     // running it inside `untracked` keeps those reads out of this effect's
