@@ -1,116 +1,35 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-14** (p13-modo-previa archivado + **mergeado a `main`** y pusheado; branch eliminada). Plan Pasos 1–8 **completos**. Los 2 WARNINGs de verify (W-p13-1, W-p13-2) quedaron **cerrados**.
-> Este archivo reemplaza al anterior (se sobrescribe a propósito para no arrastrar estado viejo).
+> Última actualización: **2026-10-15** — `p14-plantilla-publicacion` mergeado a `main` (`f70ad55`) y pusheado. Gate verde: **716 tests / 74 files** · lint limpio · build con **25 rutas prerenderizadas**.
+> El historial de cambios p0–p14 y sus notas quedaron en `git log -- HANDOFF.md` (este archivo se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
 
-## 1. Estado actual (verificado)
+## Pendientes — Plantillas
 
-- Angular 22, static SSR, **zoneless signals**, TS strict, Tailwind v4. **BUN ONLY** (`bunx ng ...`).
-- **Strict TDD activo** (`bunx ng test --watch=false`).
-- Gate verde: **652 tests / 70 files** · lint limpio · build verde (**25 rutas prerenderizadas**) · `verify:prerender` PASS.
-- `contracts/openapi.yaml` **READ-ONLY**. Roles `worker | company | admin` (sin 4º rol).
-- `git status`: limpio. p13-modo-previa archivado (spec sync) + **mergeado a `main`** (`b0ee223`) y **pusheado** a `origin/main`; branch `feature/p13-modo-previa` **eliminada** (solo queda `main`). `angular.json` revertido (no se commitea).
-- Rutas de plataforma: `/plataforma` = feed; `/plataforma/inicio` = **home por rol** (nuevo en p11).
-- `/plataforma` es **client-only** y detrás de `authGuard`. Existe `roleGuard` con `data.roles` (p12-admin); `/plataforma/admin` usa `[authGuard, roleGuard]` con `data.roles: ['admin']`.
+**Plantilla 1 — base (estándar)** ✅ hecha en `p14-plantilla-publicacion`: autor + botón Seguir · texto opcional · fotos 1–10 · Me gusta / Reenviar / Guardar · invariante *nunca-vacía* (texto **o** imagen).
 
-## 2. Cómo leemos el plan
+**Plantilla 2 — Solicitud de empleo (trabajador)**
+- [ ] `PostKind: 'job-request'` + composer propio: hoy el composer del feed está **abierto solo a `company`** → hay que habilitarlo para `worker`.
+- [ ] Definir campos propios (a definir): puesto/rubro buscado, zona, disponibilidad, experiencia, modalidad.
+- [ ] Extender la base con los slots `[postBody]` / `[postExtra]` — **proyectar en `[postExtra]`**, nunca en `[postBody]`, si el post puede venir sin texto (S-6 del verify de p14).
+- [ ] ¿Requiere schema nuevo en `contracts/openapi.yaml`? (hoy READ-ONLY → sería un cambio de contrato aparte).
 
-Plan de registro: **§10 de la versión anterior del HANDOFF** (Paso 1–8). Cada paso = **un cambio SDD chico**,
-con commits locales secuenciales sobre `main` (un work-unit commit por unidad, mensaje termina en `(nombre-cambio)`).
-**Pasos 1–8 completos.** Meta (**lograda en p13**): una **previa estática presentable** de `/plataforma` con datos falsos.
+**Plantilla 3 — Vacante (empresa)**
+- [ ] `PostKind: 'vacancy'` + composer para `company`.
+- [ ] Definir campos propios (a definir): título del puesto, rubro, ubicación, jornada, requisitos, rango salarial, forma de postularse.
+- [ ] Decidir la relación con el modelo de vacante **ya existente** (`platform-jobs` + `ApplicationsStore`): ¿la publicación es un `Job` o un post con datos propios? Evitar duplicar el modelo de vacante/postulación.
+- [ ] Mismos guardarraíles: slots de extensión, contrato READ-ONLY, strict TDD, gate a11y sobre `/plataforma`.
 
-### Decisiones bloqueadas (no volver a preguntar)
-- Modo de ejecución: **`auto`** (correr fases sin frenar).
-- Artifact store: **híbrido** (`openspec/` + Engram).
-- Delivery: **`ask-on-risk`** · Chain: **`stacked-to-main`**. Estado real: se pushea a `origin/main`; branches sólo cuando el usuario lo pide (p13 se aisló en `feature/p13-modo-previa` y luego se **mergeó a `main` + se eliminó**).
-- 4º rol / moderación: **descartado**. Pasos 5/6 pierden la parte de moderación; **Paso 6 se elimina**.
+## Pendientes — Reestructurar vistas
+- [ ] **Vista de guardados**: el botón Guardar ya persiste por viewer, pero no existe la sección que lista las publicaciones guardadas.
+- [ ] **Feed priorizado por seguidores**: el sistema de follow ya guarda las relaciones, pero `FeedStore` todavía no ordena/prioriza por follows.
+- [ ] A definir: qué más entra en esta reestructuración (perfiles de autor, lista de seguidores/seguidos, layout general de `/plataforma`).
 
-## 3. Hecho en esta tanda
+---
 
-| Cambio | Estado | Commits |
-|---|---|---|
-| **p8-warnings-closure** | ✅ archivado | `8a575d3`, `86f535c`, `a38697c`, `cfcb179` |
-| **p9-comentarios** | ✅ archivado (con spec sync) | `c5919a6`, `cbc8048`, `0859ae1`, `bf628d8` |
-| **p10-fixtures** | ✅ archivado (sin spec sync) | `fd28696`, `38f3725`, `0cc2d98` |
-| **p11-home-por-rol** | ✅ archivado (con spec sync) | `163887d`, `9a0745a`, `40b909c`, `09286bf`, `8e55e7e`, `fb1bc76`, `68c27c7` |
-| **p12-admin** | ✅ archivado (con spec sync) | `f4fe721`, `5b478e2`, `0f8ff7d`, `c81acef` |
-| **p13-modo-previa** | ✅ archivado (con spec sync) — **mergeado a `main`** + pusheado | `75c0132`, `512d366`, `5c639a3`, `b0ee223` |
+## Deuda registrada (no bloqueante)
 
-- **p8**: cerró warnings de p6/p7 — CTA del header bindeada a `site.promo.ctaPath`; rutas de plataforma
-  (`/plataforma`, `/login`, `/registro`) agregadas al scan a11y con sesión sembrada; guard de planes;
-  test con `SessionService.login()` real.
-- **p9**: modelo `Comment` + `CommentsGateway` (mock in-memory) + `CommentsStore` zoneless por post +
-  **hilo inline de comentarios en el feed** (composer sólo para autenticados). Nueva capability
-  `platform-comments` (+ MODIFIED `platform-feed`), sincronizada a `openspec/specs/`. **Sin cambio de contrato.**
-  ⚠️ El effect de carga necesitó **`untracked()`** para no loopear infinito.
-- **p10**: fixtures ampliadas — posts 3→9, comments 3→12, jobs 3→7, applications 2→7 (4 estados),
-  perfiles 3W+2C, cuentas demo 2→5. Todo `isPlaceholder: true`. Sin delta de spec.
-- **p11**: entrada por rol — nueva `PlatformHomePage` en `/plataforma/inicio` (worker "Mis postulaciones",
-  company "Mis vacantes", admin placeholder), `login`/`registro` redirigen ahí, nav gana "Inicio". Nueva
-  `ApplicationsStore` y **fix W1-p10**: `loadApplication(jobId, applicantId?)` + bloque de estado sólo para worker.
-  Capabilities: NEW `platform-home`; MODIFIED `platform-jobs`, `platform-shell`, `site-shell-navigation`.
-  Sin cambio de contrato. `roleGuard` se difirió y llegó en p12-admin (abajo).
-- **p12**: área admin con `roleGuard` (`data.roles`) + cuenta demo admin (`admin@demo.test`/`demo1234`/`admin-1`);
-  `/plataforma/admin` con `[authGuard, roleGuard]` (`data.roles: ['admin']`), directorio read-only (sin `password`)
-  + config local en `localStorage`;   `ADMIN_NAV` propio (con `Admin`) y link en el home admin. Capabilities:
-  NEW `platform-admin`; MODIFIED `platform-home`, `platform-identity`, `platform-shell`, `site-shell-navigation`.
-  Sin cambio de contrato.
-- **p13**: modo previa estática — `/previa` **top-level** (hermano de `plataforma`), prerenderizable y **sincrónico**
-  desde fixtures (sin store/`await`/`PendingTasks`, R1 mitigado), + `/previa/:role` (worker/company/admin) por
-  segmento; **switcher de rol client-only** que entra a la plataforma con cualquiera de las 6 cuentas demo
-  (`SessionService.login(email,'demo1234')`, sin registro). `/previa` es `NOINDEX` y `scripts/verify-prerender.ts`
-  queda **sin tocar** (`previa` fuera de `STATIC_PATHS`). Capabilities: NEW `platform-preview`; MODIFIED
-  `platform-shell`, `server-rendering`, `platform-identity`. Sin cambio de contrato. **Mergeado a `main`** (ff)
-  + pusheado; branch `feature/p13-modo-previa` eliminada.
-
-## 4. EN CURSO — retomar acá
-
-Paso 7 (`p12-admin`) ✅ **DONE / archivado** (ver §3 y §8).
-Paso 8 (`p13-modo-previa`) ✅ **DONE / archivado** + **mergeado a `main`** y pusheado (ver §3 y §8).
-
-**Paso 8 — Modo previa estática** (`p13-modo-previa`) — ✅ **DONE**
-- Alcance cumplido: switcher de rol (entrar como cualquiera desde fixtures, sin registro) + showcase
-  `/previa` prerenderizado (top-level, hosteable sin app). Los perfiles extra de p10 quedan **alcanzables acá**.
-- Entregable: previa navegable/publicable con datos falsos → `dist/.../browser/previa/{index,worker,company,admin}.html`.
-- ✅ **Mergeado a `main`** (`b0ee223`) y pusheado; branch `feature/p13-modo-previa` eliminada.
-
-## 5. Warnings / arrastres vivos
-
-| ID | Origen | Item |
-|---|---|---|
-| W-spawn | proceso | El sub-agente `sdd-apply` falla **intermitente** al spawnear: `Bad Request: {"model":"big-pickle"}`. **Solución: reintentar** el `task`. Un intento parcial puede dejar archivos huérfanos → re-probar RED y reconciliar (pasó en p11 WU2). |
-| W-propose | proceso | El sub-agente `sdd-propose` reportó éxito pero **no persistió** (p10): reescribir inline y **verificar artefactos en disco** tras cada fase. |
-| W-verify | proceso | En p9 el `verify-report.md` no quedó en disco (gap híbrido): verificar persistencia. |
-
-**Cerrados (p13):** `W-p13-1` — **no-emptiness del HTML construido** ahora con aserción automática: `scripts/verify-previa.ts` (nuevo) + script `verify:previa`, cableado al `gate`. Lee `dist/.../browser/previa/{index,worker,company,admin}.html` y exige, por página: **conteo exacto de filas** (`previa-feed-post`/`previa-job`/`previa-application`/`previa-vacancy`/`previa-directory-row`), **contenido de cada fila** derivado de fixtures, heading, `robots=noindex`, ausencia de `demo1234` y ausencia de leak `plataforma`; roles iterados desde `PREVIEW_ROLES` (sin lista duplicada) con `default` que **falla ruidosamente** ante un rol sin rama de verificación. **Sin tocar `verify-prerender.ts` ni `STATIC_PATHS`.** Camino de falla probado (raíz `dist` ausente → FAIL; HTML vacío/shell → FAIL; filas con conteo correcto pero contenido vacío → FAIL; build real → PASS). *Corrección al plan original:* el "spec `node:fs`" no servía — un spec de vitest rompería cuando `dist` no existe; un script post-build espeja el patrón de `verify-prerender.ts`. `W-p13-2` — evidencia TDD consolidada en `sdd/p13-modo-previa/apply-progress` con tabla RED/GREEN/TRIANGULATE/SAFETY-NET/REFACTOR que abarca WU1+WU2.
-
-**Cerrados (2026-10-14, commit de limpieza):** `W-NG8107` — el `?.` del harness en `comments.store.spec.ts` está justificado ahora que `postState` se tipa `CommentsState | undefined` (la causa raíz real es que no está activo `noUncheckedIndexedAccess`; queda como ticket aparte). `W-seq` — `MockCommentsGateway.seq` ahora es contador **por instancia** (como los otros mocks); ids determinísticos sin depender del orden de la suite.
-
-## 6. Gotchas operativos (ya nos mordieron)
-
-- **Archive**: el dir del cambio suele estar **untracked**; `git mv` falla → usar `mv` normal + **`git add` de todo el dir**.
-  Confirmar `git status` sin artefactos de archivo colgando.
-- **`angular.json`** aparece `M` por el CLI (`analytics: false` + reformat): **no commitear**.
-- **No tocar** `contracts/openapi.yaml`; **no** agregar `Comment` (u otras entidades sin schema) a `contract-conformance.ts` (rompe build).
-- UI copy **es-AR**; artefactos/commits en **inglés**; convencional commits; sin atribución de IA.
-
-## 7. Comandos
-
-```bash
-bunx ng test --watch=false     # tests (strict TDD)
-bunx ng lint
-bunx ng build                  # AOT + strictTemplates
-bun run gate                   # gate completo
-```
-
-## 8. Refs Engram (project: construction-company-agency)
-
-- Cambios: `sdd/p8-warnings-closure/summary`, `sdd/p9-comentarios/summary`, `sdd/p10-fixtures/summary`, `sdd/p11-home-por-rol/summary`. Archivado p12: `sdd/p12-admin/archive-report` (#972). Archivado p13: `sdd/p13-modo-previa/archive-report`.
-- Fases p11: `explore` (#944), `proposal` (#946), `spec` (#947), `design` (#948), `tasks` (#949), `apply-progress` (#950), `verify-report` (#952), `archive-report` (#953).
-- Fases p12 (archivado): `explore` (#956), `proposal` (#958), `spec` (#959), `design` (#960), `tasks` (#961), `apply-progress` (#963), `verify-report` (#969), `archive-report` (#972).
-- Fases p13 (archivado, **mergeado a `main`**): `explore` (#977), `proposal` (#979), `spec` (#980), `design` (#981), `tasks` (#982), `apply-progress` (#983, WU2+fix), `verify-report` (#986), `archive-report` (`sdd/p13-modo-previa/archive-report`).
-- Descubrimientos: `platform/role-guard` (#945), #951 (p11 apply), #954 (stray delta scaffolding), #957 (p12 foundation gaps).
-- Protocolo SDD: `sdd-init/{project}` (#783), `skill-registry` (#785).
-- Lección: `openspec/archive-must-stage-artifacts`.
+- `W-1` — falta un test para la cláusula "sin contador de seguidores / sin notificaciones" de `platform-engagement`.
+- `W-2` — WU2 (619 líneas) y WU3 (618) exceden el presupuesto de review de 400 líneas → requiere `size:exception` si algún día se cortan PRs.
+- `W-3` — las fotos demo de las fixtures apuntan a `images.example.com`: **404 en un navegador real** (jsdom no lo detecta). Cerrar antes de una demo pública en vivo.
