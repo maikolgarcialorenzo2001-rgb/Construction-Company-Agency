@@ -540,4 +540,58 @@ describe('PlatformFeedPage', () => {
     expect(postOne.textContent).toContain('Coordinemos el lunes a las 8.');
     expect(textarea.value).toBe('');
   });
+
+  // --- Job-request structured card projection (p15 WU2) ----------------------
+
+  it('projects the job-request card into [postExtra] and keeps [postBody] free of structured fields', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const posts = Array.from(
+      element.querySelectorAll('[data-testid="feed-post"]')
+    ) as HTMLElement[];
+
+    // Both seeded job-request posts (post-10, post-11 tail) render a card.
+    const cards = element.querySelectorAll('[data-testid="post-job-request"]');
+    expect(cards).toHaveLength(2);
+
+    const jobRequestPost = posts[posts.length - 1]; // post-11
+    const card = jobRequestPost.querySelector('[data-testid="post-job-request"]');
+    const extra = jobRequestPost.querySelector('[data-testid="post-extra"]');
+    expect(card).not.toBeNull();
+    expect(extra?.contains(card as Node)).toBe(true);
+
+    // The card owns the structured fields…
+    expect(card?.textContent).toContain('Puesto/rubro');
+    expect(card?.textContent).toContain('Herrero / estructuras metálicas');
+
+    // …and the body slot keeps only the free text.
+    const body = jobRequestPost.querySelector('[data-testid="post-body"]');
+    expect(body).not.toBeNull();
+    expect(body?.textContent).toContain('Ofrezco servicios de herrería');
+    expect(body?.textContent).not.toContain('Puesto/rubro');
+    expect(body?.textContent).not.toContain('Herrero / estructuras metálicas');
+  });
+
+  it('does not project a job-request card for standard posts', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const standardPost = element.querySelector('[data-testid="feed-post"]') as HTMLElement;
+
+    // post-1 is standard: the always-present postExtra stays empty of cards and
+    // the base template (body + actions) renders as before.
+    expect(standardPost.querySelector('[data-testid="post-job-request"]')).toBeNull();
+    expect(standardPost.querySelector('[data-testid="post-extra"]')).not.toBeNull();
+    expect(standardPost.querySelector('[data-testid="post-body"]')?.textContent).toContain(
+      'Avance de obra en Villa Crespo'
+    );
+    expect(standardPost.querySelector('[data-testid="post-actions"]')).not.toBeNull();
+  });
 });
