@@ -1,0 +1,90 @@
+<form
+  data-testid="job-request-composer"
+  role="group"
+  aria-label="Solicitud de empleo"
+  class="mt-6 rounded-xl border border-ink-900/10 p-4"
+  [formGroup]="form"
+  (ngSubmit)="submit($event)"
+  novalidate
+>
+  <p class="text-sm font-medium text-ink-900">Solicitud de empleo</p>
+
+  @for (field of requiredFields; track field.name) {
+    <div class="mt-3">
+      <label [attr.for]="field.id" class="block text-sm font-medium text-ink-900">
+        {{ field.label }} <span aria-hidden="true">*</span>
+      </label>
+      <input
+        [id]="field.id"
+        [formControlName]="field.name"
+        type="text"
+        [attr.aria-describedby]="field.id + '-error'"
+        [attr.aria-invalid]="form.controls[field.name].invalid ? 'true' : null"
+        class="mt-1 w-full rounded-lg border border-ink-900/15 p-2 text-ink-900"
+      />
+      <p [id]="field.id + '-error'" role="alert" class="mt-1 text-sm text-red-700">
+        {{ errorText(field) }}
+      </p>
+    </div>
+  }
+
+  <div class="mt-3">
+    <label for="job-request-free-text" class="block text-sm font-medium text-ink-900"
+      >Texto libre</label
+    >
+    <textarea
+      id="job-request-free-text"
+      formControlName="freeText"
+      rows="2"
+      aria-describedby="job-request-composite-error"
+      placeholder="Contá brevemente qué buscás."
+      class="mt-1 w-full rounded-lg border border-ink-900/15 p-2 text-ink-900"
+    ></textarea>
+  </div>
+
+  <div class="mt-3">
+    <label for="job-request-photos" class="block text-sm font-medium text-ink-900"
+      >Fotos (hasta 10)</label
+    >
+    <input
+      id="job-request-photos"
+      type="file"
+      accept="image/*"
+      multiple
+      aria-describedby="job-request-composite-error"
+      (change)="onPhotoInput($event)"
+      class="mt-1 block text-sm text-ink-600"
+    />
+    @if (photos().length > 0) {
+      <ul class="mt-2 flex flex-wrap gap-2">
+        @for (photo of photos(); track photo) {
+          <li>
+            <img
+              [src]="photo"
+              [alt]="'Foto ' + ($index + 1) + ' de la solicitud'"
+              data-testid="job-request-photo-preview"
+              class="h-16 w-16 rounded-lg object-cover"
+            />
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <p
+    id="job-request-composite-error"
+    data-testid="job-request-composite-error"
+    role="alert"
+    class="mt-1 text-sm text-red-700"
+  >
+    {{ compositeRejected() ? 'Sumá un texto o al menos una foto para publicar.' : '' }}
+  </p>
+
+  <button
+    data-testid="job-request-submit"
+    type="submit"
+    class="mt-3 rounded-lg bg-ink-900 px-4 py-2 font-medium text-white"
+  >
+    Publicar solicitud
+  </button>
+</form>
