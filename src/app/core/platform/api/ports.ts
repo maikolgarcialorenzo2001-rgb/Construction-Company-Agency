@@ -10,9 +10,10 @@ import type {
   CompanyProfileInput,
   DirectoryUser,
   JobOpening,
+  JobRequestPayload,
   Page,
   Post,
-  PostInput,
+  PostKind,
   Role,
   User,
   WorkerProfile,
@@ -64,9 +65,25 @@ export interface ApplicationsFilter {
   status?: ApplicationStatus;
 }
 
+/**
+ * Demo-only create payload (design D3). The contract `PostInput` is
+ * conformance-locked, so the draft carries the provenance the contract has no
+ * room for: the session `authorId` (no more hardcoded `company-1`) plus the
+ * `kind` discriminator and its optional structured payload. The adapter records
+ * a `job-request` payload into the demo registry; the resolved `Post` stays
+ * contract-shaped and never carries `kind`.
+ */
+export interface CreatePostDraft {
+  authorId: string;
+  kind: PostKind;
+  content: string;
+  attachments?: string[];
+  jobRequest?: JobRequestPayload;
+}
+
 export interface FeedGateway {
   timeline(page?: number, pageSize?: number): Promise<Page<Post>>;
-  create(input: PostInput): Promise<Post>;
+  create(draft: CreatePostDraft): Promise<Post>;
 }
 
 export interface JobsGateway {

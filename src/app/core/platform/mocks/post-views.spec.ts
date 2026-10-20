@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { Post, PostView } from '../domain';
-import { FEED_POSTS } from './fixtures';
+import { FEED_POSTS, JOB_REQUEST_SEEDS } from './fixtures';
+import { resetJobRequestRegistry } from './job-request.registry';
 import { isRenderablePostView, toPostView } from './post-views';
 
 /**
@@ -81,6 +82,54 @@ describe('toPostView mapper (p14 WU1)', () => {
       expect(view.authorName, view.id).not.toBe(view.authorId);
       expect(view.authorName, view.id).not.toBe('Perfil no disponible');
     }
+  });
+});
+
+/**
+ * Kind/payload derivation (p15 WU1, design D2). `toPostView` reads the demo
+ * job-request registry: a hit tags the view `kind: 'job-request'` and carries
+ * the payload; a miss stays `'standard'` and the `jobRequest` key is omitted so
+ * the existing `toEqual` specs keep holding. The predicate stays untouched.
+ */
+describe('toPostView job-request derivation (p15 WU1)', () => {
+  const makePost = (overrides: Partial<Post> = {}): Post => ({
+    id: 'post-x',
+    authorId: 'worker-1',
+    content: 'Contenido de prueba',
+    createdAt: '2026-10-01T00:00:00.000Z',
+    ...overrides
+  });
+
+  const postById = (id: string): Post => {
+    const post = FEED_POSTS.find((candidate) => candidate.id === id);
+    if (!post) {
+      throw new Error(`missing fixture ${id}`);
+    }
+    return post;
+  };
+
+  beforeEach(() => resetJobRequestRegistry());
+  afterEach(() => resetJobRequestRegistry());
+
+  it('derives kind job-request and the payload on a registry hit', () => {
+    const seed = JOB_REQUEST_SEEDS[0];
+    const view = toPostView(postById(seed.id));
+
+    expect(view.kind).toBe('job-request');
+    expect(view.jobRequest).toEqual(seed.payload);
+  });
+
+  it('omits the jobRequest key entirely on a registry miss', () => {
+    const view = toPostView(makePost({ id: 'post-1' }));
+
+    expect(view.kind).toBe('standard');
+    expect(view).not.toHaveProperty('jobRequest');
+  });
+
+  it('keeps isRenderablePostView independent of the derived kind', () => {
+    const view = toPostView(postById(JOB_REQUEST_SEEDS[0].id));
+
+    expect(isRenderablePostView(view)).toBe(true);
   });
 });
 

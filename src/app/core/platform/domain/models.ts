@@ -83,7 +83,15 @@ export interface PostInput {
  * today; future post types (worker job-request, company vacancy) extend the base
  * template through `[postBody]`/`[postExtra]` without widening the contract `Post`.
  */
-export type PostKind = 'standard';
+export type PostKind = 'standard' | 'job-request';
+
+/** Structured payload for worker job-request posts (Plantilla 2). Demo-only. */
+export interface JobRequestPayload {
+  position: string;
+  availability: string;
+  modality: string;
+  experience: string;
+}
 
 /**
  * A denormalized, render-ready feed post consumed by `PostTemplateComponent`
@@ -101,6 +109,7 @@ export interface PostView {
   content: string;
   attachments: string[];
   createdAt: string;
+  jobRequest?: JobRequestPayload;
 }
 
 /**

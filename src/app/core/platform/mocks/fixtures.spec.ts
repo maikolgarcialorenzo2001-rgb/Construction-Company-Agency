@@ -6,9 +6,11 @@ import {
   COMPANY_PROFILES,
   DEMO_ACCOUNTS,
   FEED_POSTS,
+  JOB_REQUEST_SEEDS,
   JOBS,
   WORKER_PROFILES
 } from './fixtures';
+import { FALLBACK_AUTHOR_NAME, isRenderablePostView, toPostView } from './post-views';
 
 /** The worker ids the seeded profiles/applications are allowed to reference. */
 const WORKER_IDS = ['worker-1', 'worker-2', 'worker-3'];
@@ -17,7 +19,7 @@ const searchableLists = [FEED_POSTS, JOBS, APPLICATIONS, COMMENTS];
 
 describe('core fixture datasets', () => {
   it('seeds the expanded demo dataset sizes', () => {
-    expect(FEED_POSTS).toHaveLength(9);
+    expect(FEED_POSTS).toHaveLength(11);
     expect(JOBS).toHaveLength(7);
     expect(APPLICATIONS).toHaveLength(7);
     expect(COMMENTS).toHaveLength(12);
@@ -206,5 +208,43 @@ describe('fixture media URLs (p14)', () => {
     expect(min).toBe(1);
     expect(max).toBe(10);
     expect(max).toBeGreaterThanOrEqual(min);
+  });
+});
+
+describe('job-request seed fixtures (p15 WU1)', () => {
+  const seedPosts = FEED_POSTS.filter((post) => JOB_REQUEST_SEEDS.some((s) => s.id === post.id));
+
+  it('seeds at least two job-request posts at the feed tail with a matching registry seed', () => {
+    expect(JOB_REQUEST_SEEDS.length).toBeGreaterThanOrEqual(2);
+    expect(seedPosts.map((post) => post.id)).toEqual(JOB_REQUEST_SEEDS.map((seed) => seed.id));
+    // The text-only seeds are appended, never inserted: the last posts are job-requests.
+    expect(FEED_POSTS.slice(-JOB_REQUEST_SEEDS.length).map((post) => post.id)).toEqual(
+      JOB_REQUEST_SEEDS.map((seed) => seed.id)
+    );
+  });
+
+  it('keeps every job-request seed text-only so the /plataforma image budget stays at 11', () => {
+    for (const post of seedPosts) {
+      expect(post.attachments ?? [], `${post.id} must carry no attachments`).toEqual([]);
+      expect(post.content.trim().length, `${post.id} must carry visible text`).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps every job-request seed renderable and author-resolvable', () => {
+    for (const post of seedPosts) {
+      const view = toPostView(post);
+      expect(isRenderablePostView(view), `${post.id} must be renderable`).toBe(true);
+      expect(view.authorName, `${post.id} must resolve its author`).not.toBe(FALLBACK_AUTHOR_NAME);
+      expect(view.authorRole).toBe('worker');
+    }
+  });
+
+  it('exposes a structured payload for each seeded job-request post', () => {
+    for (const seed of JOB_REQUEST_SEEDS) {
+      expect(seed.payload.position.length).toBeGreaterThan(0);
+      expect(seed.payload.availability.length).toBeGreaterThan(0);
+      expect(seed.payload.modality.length).toBeGreaterThan(0);
+      expect(seed.payload.experience.length).toBeGreaterThan(0);
+    }
   });
 });

@@ -1,0 +1,40 @@
+<div
+  data-testid="post-job-request"
+  role="group"
+  aria-label="Solicitud de empleo"
+  class="mt-3 rounded-lg border border-ink-900/10 bg-ink-900/[0.02] p-3"
+>
+  <p class="text-sm font-medium text-ink-900">Solicitud de empleo</p>
+
+  <dl class="mt-2 grid gap-2 sm:grid-cols-2">
+    <div>
+      <dt data-testid="job-request-position-label" class="text-xs text-ink-600">Puesto/rubro</dt>
+      <dd data-testid="job-request-position" class="text-sm text-ink-900">
+        {{ payload().position }}
+      </dd>
+    </div>
+
+    <div>
+      <dt data-testid="job-request-availability-label" class="text-xs text-ink-600">
+        Disponibilidad/jornada
+      </dt>
+      <dd data-testid="job-request-availability" class="text-sm text-ink-900">
+        {{ payload().availability }}
+      </dd>
+    </div>
+
+    <div>
+      <dt data-testid="job-request-modality-label" class="text-xs text-ink-600">Modalidad</dt>
+      <dd data-testid="job-request-modality" class="text-sm text-ink-900">
+        {{ payload().modality }}
+      </dd>
+    </div>
+
+    <div>
+      <dt data-testid="job-request-experience-label" class="text-xs text-ink-600">Experiencia</dt>
+      <dd data-testid="job-request-experience" class="text-sm text-ink-900">
+        {{ payload().experience }}
+      </dd>
+    </div>
+  </dl>
+</div>

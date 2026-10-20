@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { FEED_POSTS, JOBS, APPLICATIONS, COMMENTS, DEMO_ACCOUNTS } from '../mocks/fixtures';
+import { getJobRequest, resetJobRequestRegistry } from '../mocks/job-request.registry';
 import { MockCommentsGateway } from './mock-comments.gateway';
 import {
   APPLICATIONS_GATEWAY,
@@ -15,6 +16,13 @@ import {
 describe('mock gateway adapters', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
+    // R1: this spec creates job-request posts — reset keeps the registry
+    // re-seeded from fixtures so no entry leaks across tests.
+    resetJobRequestRegistry();
+  });
+
+  afterEach(() => {
+    resetJobRequestRegistry();
   });
 
   describe('FeedGateway mock', () => {
@@ -33,7 +41,11 @@ describe('mock gateway adapters', () => {
     it('keeps created posts in later timelines and grows the envelope', async () => {
       const gateway = TestBed.inject(FEED_GATEWAY);
 
-      const created = await gateway.create({ content: 'Iniciamos losa en Sarandí' });
+      const created = await gateway.create({
+        authorId: 'company-1',
+        kind: 'standard',
+        content: 'Iniciamos losa en Sarandí'
+      });
 
       expect(created.content).toBe('Iniciamos losa en Sarandí');
       expect(created.id).toMatch(/^post-new-/);
@@ -41,6 +53,46 @@ describe('mock gateway adapters', () => {
       const after = await gateway.timeline();
       expect(after.items.map((post) => post.id)).toContain(created.id);
       expect(after.meta.total).toBe(FEED_POSTS.length + 1);
+    });
+
+    it('creates a job-request draft as the session author and records its payload', async () => {
+      const gateway = TestBed.inject(FEED_GATEWAY);
+      const draft = {
+        authorId: 'worker-1',
+        kind: 'job-request' as const,
+        content: 'Busco obra como electricista matriculado.',
+        attachments: ['https://cdn.example.test/workers/worker-1/herramientas.webp'],
+        jobRequest: {
+          position: 'Electricista matriculado',
+          availability: 'Jornada completa',
+          modality: 'Presencial',
+          experience: '3 a 5 años'
+        }
+      };
+
+      const created = await gateway.create(draft);
+
+      expect(created.authorId).toBe('worker-1');
+      expect(created.content).toBe(draft.content);
+      expect(created.attachments).toEqual(draft.attachments);
+      expect(getJobRequest(created.id)).toEqual(draft.jobRequest);
+
+      const after = await gateway.timeline();
+      expect(after.items.map((post) => post.id)).toContain(created.id);
+    });
+
+    it('creates a standard draft without writing to the job-request registry', async () => {
+      const gateway = TestBed.inject(FEED_GATEWAY);
+
+      const created = await gateway.create({
+        authorId: 'company-2',
+        kind: 'standard',
+        content: 'Grupo Delta suma una nueva obra en San Isidro.'
+      });
+
+      expect(created.authorId).toBe('company-2');
+      expect(created.attachments).toBeUndefined();
+      expect(getJobRequest(created.id)).toBeUndefined();
     });
   });
 

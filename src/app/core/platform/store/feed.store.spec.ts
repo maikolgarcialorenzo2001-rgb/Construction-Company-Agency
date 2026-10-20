@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { FEED_GATEWAY } from '../api/ports';
+import { FEED_GATEWAY, type CreatePostDraft } from '../api/ports';
 import type { Page, Post } from '../domain';
 import { FEED_POSTS } from '../mocks/fixtures';
 import { FeedStore } from './feed.store';
@@ -134,10 +134,10 @@ describe('FeedStore', () => {
           items: [FEED_POSTS[0]],
           meta: { page: 1, pageSize: 20, total: 1 }
         }),
-        create: async (input: { content: string }): Promise<Post> => ({
+        create: async (draft: CreatePostDraft): Promise<Post> => ({
           id: 'post-new-1',
-          authorId: 'company-1',
-          content: input.content,
+          authorId: draft.authorId,
+          content: draft.content,
           createdAt: '2026-10-09T12:00:00.000Z'
         })
       }
@@ -147,7 +147,11 @@ describe('FeedStore', () => {
     await store.load();
     expect(store.posts()).toHaveLength(1);
 
-    await store.create('Arrancamos la instalación de sanitarias en Palermo.');
+    await store.create({
+      authorId: 'company-1',
+      kind: 'standard',
+      content: 'Arrancamos la instalación de sanitarias en Palermo.'
+    });
 
     expect(store.status()).toBe('ready');
     const posts = store.posts();
@@ -164,10 +168,10 @@ describe('FeedStore', () => {
           items: [],
           meta: { page: 1, pageSize: 20, total: 0 }
         }),
-        create: async (input: { content: string }): Promise<Post> => ({
+        create: async (draft: CreatePostDraft): Promise<Post> => ({
           id: 'post-new-1',
-          authorId: 'company-1',
-          content: input.content,
+          authorId: draft.authorId,
+          content: draft.content,
           createdAt: '2026-10-09T12:00:00.000Z'
         })
       }
@@ -177,10 +181,65 @@ describe('FeedStore', () => {
     await store.load();
     expect(store.status()).toBe('empty');
 
-    await store.create('Primer aviso de la empresa.');
+    await store.create({
+      authorId: 'company-1',
+      kind: 'standard',
+      content: 'Primer aviso de la empresa.'
+    });
 
     expect(store.status()).toBe('ready');
     expect(store.posts()).toHaveLength(1);
     expect(store.posts()[0].content).toBe('Primer aviso de la empresa.');
+  });
+
+  it('forwards the full draft (author, kind, attachments, payload) to the gateway', async () => {
+    const drafts: CreatePostDraft[] = [];
+    TestBed.overrideProvider(FEED_GATEWAY, {
+      useValue: {
+        timeline: async (): Promise<Page<Post>> => ({
+          items: [],
+          meta: { page: 1, pageSize: 20, total: 0 }
+        }),
+        create: async (draft: CreatePostDraft): Promise<Post> => {
+          drafts.push(draft);
+          return {
+            id: 'post-new-1',
+            authorId: draft.authorId,
+            content: draft.content,
+            attachments: draft.attachments,
+            createdAt: '2026-10-09T12:00:00.000Z'
+          };
+        }
+      }
+    });
+
+    const store = TestBed.inject(FeedStore);
+    await store.load();
+
+    await store.create({
+      authorId: 'worker-1',
+      kind: 'job-request',
+      content: 'Busco obra como electricista.',
+      attachments: ['https://cdn.example.test/workers/worker-1/foto.webp'],
+      jobRequest: {
+        position: 'Electricista',
+        availability: 'Jornada completa',
+        modality: 'Presencial',
+        experience: '3 a 5 años'
+      }
+    });
+
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].authorId).toBe('worker-1');
+    expect(drafts[0].kind).toBe('job-request');
+    expect(drafts[0].attachments).toEqual(['https://cdn.example.test/workers/worker-1/foto.webp']);
+    expect(drafts[0].jobRequest?.position).toBe('Electricista');
+
+    // The resolved post is denormalized into the signal, attachments included.
+    expect(store.status()).toBe('ready');
+    expect(store.posts()[0].authorId).toBe('worker-1');
+    expect(store.posts()[0].attachments).toEqual([
+      'https://cdn.example.test/workers/worker-1/foto.webp'
+    ]);
   });
 });

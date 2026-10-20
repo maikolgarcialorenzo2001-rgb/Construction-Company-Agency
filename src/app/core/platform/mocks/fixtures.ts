@@ -13,6 +13,7 @@ import type {
   Comment,
   CompanyProfile,
   JobOpening,
+  JobRequestPayload,
   Page,
   Post,
   Role,
@@ -106,11 +107,63 @@ const seededPosts = [
     attachments: ['https://images.example.com/plataforma/obra-san-isidro-01.webp'],
     createdAt: '2026-10-11T08:50:00.000Z',
     isPlaceholder: true
+  },
+  {
+    id: 'post-10',
+    authorId: 'worker-2',
+    content:
+      'Busco trabajo como electricista matriculado. Disponibilidad inmediata para obras en CABA y GBA.',
+    createdAt: '2026-10-12T09:20:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    id: 'post-11',
+    authorId: 'worker-3',
+    content:
+      'Ofrezco servicios de herrería y montaje de estructuras metálicas. Presupuesto sin cargo.',
+    createdAt: '2026-10-12T10:05:00.000Z',
+    isPlaceholder: true
   }
 ] satisfies readonly Placeholder<Post>[];
 
 /** Seeded timeline entries. */
 export const FEED_POSTS = seededPosts satisfies readonly Post[];
+
+// --- Job-request seeds (p15 WU1) --------------------------------------------
+
+/** A seeded job-request: which post it belongs to plus its structured payload. */
+export interface JobRequestSeed {
+  readonly id: string;
+  readonly payload: JobRequestPayload;
+}
+
+/**
+ * Structured payloads for the text-only worker job-request posts appended at the
+ * `FEED_POSTS` tail (design D9). Appending keeps the `/plataforma` image budget
+ * at 11 (no attachments) and keeps the index-based feed specs stable. The demo
+ * registry (`job-request.registry.ts`) is seeded from this list, so `post-10`
+ * and `post-11` resolve to `kind: 'job-request'` in `toPostView`.
+ */
+export const JOB_REQUEST_SEEDS: readonly JobRequestSeed[] = [
+  {
+    id: 'post-10',
+    payload: {
+      position: 'Electricista matriculado',
+      availability: 'Tiempo completo',
+      modality: 'Presencial',
+      experience: '3 a 5 años'
+    }
+  },
+  {
+    id: 'post-11',
+    payload: {
+      position: 'Herrero / estructuras metálicas',
+      availability: 'Medio tiempo',
+      modality: 'Presencial',
+      experience: 'Más de 5 años'
+    }
+  }
+];
 
 // --- Comments ---------------------------------------------------------------
 

@@ -9,6 +9,11 @@ import {
   untracked
 } from '@angular/core';
 
+import {
+  JobRequestComposerComponent,
+  type JobRequestDraft
+} from '../../components/job-request-composer/job-request-composer.component';
+import { PostJobRequestComponent } from '../../components/post-job-request/post-job-request.component';
 import { PostTemplateComponent } from '../../components/post-template/post-template.component';
 import { SessionService } from '../../core/platform/auth/session.service';
 import type { Role } from '../../core/platform/domain';
@@ -29,22 +34,34 @@ import { FeedStore } from '../../core/platform/store/feed.store';
  *
  * Each post carries an inline comment thread from the per-post `CommentsStore`
  * (design D7 — the thread stays page-side in the `li`, leaving `[postExtra]`
- * free for future `PostKind`s): the view reads `comments.state()[view.id]`
+ * free for the kind projection): the view reads `comments.state()[view.id]`
  * directly — never a per-post `computed` inside the `@for`. An `effect` calls
  * the guarded `load(postId)` once per rendered post, and the constructor
  * triggers the guarded one-shot `EngagementStore.load()`.
  *
- * The post composer is gated to `company`; the per-post comment composer is
- * gated to any authenticated role (`effectiveRole() !== null`), so a worker or
- * admin can comment while an anonymous visitor sees neither control.
+ * The structured job-request card (p15 WU2, design D8) is projected into the
+ * template's always-present `[postExtra]` slot only when
+ * `kind === 'job-request' && jobRequest`; free text stays in `[postBody]`, so
+ * the shell (`PostTemplateComponent`) is never edited for a new kind.
+ *
+ * The post composer is role-differentiated (p15 WU3, design D4/D5): `worker`
+ * gets the reactive `JobRequestComposerComponent` (Q1=a composite rule),
+ * `company` keeps the signal-based textarea, and `admin`/anonymous see no
+ * composer at all. The per-post comment composer is gated to any authenticated
+ * role (`effectiveRole() !== null`), so a worker or admin can comment while an
+ * anonymous visitor sees neither control.
  */
 @Component({
   selector: 'app-platform-feed',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PostTemplateComponent],
+  imports: [PostTemplateComponent, PostJobRequestComponent, JobRequestComposerComponent],
   template: `
     <section class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 class="text-section font-semibold text-ink-900">Novedades</h1>
+
+      @if (effectiveRole() === 'worker') {
+        <app-job-request-composer (publish)="publishJobRequest($event)" />
+      }
 
       @if (effectiveRole() === 'company') {
         <form
@@ -84,7 +101,11 @@ import { FeedStore } from '../../core/platform/store/feed.store';
           <ul class="mt-6 space-y-4">
             @for (view of views(); track view.id) {
               <li data-testid="feed-post">
-                <app-post-template [post]="view" [viewerId]="viewerId()" />
+                <app-post-template [post]="view" [viewerId]="viewerId()">
+                  @if (view.kind === 'job-request' && view.jobRequest; as jobRequest) {
+                    <app-post-job-request postExtra [payload]="jobRequest" />
+                  }
+                </app-post-template>
 
                 <div class="mt-3 rounded-xl border border-ink-900/10 p-4">
                   <p class="text-sm font-medium text-ink-900">Comentarios</p>
@@ -212,12 +233,33 @@ export class PlatformFeedPage {
     if (!content) {
       return;
     }
-    await this.store.create(content);
+    // Author-aware create (design D3): the session user owns the post; the
+    // company composer falls back to the demo company when no session is
+    // seeded (tests/preview). The worker path lives in `publishJobRequest`.
+    const authorId = this.session.currentUser()?.userId ?? 'company-1';
+    await this.store.create({ authorId, kind: 'standard', content });
     this.draft.set('');
     // The textarea is an uncontrolled field typed by the user: clearing the
     // signal alone would not repaint it (Angular's tracked value never changed),
     // so reset the form element to leave the composer empty after publishing.
     form.reset();
+  }
+
+  /**
+   * Worker path (design D5/D6): the composer enforces the Q1=a composite rule
+   * before emitting, so the draft already holds a valid payload plus text or
+   * photos. The session worker authors the post; the demo fallback is the
+   * seeded worker (the company path falls back to the seeded company).
+   */
+  protected async publishJobRequest(draft: JobRequestDraft): Promise<void> {
+    const authorId = this.session.currentUser()?.userId ?? 'worker-1';
+    await this.store.create({
+      authorId,
+      kind: 'job-request',
+      content: draft.content,
+      attachments: draft.attachments.length > 0 ? draft.attachments : undefined,
+      jobRequest: draft.payload
+    });
   }
 
   protected async postComment(event: Event, postId: string): Promise<void> {

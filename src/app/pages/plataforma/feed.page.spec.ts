@@ -7,6 +7,7 @@ import { COMMENTS_GATEWAY, FEED_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import type { Comment, Page, Post } from '../../core/platform/domain';
 import { COMMENTS, FEED_POSTS } from '../../core/platform/mocks/fixtures';
+import { resetJobRequestRegistry } from '../../core/platform/mocks/job-request.registry';
 import { PlatformFeedPage } from './feed.page';
 
 /** Seeds a local mock session, as `SessionService` would after login. */
@@ -34,12 +35,15 @@ describe('PlatformFeedPage', () => {
   beforeEach(() => {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
+    // This spec now creates job-request posts (R1): reset re-seeds the registry.
+    resetJobRequestRegistry();
     TestBed.configureTestingModule({});
   });
 
   afterEach(() => {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
+    resetJobRequestRegistry();
   });
 
   it('renders the timeline once the gateway resolves', async () => {
@@ -539,5 +543,214 @@ describe('PlatformFeedPage', () => {
     expect(postOne.querySelectorAll('[data-testid="comment"]')).toHaveLength(3);
     expect(postOne.textContent).toContain('Coordinemos el lunes a las 8.');
     expect(textarea.value).toBe('');
+  });
+
+  // --- Job-request structured card projection (p15 WU2) ----------------------
+
+  it('projects the job-request card into [postExtra] and keeps [postBody] free of structured fields', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const posts = Array.from(
+      element.querySelectorAll('[data-testid="feed-post"]')
+    ) as HTMLElement[];
+
+    // Both seeded job-request posts (post-10, post-11 tail) render a card.
+    const cards = element.querySelectorAll('[data-testid="post-job-request"]');
+    expect(cards).toHaveLength(2);
+
+    const jobRequestPost = posts[posts.length - 1]; // post-11
+    const card = jobRequestPost.querySelector('[data-testid="post-job-request"]');
+    const extra = jobRequestPost.querySelector('[data-testid="post-extra"]');
+    expect(card).not.toBeNull();
+    expect(extra?.contains(card as Node)).toBe(true);
+
+    // The card owns the structured fields…
+    expect(card?.textContent).toContain('Puesto/rubro');
+    expect(card?.textContent).toContain('Herrero / estructuras metálicas');
+
+    // …and the body slot keeps only the free text.
+    const body = jobRequestPost.querySelector('[data-testid="post-body"]');
+    expect(body).not.toBeNull();
+    expect(body?.textContent).toContain('Ofrezco servicios de herrería');
+    expect(body?.textContent).not.toContain('Puesto/rubro');
+    expect(body?.textContent).not.toContain('Herrero / estructuras metálicas');
+  });
+
+  it('does not project a job-request card for standard posts', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const standardPost = element.querySelector('[data-testid="feed-post"]') as HTMLElement;
+
+    // post-1 is standard: the always-present postExtra stays empty of cards and
+    // the base template (body + actions) renders as before.
+    expect(standardPost.querySelector('[data-testid="post-job-request"]')).toBeNull();
+    expect(standardPost.querySelector('[data-testid="post-extra"]')).not.toBeNull();
+    expect(standardPost.querySelector('[data-testid="post-body"]')?.textContent).toContain(
+      'Avance de obra en Villa Crespo'
+    );
+    expect(standardPost.querySelector('[data-testid="post-actions"]')).not.toBeNull();
+  });
+
+  // --- Role-differentiated composer (p15 WU3) --------------------------------
+
+  it('shows the solicitud form to a worker and withholds the company composer', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="job-request-composer"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="feed-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="feed-publish"]')).toBeNull();
+  });
+
+  it('keeps the textarea composer for a company and withholds the solicitud form', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'company');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="job-request-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="feed-composer"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="feed-publish"]')).not.toBeNull();
+  });
+
+  it('renders no post composer for an admin or an anonymous visitor', async () => {
+    for (const role of ['admin', null] as const) {
+      const fixture = TestBed.createComponent(PlatformFeedPage);
+      if (role !== null) {
+        fixture.componentRef.setInput('role', role);
+      }
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const element = fixture.nativeElement as HTMLElement;
+      expect(
+        element.querySelector('[data-testid="job-request-composer"]'),
+        `${role} solicitud form`
+      ).toBeNull();
+      expect(
+        element.querySelector('[data-testid="feed-composer"]'),
+        `${role} company composer`
+      ).toBeNull();
+      fixture.destroy();
+    }
+  });
+
+  it('publishes a worker job-request end to end, authored by the session worker', async () => {
+    seedSession('worker');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const composer = element.querySelector(
+      '[data-testid="job-request-composer"]'
+    ) as HTMLElement;
+    const fill = (id: string, value: string): void => {
+      const control = composer.querySelector(`#${id}`) as HTMLInputElement;
+      control.value = value;
+      control.dispatchEvent(new Event('input'));
+    };
+    fill('job-request-position', 'Herrero');
+    fill('job-request-availability', 'Jornada completa');
+    fill('job-request-modality', 'Presencial');
+    fill('job-request-experience', '5 años');
+    fill('job-request-free-text', 'Ofrezco mi servicio para obras industriales.');
+
+    (composer.querySelector('[data-testid="job-request-submit"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const items = element.querySelectorAll('[data-testid="feed-post"]');
+    expect(items).toHaveLength(FEED_POSTS.length + 1);
+    const first = items[0] as HTMLElement;
+    // The structured card renders, so the demo registry holds the payload…
+    expect(first.querySelector('[data-testid="post-job-request"]')).not.toBeNull();
+    // …the free text rides the body slot…
+    expect(first.querySelector('[data-testid="post-body"]')?.textContent).toContain(
+      'Ofrezco mi servicio para obras industriales.'
+    );
+    // …and the author is the session worker (worker-1), denormalized by the mapper.
+    expect(first.textContent).toContain('Lucía Fernández');
+  });
+
+  it('gives every worker composer control an explicit accessible name and a unique id', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const composer = element.querySelector(
+      '[data-testid="job-request-composer"]'
+    ) as HTMLElement;
+    const controls = Array.from(composer.querySelectorAll('input, textarea, button'));
+    // 4 required inputs + texto libre + fotos + submit.
+    expect(controls).toHaveLength(7);
+
+    const controlIds = controls.map((control) => control.id);
+    expect(new Set(controlIds).size, 'unique control ids').toBe(controlIds.length);
+
+    for (const control of controls) {
+      const label = element.querySelector(`label[for="${control.id}"]`);
+      const name = label?.textContent?.trim() || control.textContent?.trim();
+      expect(name, `accessible name of #${control.id || control.tagName}`).toBeTruthy();
+    }
+
+    // Composer and per-post comment composers coexist: no id collision anywhere.
+    const ids = Array.from(element.querySelectorAll('[id]')).map((node) => node.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('describes each worker control with its error live region and names the composer group', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    fixture.componentRef.setInput('role', 'worker');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const composer = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="job-request-composer"]'
+    ) as HTMLElement;
+
+    // D11: assistive tech announces the composer as the solicitud group.
+    expect(composer.getAttribute('role')).toBe('group');
+    expect(composer.getAttribute('aria-label')).toBe('Solicitud de empleo');
+
+    // Every control points at a live `role="alert"` region that already exists
+    // (quote.page precedent: the region must exist before it carries text).
+    for (const id of [
+      'job-request-position',
+      'job-request-availability',
+      'job-request-modality',
+      'job-request-experience',
+      'job-request-free-text',
+      'job-request-photos'
+    ]) {
+      const control = composer.querySelector(`#${id}`);
+      expect(control, `${id} control`).not.toBeNull();
+      const describedBy = control?.getAttribute('aria-describedby');
+      expect(describedBy, `${id} aria-describedby`).toBeTruthy();
+      expect(
+        composer.querySelector(`#${describedBy ?? ''}`)?.getAttribute('role'),
+        `${id} live region role`
+      ).toBe('alert');
+    }
   });
 });

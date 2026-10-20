@@ -1,11 +1,16 @@
-import type { Page, Post, PostInput } from '../domain';
+import type { Page, Post } from '../domain';
 import { FEED_POSTS, paginate } from '../mocks/fixtures';
-import type { FeedGateway } from './ports';
+import { recordJobRequest } from '../mocks/job-request.registry';
+import type { CreatePostDraft, FeedGateway } from './ports';
 
 /**
  * In-memory `FeedGateway`. The seeded timeline is deterministic; every call to
  * `timeline` re-paginates the same store so posts created in the demo session
  * show up immediately (zoneless stores read the promise result into a signal).
+ *
+ * `create` is author-aware (design D3): the draft carries the session author,
+ * and a `job-request` draft additionally records its structured payload in the
+ * demo registry — the resolved `Post` stays contract-shaped (no `kind`).
  */
 export class MockFeedGateway implements FeedGateway {
   private readonly posts: Post[] = [...FEED_POSTS];
@@ -15,17 +20,18 @@ export class MockFeedGateway implements FeedGateway {
     return paginate(this.posts, page, pageSize);
   }
 
-  async create(input: PostInput): Promise<Post> {
+  async create(draft: CreatePostDraft): Promise<Post> {
     const post: Post = {
-      // The mock has no session: the composer is company-gated, and the demo
-      // company is `company-1` (see fixtures).
-      authorId: 'company-1',
+      authorId: draft.authorId,
       id: `post-new-${++this.sequence}`,
-      content: input.content,
-      attachments: input.attachments,
+      content: draft.content,
+      attachments: draft.attachments,
       createdAt: new Date().toISOString()
     };
     this.posts.push(post);
+    if (draft.kind === 'job-request' && draft.jobRequest) {
+      recordJobRequest(post.id, draft.jobRequest);
+    }
     return post;
   }
 }

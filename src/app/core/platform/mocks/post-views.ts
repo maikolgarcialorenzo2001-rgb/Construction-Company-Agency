@@ -10,6 +10,7 @@
  */
 import type { Post, PostView, Role } from '../domain';
 import { COMPANY_PROFILES, WORKER_PROFILES } from './fixtures';
+import { getJobRequest } from './job-request.registry';
 
 /** es-AR label shown when a post references an author with no fixture profile. */
 export const FALLBACK_AUTHOR_NAME = 'Perfil no disponible';
@@ -41,16 +42,20 @@ const resolveAuthor = (authorId: string): ResolvedAuthor => {
 /** Maps one contract-shaped `Post` into the denormalized demo view-model. */
 export const toPostView = (post: Post): PostView => {
   const author = resolveAuthor(post.authorId);
+  const jobRequest = getJobRequest(post.id);
 
   return {
     id: post.id,
-    kind: 'standard',
+    kind: jobRequest ? 'job-request' : 'standard',
     authorId: post.authorId,
     authorName: author.name,
     authorRole: author.role,
     content: post.content,
     attachments: post.attachments ?? [],
-    createdAt: post.createdAt
+    createdAt: post.createdAt,
+    // A registry miss omits the key entirely (design D2) so the existing
+    // `toEqual` specs and `isRenderablePostView` keep holding verbatim.
+    ...(jobRequest ? { jobRequest } : {})
   };
 };
 
