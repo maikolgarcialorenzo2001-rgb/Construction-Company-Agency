@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { FEED_POSTS, JOBS, APPLICATIONS, COMMENTS, DEMO_ACCOUNTS } from '../mocks/fixtures';
 import { getJobRequest, resetJobRequestRegistry } from '../mocks/job-request.registry';
+import { getVacancy, resetVacancyRegistry } from '../mocks/vacancy.registry';
 import { MockCommentsGateway } from './mock-comments.gateway';
 import {
   APPLICATIONS_GATEWAY,
@@ -16,13 +17,15 @@ import {
 describe('mock gateway adapters', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    // R1: this spec creates job-request posts — reset keeps the registry
-    // re-seeded from fixtures so no entry leaks across tests.
+    // R1: this spec creates job-request/vacancy posts — reset keeps both
+    // registries re-seeded from fixtures so no entry leaks across tests.
     resetJobRequestRegistry();
+    resetVacancyRegistry();
   });
 
   afterEach(() => {
     resetJobRequestRegistry();
+    resetVacancyRegistry();
   });
 
   describe('FeedGateway mock', () => {
@@ -92,6 +95,41 @@ describe('mock gateway adapters', () => {
 
       expect(created.authorId).toBe('company-2');
       expect(created.attachments).toBeUndefined();
+      expect(getJobRequest(created.id)).toBeUndefined();
+    });
+
+    it('creates a vacancy draft as the session author and records its payload', async () => {
+      const gateway = TestBed.inject(FEED_GATEWAY);
+      const draft = {
+        authorId: 'company-1',
+        kind: 'vacancy' as const,
+        content: 'Buscamos albañil y electricista para nuestras obras activas.',
+        vacancy: { jobIds: ['job-1', 'job-2'] }
+      };
+
+      const created = await gateway.create(draft);
+
+      // Author-aware (p15 D3 / p16 spec): the draft carries the session
+      // author — never a hardcoded id.
+      expect(created.authorId).toBe('company-1');
+      expect(created.content).toBe(draft.content);
+      expect(getVacancy(created.id)).toEqual({ jobIds: ['job-1', 'job-2'] });
+
+      const after = await gateway.timeline();
+      expect(after.items.map((post) => post.id)).toContain(created.id);
+    });
+
+    it('creates a standard company draft without writing to the vacancy registry', async () => {
+      const gateway = TestBed.inject(FEED_GATEWAY);
+
+      const created = await gateway.create({
+        authorId: 'company-1',
+        kind: 'standard',
+        content: 'Novedades de obra en San Isidro.'
+      });
+
+      expect(created.authorId).toBe('company-1');
+      expect(getVacancy(created.id)).toBeUndefined();
       expect(getJobRequest(created.id)).toBeUndefined();
     });
   });

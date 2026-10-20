@@ -17,6 +17,7 @@ import type {
   Page,
   Post,
   Role,
+  VacancyPayload,
   WorkerProfile
 } from '../domain';
 
@@ -109,6 +110,22 @@ const seededPosts = [
     isPlaceholder: true
   },
   {
+    id: 'post-12',
+    authorId: 'company-1',
+    content:
+      'Buscamos albañil para obra en Vicente López y electricista matriculado para locales en Villa Crespo. Postulate desde la plataforma.',
+    createdAt: '2026-10-11T12:00:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    id: 'post-13',
+    authorId: 'company-2',
+    content:
+      'Abrimos dos búsquedas: plomero con experiencia para edificio en La Plata y pintor para planta industrial en Quilmes. Sumate al equipo.',
+    createdAt: '2026-10-11T17:30:00.000Z',
+    isPlaceholder: true
+  },
+  {
     id: 'post-10',
     authorId: 'worker-2',
     content:
@@ -162,6 +179,32 @@ export const JOB_REQUEST_SEEDS: readonly JobRequestSeed[] = [
       modality: 'Presencial',
       experience: 'Más de 5 años'
     }
+  }
+];
+
+// --- Vacancy seeds (p16 WU1) ------------------------------------------------
+
+/** A seeded vacancy: which post it belongs to plus its reference-only payload. */
+export interface VacancySeed {
+  readonly id: string;
+  readonly payload: VacancyPayload;
+}
+
+/**
+ * Reference-only payloads for the text-only company vacancy posts inserted
+ * before `post-10` (design D9). Insertion (not appending) keeps the
+ * job-request tail invariant and the `/plataforma` image budget at 11. Every
+ * `jobIds` entry references a real `JOBS` id owned by the seed post's author
+ * company, so the card can resolve each entry live.
+ */
+export const VACANCY_SEEDS: readonly VacancySeed[] = [
+  {
+    id: 'post-12',
+    payload: { jobIds: ['job-1', 'job-2'] }
+  },
+  {
+    id: 'post-13',
+    payload: { jobIds: ['job-4', 'job-5'] }
   }
 ];
 

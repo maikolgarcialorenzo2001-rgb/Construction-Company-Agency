@@ -16,6 +16,7 @@ import type {
   PostKind,
   Role,
   User,
+  VacancyPayload,
   WorkerProfile,
   WorkerProfileInput
 } from '../domain';
@@ -79,6 +80,7 @@ export interface CreatePostDraft {
   content: string;
   attachments?: string[];
   jobRequest?: JobRequestPayload;
+  vacancy?: VacancyPayload;
 }
 
 export interface FeedGateway {

@@ -8,6 +8,7 @@ import {
   FEED_POSTS,
   JOB_REQUEST_SEEDS,
   JOBS,
+  VACANCY_SEEDS,
   WORKER_PROFILES
 } from './fixtures';
 import { FALLBACK_AUTHOR_NAME, isRenderablePostView, toPostView } from './post-views';
@@ -19,7 +20,7 @@ const searchableLists = [FEED_POSTS, JOBS, APPLICATIONS, COMMENTS];
 
 describe('core fixture datasets', () => {
   it('seeds the expanded demo dataset sizes', () => {
-    expect(FEED_POSTS).toHaveLength(11);
+    expect(FEED_POSTS).toHaveLength(13);
     expect(JOBS).toHaveLength(7);
     expect(APPLICATIONS).toHaveLength(7);
     expect(COMMENTS).toHaveLength(12);
@@ -245,6 +246,67 @@ describe('job-request seed fixtures (p15 WU1)', () => {
       expect(seed.payload.availability.length).toBeGreaterThan(0);
       expect(seed.payload.modality.length).toBeGreaterThan(0);
       expect(seed.payload.experience.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('vacancy seed fixtures (p16 WU1)', () => {
+  const seedPosts = FEED_POSTS.filter((post) => VACANCY_SEEDS.some((s) => s.id === post.id));
+
+  it('seeds at least two company vacancy posts before the job-request tail', () => {
+    expect(VACANCY_SEEDS.length).toBeGreaterThanOrEqual(2);
+    expect(seedPosts.map((post) => post.id)).toEqual(VACANCY_SEEDS.map((seed) => seed.id));
+    // The text-only seeds are INSERTED before post-10, never appended (design D9):
+    // the last posts stay job-requests.
+    const firstJobRequestIndex = FEED_POSTS.findIndex((post) => post.id === 'post-10');
+    expect(firstJobRequestIndex).toBeGreaterThan(-1);
+    for (const post of seedPosts) {
+      expect(FEED_POSTS.indexOf(post), `${post.id} must precede post-10`).toBeLessThan(
+        firstJobRequestIndex
+      );
+    }
+  });
+
+  it('keeps every vacancy seed text-only so the /plataforma image budget stays at 11', () => {
+    for (const post of seedPosts) {
+      expect(post.attachments ?? [], `${post.id} must carry no attachments`).toEqual([]);
+      expect(post.content.trim().length, `${post.id} must carry visible text`).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps every vacancy seed renderable with a resolvable company author', () => {
+    for (const post of seedPosts) {
+      const view = toPostView(post);
+      expect(isRenderablePostView(view), `${post.id} must be renderable`).toBe(true);
+      expect(view.authorName, `${post.id} must resolve its author`).not.toBe(FALLBACK_AUTHOR_NAME);
+      expect(view.authorRole, `${post.id} must be company-owned`).toBe('company');
+    }
+  });
+
+  it('references only real jobs owned by the seed author company', () => {
+    for (const seed of VACANCY_SEEDS) {
+      const post = FEED_POSTS.find((candidate) => candidate.id === seed.id);
+      expect(post, `${seed.id} must exist in FEED_POSTS`).toBeDefined();
+      expect(seed.payload.jobIds.length).toBeGreaterThan(0);
+      for (const jobId of seed.payload.jobIds) {
+        const job = JOBS.find((candidate) => candidate.id === jobId);
+        expect(job, `${seed.id} → ${jobId} must be a real job`).toBeDefined();
+        expect(job?.companyId, `${seed.id} → ${jobId} must belong to the author`).toBe(
+          post?.authorId
+        );
+      }
+    }
+  });
+
+  it('derives each vacancy seed to kind vacancy with its payload', () => {
+    for (const seed of VACANCY_SEEDS) {
+      const post = FEED_POSTS.find((candidate) => candidate.id === seed.id);
+      if (!post) {
+        throw new Error(`missing fixture ${seed.id}`);
+      }
+      const view = toPostView(post);
+      expect(view.kind, `${seed.id}`).toBe('vacancy');
+      expect(view.vacancy).toEqual(seed.payload);
     }
   });
 });

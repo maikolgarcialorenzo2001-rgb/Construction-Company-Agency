@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { Post, PostView } from '../domain';
 import { FEED_POSTS, JOB_REQUEST_SEEDS } from './fixtures';
-import { resetJobRequestRegistry } from './job-request.registry';
+import { resetJobRequestRegistry, recordJobRequest } from './job-request.registry';
 import { isRenderablePostView, toPostView } from './post-views';
+import { recordVacancy, resetVacancyRegistry } from './vacancy.registry';
 
 /**
  * Strict-mode RED for p14 WU1: `post-views.ts` does not exist yet, so every
@@ -128,6 +129,73 @@ describe('toPostView job-request derivation (p15 WU1)', () => {
 
   it('keeps isRenderablePostView independent of the derived kind', () => {
     const view = toPostView(postById(JOB_REQUEST_SEEDS[0].id));
+
+    expect(isRenderablePostView(view)).toBe(true);
+  });
+});
+
+/**
+ * Vacancy kind/payload derivation (p16 WU1, design D2). `toPostView` reads
+ * the job-request registry first, then the vacancy registry: a job-request hit
+ * wins (precedence), a vacancy hit tags the view `kind: 'vacancy'` and carries
+ * the reference-only payload, and a miss on both stays `'standard'` with the
+ * `vacancy` key omitted so the existing `toEqual` specs keep holding. The
+ * never-empty predicate stays untouched.
+ */
+describe('toPostView vacancy derivation (p16 WU1)', () => {
+  const makePost = (overrides: Partial<Post> = {}): Post => ({
+    id: 'post-x',
+    authorId: 'company-1',
+    content: 'Contenido de prueba',
+    createdAt: '2026-10-11T12:00:00.000Z',
+    ...overrides
+  });
+
+  beforeEach(() => {
+    resetJobRequestRegistry();
+    resetVacancyRegistry();
+  });
+  afterEach(() => {
+    resetJobRequestRegistry();
+    resetVacancyRegistry();
+  });
+
+  it('derives kind vacancy and the payload on a registry hit', () => {
+    recordVacancy('post-x', { jobIds: ['job-1', 'job-2'] });
+
+    const view = toPostView(makePost());
+
+    expect(view.kind).toBe('vacancy');
+    expect(view.vacancy).toEqual({ jobIds: ['job-1', 'job-2'] });
+  });
+
+  it('omits the vacancy key entirely on a registry miss', () => {
+    const view = toPostView(makePost({ id: 'post-1' }));
+
+    expect(view.kind).toBe('standard');
+    expect(view).not.toHaveProperty('vacancy');
+  });
+
+  it('keeps job-request precedence when both registries match the same post', () => {
+    recordJobRequest('post-x', {
+      position: 'Electricista',
+      availability: 'Inmediata',
+      modality: 'Presencial',
+      experience: '3 a 5 años'
+    });
+    recordVacancy('post-x', { jobIds: ['job-1'] });
+
+    const view = toPostView(makePost());
+
+    expect(view.kind).toBe('job-request');
+    expect(view.jobRequest).toBeDefined();
+    expect(view).not.toHaveProperty('vacancy');
+  });
+
+  it('keeps isRenderablePostView independent of the derived vacancy kind', () => {
+    recordVacancy('post-x', { jobIds: ['job-1', 'job-6'] });
+
+    const view = toPostView(makePost());
 
     expect(isRenderablePostView(view)).toBe(true);
   });

@@ -11,6 +11,7 @@
 import type { Post, PostView, Role } from '../domain';
 import { COMPANY_PROFILES, WORKER_PROFILES } from './fixtures';
 import { getJobRequest } from './job-request.registry';
+import { getVacancy } from './vacancy.registry';
 
 /** es-AR label shown when a post references an author with no fixture profile. */
 export const FALLBACK_AUTHOR_NAME = 'Perfil no disponible';
@@ -43,10 +44,13 @@ const resolveAuthor = (authorId: string): ResolvedAuthor => {
 export const toPostView = (post: Post): PostView => {
   const author = resolveAuthor(post.authorId);
   const jobRequest = getJobRequest(post.id);
+  // Job-request wins over vacancy when both registries match (design D2):
+  // each post maps to exactly one kind.
+  const vacancy = jobRequest ? undefined : getVacancy(post.id);
 
   return {
     id: post.id,
-    kind: jobRequest ? 'job-request' : 'standard',
+    kind: jobRequest ? 'job-request' : vacancy ? 'vacancy' : 'standard',
     authorId: post.authorId,
     authorName: author.name,
     authorRole: author.role,
@@ -55,7 +59,8 @@ export const toPostView = (post: Post): PostView => {
     createdAt: post.createdAt,
     // A registry miss omits the key entirely (design D2) so the existing
     // `toEqual` specs and `isRenderablePostView` keep holding verbatim.
-    ...(jobRequest ? { jobRequest } : {})
+    ...(jobRequest ? { jobRequest } : {}),
+    ...(vacancy ? { vacancy } : {})
   };
 };
 

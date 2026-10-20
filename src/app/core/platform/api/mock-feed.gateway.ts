@@ -1,6 +1,7 @@
 import type { Page, Post } from '../domain';
 import { FEED_POSTS, paginate } from '../mocks/fixtures';
 import { recordJobRequest } from '../mocks/job-request.registry';
+import { recordVacancy } from '../mocks/vacancy.registry';
 import type { CreatePostDraft, FeedGateway } from './ports';
 
 /**
@@ -9,8 +10,9 @@ import type { CreatePostDraft, FeedGateway } from './ports';
  * show up immediately (zoneless stores read the promise result into a signal).
  *
  * `create` is author-aware (design D3): the draft carries the session author,
- * and a `job-request` draft additionally records its structured payload in the
- * demo registry — the resolved `Post` stays contract-shaped (no `kind`).
+ * and a `job-request`/`vacancy` draft additionally records its structured
+ * payload in the matching demo registry — the resolved `Post` stays
+ * contract-shaped (no `kind`).
  */
 export class MockFeedGateway implements FeedGateway {
   private readonly posts: Post[] = [...FEED_POSTS];
@@ -31,6 +33,9 @@ export class MockFeedGateway implements FeedGateway {
     this.posts.push(post);
     if (draft.kind === 'job-request' && draft.jobRequest) {
       recordJobRequest(post.id, draft.jobRequest);
+    }
+    if (draft.kind === 'vacancy' && draft.vacancy) {
+      recordVacancy(post.id, draft.vacancy);
     }
     return post;
   }

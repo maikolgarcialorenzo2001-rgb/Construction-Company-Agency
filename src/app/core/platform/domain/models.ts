@@ -79,11 +79,11 @@ export interface PostInput {
 }
 
 /**
- * Discriminated tag for the feed view-model (design D1). Only `standard` exists
- * today; future post types (worker job-request, company vacancy) extend the base
- * template through `[postBody]`/`[postExtra]` without widening the contract `Post`.
+ * Discriminated tag for the feed view-model (design D1). Each structured post
+ * type (worker job-request, company vacancy) extends the base template through
+ * `[postBody]`/`[postExtra]` without widening the contract `Post`.
  */
-export type PostKind = 'standard' | 'job-request';
+export type PostKind = 'standard' | 'job-request' | 'vacancy';
 
 /** Structured payload for worker job-request posts (Plantilla 2). Demo-only. */
 export interface JobRequestPayload {
@@ -91,6 +91,16 @@ export interface JobRequestPayload {
   availability: string;
   modality: string;
   experience: string;
+}
+
+/**
+ * Reference-only payload for company vacancy posts (Plantilla 3, p16). Holds
+ * job ids 1..n and deliberately copies NO `JobOpening` field (title, location,
+ * budget, status) — the card resolves jobs live via `JobsStore`, so a job
+ * closed after seeding renders truthfully. Demo-only.
+ */
+export interface VacancyPayload {
+  jobIds: string[];
 }
 
 /**
@@ -110,6 +120,7 @@ export interface PostView {
   attachments: string[];
   createdAt: string;
   jobRequest?: JobRequestPayload;
+  vacancy?: VacancyPayload;
 }
 
 /**
