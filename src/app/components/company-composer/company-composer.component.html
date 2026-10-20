@@ -1,0 +1,116 @@
+<form
+  data-testid="feed-composer"
+  class="mt-6 rounded-xl border border-ink-900/10 p-4"
+  (submit)="submitNormal($event)"
+>
+  <label for="feed-post-content" class="block text-sm font-medium text-ink-900"
+    >Publicar novedad</label
+  >
+  <textarea
+    id="feed-post-content"
+    rows="3"
+    [value]="draft()"
+    (input)="onDraftInput($event)"
+    placeholder="Contá el avance de obra, una búsqueda de personal, etc."
+    class="mt-2 w-full rounded-lg border border-ink-900/15 p-3 text-ink-900"
+  ></textarea>
+  <button
+    data-testid="feed-publish"
+    type="submit"
+    class="mt-3 rounded-lg bg-ink-900 px-4 py-2 font-medium text-white"
+  >
+    Publicar
+  </button>
+</form>
+
+<button
+  type="button"
+  [attr.aria-pressed]="mode() === 'vacancy'"
+  (click)="toggleMode()"
+  class="mt-3 rounded-lg border border-ink-900/20 px-4 py-2 text-sm font-medium text-ink-900"
+>
+  Buscar trabajadores
+</button>
+
+@if (mode() === 'vacancy') {
+  <form
+    data-testid="vacancy-composer"
+    role="group"
+    aria-label="Buscar trabajadores"
+    class="mt-6 rounded-xl border border-ink-900/10 p-4"
+    (submit)="submitVacancy($event)"
+    novalidate
+  >
+    <p class="text-sm font-medium text-ink-900">Elegí las vacantes a promocionar</p>
+    <ul class="mt-2 space-y-2">
+      @for (job of selectableJobs(); track job.id) {
+        <li>
+          <input
+            type="checkbox"
+            [id]="'company-composer-job-' + job.id"
+            data-testid="vacancy-option"
+            class="company-composer-job"
+            [checked]="isSelected(job.id)"
+            [attr.aria-invalid]="pickerTouched() ? 'true' : null"
+            (change)="toggleJob(job.id)"
+          />
+          <label [for]="'company-composer-job-' + job.id" class="ml-2 text-sm text-ink-900">
+            {{ job.title }}
+          </label>
+        </li>
+      }
+    </ul>
+
+    <div class="mt-3">
+      <label for="company-composer-vacancy-text" class="block text-sm font-medium text-ink-900"
+        >Texto (opcional)</label
+      >
+      <textarea
+        id="company-composer-vacancy-text"
+        rows="2"
+        [value]="vacancyText()"
+        (input)="onVacancyTextInput($event)"
+        aria-describedby="company-composer-composite-error"
+        [attr.aria-invalid]="textTouched() ? 'true' : null"
+        placeholder="Sumá un mensaje a la promoción."
+        class="mt-1 w-full rounded-lg border border-ink-900/15 p-2 text-ink-900"
+      ></textarea>
+    </div>
+
+    <div class="mt-3">
+      <label for="company-composer-photos" class="block text-sm font-medium text-ink-900"
+        >Fotos (hasta 10)</label
+      >
+      <input
+        id="company-composer-photos"
+        type="file"
+        accept="image/*"
+        multiple
+        aria-describedby="company-composer-composite-error"
+        (change)="onPhotoInput($event)"
+        class="mt-1 block text-sm text-ink-600"
+      />
+    </div>
+
+    <p
+      id="company-composer-composite-error"
+      data-testid="company-composer-composite-error"
+      role="alert"
+      class="mt-1 text-sm text-red-700"
+    >
+      {{
+        compositeRejected()
+          ? 'Elegí al menos una vacante y sumá un texto o al menos una foto para publicar.'
+          : ''
+      }}
+    </p>
+
+    <button
+      data-testid="vacancy-publish"
+      type="submit"
+      class="mt-3 rounded-lg bg-ink-900 px-4 py-2 font-medium text-white"
+    >
+      Publicar vacantes
+    </button>
+  </form>
+}
