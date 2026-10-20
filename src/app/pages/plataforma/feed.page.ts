@@ -9,6 +9,10 @@ import {
   untracked
 } from '@angular/core';
 
+import {
+  JobRequestComposerComponent,
+  type JobRequestDraft
+} from '../../components/job-request-composer/job-request-composer.component';
 import { PostJobRequestComponent } from '../../components/post-job-request/post-job-request.component';
 import { PostTemplateComponent } from '../../components/post-template/post-template.component';
 import { SessionService } from '../../core/platform/auth/session.service';
@@ -40,17 +44,24 @@ import { FeedStore } from '../../core/platform/store/feed.store';
  * `kind === 'job-request' && jobRequest`; free text stays in `[postBody]`, so
  * the shell (`PostTemplateComponent`) is never edited for a new kind.
  *
- * The post composer is gated to `company`; the per-post comment composer is
- * gated to any authenticated role (`effectiveRole() !== null`), so a worker or
- * admin can comment while an anonymous visitor sees neither control.
+ * The post composer is role-differentiated (p15 WU3, design D4/D5): `worker`
+ * gets the reactive `JobRequestComposerComponent` (Q1=a composite rule),
+ * `company` keeps the signal-based textarea, and `admin`/anonymous see no
+ * composer at all. The per-post comment composer is gated to any authenticated
+ * role (`effectiveRole() !== null`), so a worker or admin can comment while an
+ * anonymous visitor sees neither control.
  */
 @Component({
   selector: 'app-platform-feed',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PostTemplateComponent, PostJobRequestComponent],
+  imports: [PostTemplateComponent, PostJobRequestComponent, JobRequestComposerComponent],
   template: `
     <section class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 class="text-section font-semibold text-ink-900">Novedades</h1>
+
+      @if (effectiveRole() === 'worker') {
+        <app-job-request-composer (publish)="publishJobRequest($event)" />
+      }
 
       @if (effectiveRole() === 'company') {
         <form
@@ -223,8 +234,8 @@ export class PlatformFeedPage {
       return;
     }
     // Author-aware create (design D3): the session user owns the post; the
-    // company-gated composer falls back to the demo company when no session is
-    // seeded (tests/preview). Role differentiation (worker form) is WU3.
+    // company composer falls back to the demo company when no session is
+    // seeded (tests/preview). The worker path lives in `publishJobRequest`.
     const authorId = this.session.currentUser()?.userId ?? 'company-1';
     await this.store.create({ authorId, kind: 'standard', content });
     this.draft.set('');
@@ -232,6 +243,23 @@ export class PlatformFeedPage {
     // signal alone would not repaint it (Angular's tracked value never changed),
     // so reset the form element to leave the composer empty after publishing.
     form.reset();
+  }
+
+  /**
+   * Worker path (design D5/D6): the composer enforces the Q1=a composite rule
+   * before emitting, so the draft already holds a valid payload plus text or
+   * photos. The session worker authors the post; the demo fallback is the
+   * seeded worker (the company path falls back to the seeded company).
+   */
+  protected async publishJobRequest(draft: JobRequestDraft): Promise<void> {
+    const authorId = this.session.currentUser()?.userId ?? 'worker-1';
+    await this.store.create({
+      authorId,
+      kind: 'job-request',
+      content: draft.content,
+      attachments: draft.attachments.length > 0 ? draft.attachments : undefined,
+      jobRequest: draft.payload
+    });
   }
 
   protected async postComment(event: Event, postId: string): Promise<void> {
