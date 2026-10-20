@@ -1,13 +1,16 @@
-import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ENGAGEMENT_STORAGE_KEY } from '../../core/platform/api/mock-engagement.gateway';
 import type { EngagementState } from '../../core/platform/api/ports';
-import { COMMENTS_GATEWAY, FEED_GATEWAY } from '../../core/platform/api/ports';
+import { COMMENTS_GATEWAY, FEED_GATEWAY, JOBS_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
-import type { Comment, Page, Post } from '../../core/platform/domain';
-import { COMMENTS, FEED_POSTS } from '../../core/platform/mocks/fixtures';
+import type { Comment, JobOpening, Page, Post } from '../../core/platform/domain';
+import { COMMENTS, FEED_POSTS, JOBS } from '../../core/platform/mocks/fixtures';
 import { resetJobRequestRegistry } from '../../core/platform/mocks/job-request.registry';
+import { recordVacancy, resetVacancyRegistry } from '../../core/platform/mocks/vacancy.registry';
+import { JobsStore } from '../../core/platform/store/jobs.store';
 import { PlatformFeedPage } from './feed.page';
 
 /** Seeds a local mock session, as `SessionService` would after login. */
@@ -37,13 +40,18 @@ describe('PlatformFeedPage', () => {
     localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
     // This spec now creates job-request posts (R1): reset re-seeds the registry.
     resetJobRequestRegistry();
-    TestBed.configureTestingModule({});
+    // Vacancy posts resolve through their own registry (p16 R1/D11).
+    resetVacancyRegistry();
+    // The projected vacancy card carries "Postularse" routerLinks, so the page
+    // now needs a router in the TestBed (same minimal setup as the card spec).
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
   afterEach(() => {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
     resetJobRequestRegistry();
+    resetVacancyRegistry();
   });
 
   it('renders the timeline once the gateway resolves', async () => {
@@ -752,5 +760,185 @@ describe('PlatformFeedPage', () => {
         `${id} live region role`
       ).toBe('alert');
     }
+  });
+
+  // --- Vacancy card projection + guarded hydration (p16 WU3) ------------------
+
+  /**
+   * Vacancy hydration is a TWO-hop async chain: the feed timeline resolves,
+   * then the effect fires the one-shot `JobsStore.load()`, whose openings must
+   * settle before the cards can paint — so the zoneless dance needs one extra
+   * `whenStable` round compared with the plain feed tests above.
+   */
+  const settleVacancyFeed = async (fixture: ComponentFixture<PlatformFeedPage>): Promise<void> => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
+  /** Overrides the timeline with a single company vacancy post. */
+  const overrideVacancyTimeline = (post: Post): void => {
+    TestBed.overrideProvider(FEED_GATEWAY, {
+      useValue: {
+        timeline: async (): Promise<Page<Post>> => ({
+          items: [post],
+          meta: { page: 1, pageSize: 20, total: 1 }
+        }),
+        create: async () => {
+          throw new Error('not under test');
+        }
+      }
+    });
+  };
+
+  it('projects the vacancy card into [postExtra] and keeps [postBody] free of vacancy fields', async () => {
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    const posts = Array.from(
+      element.querySelectorAll('[data-testid="feed-post"]')
+    ) as HTMLElement[];
+
+    // Both seeded vacancy posts (post-12, post-13) resolve their jobIds live.
+    expect(element.querySelectorAll('[data-testid="post-vacancy"]')).toHaveLength(2);
+
+    const vacancyPost = posts[9]; // post-12
+    const card = vacancyPost.querySelector('[data-testid="post-vacancy"]');
+    const extra = vacancyPost.querySelector('[data-testid="post-extra"]');
+    expect(card).not.toBeNull();
+    expect(extra?.contains(card as Node)).toBe(true);
+
+    // The card owns the structured job data, one entry per resolved job id.
+    expect(card?.textContent).toContain('Albañil con experiencia para obra en Vicente López');
+    expect(card?.textContent).toContain('Electricista matriculado para locales comerciales');
+    expect(card?.querySelectorAll('[data-testid="vacancy-entry"]')).toHaveLength(2);
+
+    // …and the body slot keeps only the free text (never vacancy fields).
+    const body = vacancyPost.querySelector('[data-testid="post-body"]');
+    expect(body?.textContent).toContain('Buscamos albañil para obra en Vicente López');
+    expect(body?.textContent).not.toContain('Albañil con experiencia para obra en Vicente López');
+
+    // The base template renders untouched around the projection.
+    expect(vacancyPost.querySelector('[data-testid="post-header"]')).not.toBeNull();
+    expect(vacancyPost.querySelector('[data-testid="post-actions"]')).not.toBeNull();
+
+    // Neighbors unaffected: standard posts carry no card, job-request cards stay at 2.
+    expect(posts[0].querySelector('[data-testid="post-vacancy"]')).toBeNull();
+    expect(element.querySelectorAll('[data-testid="post-job-request"]')).toHaveLength(2);
+
+    // D11 a11y: the projected card is a labelled group with one distinctly
+    // named apply link per entry (same contract WU2 locked for the card).
+    expect(card?.getAttribute('role')).toBe('group');
+    expect(card?.getAttribute('aria-label')).toBe('Vacante');
+    const applyNames = Array.from(card?.querySelectorAll('[data-testid="vacancy-apply"]') ?? []).map(
+      (link) => link.getAttribute('aria-label')
+    );
+    expect(applyNames).toEqual([
+      'Postularse a Albañil con experiencia para obra en Vicente López',
+      'Postularse a Electricista matriculado para locales comerciales'
+    ]);
+  });
+
+  it('hides the vacancy card when none of its referenced jobs resolve (D6)', async () => {
+    recordVacancy('post-all-missing', { jobIds: ['job-ghost-1', 'job-ghost-2'] });
+    overrideVacancyTimeline({
+      id: 'post-all-missing',
+      authorId: 'company-1',
+      content: 'Publicamos dos búsquedas cuyos puestos ya no están activos.',
+      createdAt: '2026-10-16T10:00:00.000Z'
+    });
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const post = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="feed-post"]'
+    ) as HTMLElement;
+    // The post itself is renderable (text) so it paints — but the card hides:
+    // no empty card and no hydration flash while the openings never resolve.
+    expect(post.textContent).toContain('Publicamos dos búsquedas cuyos puestos ya no están activos.');
+    expect(post.querySelector('[data-testid="post-vacancy"]')).toBeNull();
+    expect(post.querySelector('[data-testid="post-extra"]')).not.toBeNull();
+  });
+
+  it('renders only the resolvable entries when some referenced jobs are missing', async () => {
+    recordVacancy('post-partial', { jobIds: ['job-ghost', 'job-1'] });
+    overrideVacancyTimeline({
+      id: 'post-partial',
+      authorId: 'company-1',
+      content: 'Buscamos albañil; el segundo puesto se dio de baja.',
+      createdAt: '2026-10-16T11:00:00.000Z'
+    });
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const card = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="post-vacancy"]'
+    );
+    // Payload order kept, missing id skipped: only the resolvable job paints.
+    expect(card).not.toBeNull();
+    expect(card?.querySelectorAll('[data-testid="vacancy-entry"]')).toHaveLength(1);
+    expect(card?.textContent).toContain('Albañil con experiencia para obra en Vicente López');
+  });
+
+  it('loads the jobs board exactly once for a timeline with several vacancy posts', async () => {
+    const jobs = TestBed.inject(JobsStore);
+    const load = vi.spyOn(jobs, 'load');
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+    // Further render passes must not re-trigger hydration (one-shot guard).
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // The default timeline carries 2 vacancy posts: a single load serves both.
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="post-vacancy"]')
+    ).toHaveLength(2);
+  });
+
+  it('renders a job closed after seeding as Cerrada with its link still present (live resolve)', async () => {
+    TestBed.overrideProvider(JOBS_GATEWAY, {
+      useValue: {
+        list: async (): Promise<Page<JobOpening>> => ({
+          items: JOBS.map((job) =>
+            job.id === 'job-1' ? { ...job, status: 'closed' as const } : job
+          ),
+          meta: { page: 1, pageSize: 20, total: JOBS.length }
+        }),
+        byId: async (id: string): Promise<JobOpening | null> =>
+          JOBS.find((job) => job.id === id) ?? null
+      }
+    });
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const posts = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="feed-post"]'
+    );
+    const card = (posts[9] as HTMLElement).querySelector('[data-testid="post-vacancy"]'); // post-12
+
+    // The card shows LIVE data: job-1 flipped to closed after seeding renders
+    // "Cerrada" while job-2 stays "Abierta" — nothing was copied at seed time.
+    const statuses = Array.from(card?.querySelectorAll('[data-testid="vacancy-status"]') ?? []);
+    expect(statuses.map((node) => node.textContent?.trim())).toEqual([
+      'Estado: Cerrada',
+      'Estado: Abierta'
+    ]);
+
+    // The label informs; the "Postularse" link stays rendered for the closed job.
+    const links = card?.querySelectorAll('[data-testid="vacancy-apply"]');
+    expect(links).toHaveLength(2);
+    expect(links?.[0]?.getAttribute('aria-label')).toBe(
+      'Postularse a Albañil con experiencia para obra en Vicente López'
+    );
+    expect(links?.[0]?.getAttribute('href')).toBe('/plataforma/trabajos/job-1');
   });
 });

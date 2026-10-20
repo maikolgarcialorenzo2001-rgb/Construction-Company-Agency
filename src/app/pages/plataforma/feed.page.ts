@@ -14,13 +14,16 @@ import {
   type JobRequestDraft
 } from '../../components/job-request-composer/job-request-composer.component';
 import { PostJobRequestComponent } from '../../components/post-job-request/post-job-request.component';
+import { PostVacancyComponent } from '../../components/post-vacancy/post-vacancy.component';
+import { resolveVacancyOpenings } from '../../components/post-vacancy/vacancy-openings';
 import { PostTemplateComponent } from '../../components/post-template/post-template.component';
 import { SessionService } from '../../core/platform/auth/session.service';
-import type { Role } from '../../core/platform/domain';
+import type { JobOpening, Role } from '../../core/platform/domain';
 import { toPostView, isRenderablePostView } from '../../core/platform/mocks/post-views';
 import { CommentsStore } from '../../core/platform/store/comments.store';
 import { EngagementStore } from '../../core/platform/store/engagement.store';
 import { FeedStore } from '../../core/platform/store/feed.store';
+import { JobsStore } from '../../core/platform/store/jobs.store';
 
 /**
  * Platform feed page. It renders the timeline from `FeedStore` — signals only,
@@ -44,6 +47,12 @@ import { FeedStore } from '../../core/platform/store/feed.store';
  * `kind === 'job-request' && jobRequest`; free text stays in `[postBody]`, so
  * the shell (`PostTemplateComponent`) is never edited for a new kind.
  *
+ * The vacancy promo card (p16 WU3, design D5/D6) follows the same projection
+ * rule: `kind === 'vacancy'` resolves its reference-only `jobIds` against
+ * `JobsStore.openings()` — hydrated once by an idle-guarded effect, since the
+ * store's own `load()` is unguarded — and the card hides entirely when nothing
+ * resolves, so the timeline never paints an empty card or a hydration flash.
+ *
  * The post composer is role-differentiated (p15 WU3, design D4/D5): `worker`
  * gets the reactive `JobRequestComposerComponent` (Q1=a composite rule),
  * `company` keeps the signal-based textarea, and `admin`/anonymous see no
@@ -54,7 +63,7 @@ import { FeedStore } from '../../core/platform/store/feed.store';
 @Component({
   selector: 'app-platform-feed',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PostTemplateComponent, PostJobRequestComponent, JobRequestComposerComponent],
+  imports: [PostTemplateComponent, PostJobRequestComponent, PostVacancyComponent, JobRequestComposerComponent],
   template: `
     <section class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 class="text-section font-semibold text-ink-900">Novedades</h1>
@@ -104,6 +113,9 @@ import { FeedStore } from '../../core/platform/store/feed.store';
                 <app-post-template [post]="view" [viewerId]="viewerId()">
                   @if (view.kind === 'job-request' && view.jobRequest; as jobRequest) {
                     <app-post-job-request postExtra [payload]="jobRequest" />
+                  }
+                  @if (view.kind === 'vacancy' && vacancyOpeningsById().get(view.id); as openings) {
+                    <app-post-vacancy postExtra [openings]="openings" />
                   }
                 </app-post-template>
 
@@ -176,6 +188,7 @@ export class PlatformFeedPage {
   protected readonly store = inject(FeedStore);
   protected readonly comments = inject(CommentsStore);
   protected readonly engagement = inject(EngagementStore);
+  protected readonly jobs = inject(JobsStore);
   private readonly session = inject(SessionService);
 
   /** Authenticated role; `null` is an anonymous visitor. */
@@ -198,12 +211,51 @@ export class PlatformFeedPage {
       .filter(isRenderablePostView)
   );
 
+  /**
+   * `postId → resolved openings` for every vacancy view (p16 D5/D6): the
+   * reference-only `jobIds` are resolved here against the live `JobsStore`
+   * openings, payload order preserved, missing ids skipped (pure
+   * `resolveVacancyOpenings`). Views whose resolution comes back empty never
+   * enter the map, so the template hides the card entirely — no empty card,
+   * no hydration flash. The map recomputes for free when the openings arrive.
+   */
+  protected readonly vacancyOpeningsById = computed(() => {
+    const openings = this.jobs.openings();
+    const byId = new Map<string, JobOpening[]>();
+    for (const view of this.views()) {
+      if (view.kind === 'vacancy' && view.vacancy) {
+        const resolved = resolveVacancyOpenings(view.vacancy, openings);
+        if (resolved.length > 0) {
+          byId.set(view.id, resolved);
+        }
+      }
+    }
+    return byId;
+  });
+
   protected readonly draft = signal('');
 
   constructor() {
     void this.store.load();
     // Guarded one-shot engagement hydration (design: "page ctor → store.load()").
     void this.engagement.load();
+    // One-shot guarded jobs hydration (p16 D5): `JobsStore.load()` is UNGUARDED
+    // (the jobs board page owns its own load), so the feed fires it only while
+    // the list is `idle` AND a vacancy view needs openings — a single load for
+    // N vacancy posts. `load()` flips `list` to `loading` synchronously before
+    // its first await, so any later effect run (new vacancy post arriving)
+    // sees a non-idle status and never double-loads. `listStatus` is read
+    // untracked for the same reason the comment loop is: `load` writes the
+    // list signal, and tracking it would let the load write re-trigger this
+    // effect and spin.
+    effect(() => {
+      const hasVacancy = this.views().some((view) => view.kind === 'vacancy');
+      untracked(() => {
+        if (hasVacancy && this.jobs.listStatus() === 'idle') {
+          void this.jobs.load();
+        }
+      });
+    });
     // Load each thread once posts arrive. The loop deliberately tracks only
     // `store.posts()`: `comments.load` reads and writes `comments.state`, so
     // running it inside `untracked` keeps those reads out of this effect's
