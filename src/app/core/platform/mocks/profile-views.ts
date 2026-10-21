@@ -9,8 +9,11 @@
  * `vacancy.registry.ts` precedent) and it is frozen — the profiles are seeded
  * and never created at runtime. No Angular imports, no side effects, so it stays
  * trivially testable and usable from a `computed()`.
+ *
+ * The es-AR identity labels live in `labels/profile-labels.ts` (p17 review D4):
+ * this module maps data, it does not name it.
  */
-import type { CompanyProfile, ProfileView, Role, WorkerProfile } from '../domain';
+import type { CompanyProfile, ProfileView, WorkerProfile } from '../domain';
 
 /** The demo-only display extras of a profile, keyed by its id. */
 export interface ProfileExtras {
@@ -34,21 +37,6 @@ export const AVATAR_COLOR_CLASSES = [
   'bg-brand-50 text-ink-900',
   'bg-accent-400 text-ink-900'
 ] as const;
-
-/**
- * The es-AR label of the verified badge, by role: a company is "Verificada" and
- * a worker "Verificado". The badge copy follows the grammatical gender of the
- * role, so the SAME badge never says "Verificado" to a company.
- */
-export const verifiedLabel = (role: Role): string =>
-  role === 'company' ? 'Verificada' : 'Verificado';
-
-/**
- * The es-AR line that names the sector of a profile: a company states its
- * "Rubro" and a worker their "Oficio". The seeded sector follows the label.
- */
-export const sectorLabel = (role: Role, sector: string): string =>
-  `${role === 'company' ? 'Rubro' : 'Oficio'}: ${sector}`;
 
 /**
  * The seeded demo extras. These are placeholder numbers (D7): the follow EDGES
@@ -156,7 +144,9 @@ export const profileViewFor = (profile: WorkerProfile | CompanyProfile): Profile
     const extras = extrasFor(profile.companyId, profile.phone ?? '');
     return {
       id: profile.companyId,
-      role: profile.role,
+      // The branch IS the role: a company profile is a company, whatever its
+      // loose `role` field says. An admin never reaches the identity badges.
+      role: 'company',
       displayName: profile.name,
       initials: initialsFor(profile.name),
       avatarColor: avatarColorFor(profile.companyId),
@@ -178,7 +168,9 @@ export const profileViewFor = (profile: WorkerProfile | CompanyProfile): Profile
   const extras = extrasFor(profile.userId, profile.phone ?? '');
   return {
     id: profile.userId,
-    role: profile.role,
+    // The branch IS the role: a worker profile is a worker, whatever its loose
+    // `role` field says. An admin never reaches the identity badges.
+    role: 'worker',
     displayName: profile.fullName,
     initials: initialsFor(profile.fullName),
     avatarColor: avatarColorFor(profile.userId),

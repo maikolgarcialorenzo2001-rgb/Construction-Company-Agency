@@ -2,13 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { CompanyProfile, WorkerProfile } from '../domain';
 import { COMPANY_PROFILES, WORKER_PROFILES } from './fixtures';
-import {
-  AVATAR_COLOR_CLASSES,
-  PROFILE_EXTRAS,
-  profileViewFor,
-  sectorLabel,
-  verifiedLabel
-} from './profile-views';
+import { AVATAR_COLOR_CLASSES, PROFILE_EXTRAS, profileViewFor } from './profile-views';
 
 /**
  * The demo profile view-model mapper (p17, design D5/D6). It merges the frozen
@@ -169,23 +163,15 @@ describe('profileViewFor', () => {
     expect(view.verified).toBe(false);
     expect(view.initials).toBe('MG');
   });
-});
 
-/**
- * The es-AR labels of the identity badges. They are role-aware: the badge copy
- * follows the grammatical gender of the role, so a company is never labelled
- * with a worker's wording.
- */
-describe('verifiedLabel', () => {
-  it('labels a verified company Verificada and a verified worker Verificado', () => {
-    expect(verifiedLabel('company')).toBe('Verificada');
-    expect(verifiedLabel('worker')).toBe('Verificado');
-  });
-});
+  it('never carries an admin role: the role follows the branch, not a loose field', () => {
+    const forged: WorkerProfile = { ...WORKER_PROFILES[0], role: 'admin' };
 
-describe('sectorLabel', () => {
-  it('names the sector Rubro for a company and Oficio for a worker', () => {
-    expect(sectorLabel('company', 'Construcción')).toBe('Rubro: Construcción');
-    expect(sectorLabel('worker', 'Electricidad')).toBe('Oficio: Electricidad');
+    const view = profileViewFor(forged);
+
+    // A public profile is a worker or a company. The mapper took the WORKER
+    // branch (the profile has no `companyId`), so the view says "worker": an
+    // admin never reaches the identity badges.
+    expect(view.role).toBe('worker');
   });
 });

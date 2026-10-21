@@ -16,9 +16,9 @@ import { buildTelHref, toWaDigits } from '../../core/lead/lead-links';
 import { PROFILES_GATEWAY } from '../../core/platform/api/ports';
 import { SessionService } from '../../core/platform/auth/session.service';
 import type { PostView, ProfileView } from '../../core/platform/domain';
+import { roleLabel, sectorLabel, verifiedLabel } from '../../core/platform/labels/profile-labels';
 import { isRenderablePostView, toPostView } from '../../core/platform/mocks/post-views';
-import { profileViewFor, sectorLabel, verifiedLabel } from '../../core/platform/mocks/profile-views';
-import { roleLabel } from '../../core/platform/preview/preview-fixtures';
+import { profileViewFor } from '../../core/platform/mocks/profile-views';
 import { EngagementStore } from '../../core/platform/store/engagement.store';
 import { FeedStore } from '../../core/platform/store/feed.store';
 import { JobsStore } from '../../core/platform/store/jobs.store';
@@ -114,6 +114,13 @@ export class PlatformPerfilPublicoPage {
   /** The signed-in viewer, or `null` for an anonymous visitor. */
   protected readonly viewer = computed(() => this.session.currentUser());
 
+  /**
+   * The generation of the last resolution started. It only ever grows, so a
+   * resolution can tell whether it is still the CURRENT one — the id alone
+   * cannot: an A → B → A sequence gives two resolutions the SAME id.
+   */
+  private requestToken = 0;
+
   /** True when the viewer IS the profile: nobody follows themselves. */
   protected readonly isOwner = computed(() => this.viewer()?.userId === this.id());
 
@@ -154,7 +161,7 @@ export class PlatformPerfilPublicoPage {
     () => this.vacancies().filter((opening) => opening.status === 'open').length
   );
 
-  /** How many trades the worker lists. */
+  /** How many skills (the "Habilidades" chips) the worker lists. */
   protected readonly skillsCount = computed(() => this.profile()?.skills.length ?? 0);
 
   /** The bio heading: a company is described, a worker introduces themselves. */
@@ -205,19 +212,27 @@ export class PlatformPerfilPublicoPage {
    * Resolves the profile of an id: `worker(id)` first, then `company(id)`.
    *
    * The resolution is ASYNCHRONOUS and the id can change while it awaits, so
-   * the result is dropped when the id moved on: a slow resolution must never
-   * overwrite the profile of a newer id (the effect re-resolves on every change).
+   * the result is dropped when a NEWER resolution took over: a slow resolution
+   * must never overwrite the profile of a newer id (the effect re-resolves on
+   * every change).
+   *
+   * Two guards, because the id alone is not enough: an A → B → A sequence
+   * hands two resolutions the SAME id, so the GENERATION (the token) is what
+   * tells the stale result from the current one.
    */
   private async resolveProfile(id: string): Promise<void> {
+    // The token is taken BEFORE the first await: it stamps this resolution as
+    // the current one until a newer one starts.
+    const token = ++this.requestToken;
     this.status.set('loading');
     this.profile.set(null);
 
     const worker = await this.profiles.worker(id);
     const profile = worker ?? (await this.profiles.company(id));
 
-    // The id may have changed while this resolution awaited: a newer id owns the
-    // page now, so the stale result is dropped instead of overwriting it.
-    if (this.id() !== id) {
+    // A newer resolution started while this one awaited, or the id moved on:
+    // the stale result is dropped instead of overwriting the current profile.
+    if (token !== this.requestToken || this.id() !== id) {
       return;
     }
 

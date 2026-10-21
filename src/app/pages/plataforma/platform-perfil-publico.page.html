@@ -135,8 +135,13 @@
             </div>
           } @else {
             <div>
-              <dt class="text-sm text-ink-600">Oficios</dt>
-              <dd data-testid="perfil-stat-oficios" class="text-2xl font-semibold text-ink-900">
+              <!-- "Habilidades" counts the skill chips. The SECTOR above already
+                   says "Oficio" for the trade: one word, one meaning. -->
+              <dt class="text-sm text-ink-600">Habilidades</dt>
+              <dd
+                data-testid="perfil-stat-habilidades"
+                class="text-2xl font-semibold text-ink-900"
+              >
                 {{ skillsCount() }}
               </dd>
             </div>
@@ -186,7 +191,10 @@
         @if (view.role === 'company' && vacancies().length) {
           <section data-testid="perfil-vacancies" class="mt-10">
             <h2 class="text-lg font-semibold text-ink-900">Vacantes</h2>
-            <app-post-vacancy class="mt-3 block" [openings]="vacancies()" />
+            <!-- The card prints no title of its own: this heading owns it, and the
+                 card's default copy ("Vacantes disponibles") is wrong for a list
+                 that carries the closed vacancies too. -->
+            <app-post-vacancy class="mt-3 block" [openings]="vacancies()" [label]="null" />
           </section>
         }
 

@@ -24,6 +24,16 @@ export class PostVacancyComponent {
   /** The resolved openings to promote, in payload order. */
   readonly openings = input.required<JobOpening[]>();
 
+  /**
+   * The title of the card. It defaults to "Vacantes disponibles", the copy of
+   * a board that promotes OPEN openings only.
+   *
+   * A page that lists CLOSED openings too must pass `null`: the default copy
+   * would be a lie there, and a page that brings its own heading passes `null`
+   * to avoid a duplicated title.
+   */
+  readonly label = input<string | null>('Vacantes disponibles');
+
   protected readonly jobStatusLabel = jobStatusLabel;
 
   /** Single-figure budget in es-AR form (`ARS 380.000`); only called when present. */

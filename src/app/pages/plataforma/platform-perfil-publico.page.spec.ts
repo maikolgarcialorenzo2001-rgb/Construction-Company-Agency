@@ -1,9 +1,10 @@
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { routes } from '../../app.routes';
+import { appConfig } from '../../app.config';
 import { ENGAGEMENT_GATEWAY, FEED_GATEWAY, PROFILES_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import { ENGAGEMENT_STORAGE_KEY } from '../../core/platform/api/mock-engagement.gateway';
@@ -266,8 +267,26 @@ describe('PlatformPerfilPublicoPage', () => {
     expect(stats?.querySelector('[data-testid="perfil-stat-seguidos"]')?.textContent?.trim()).toBe(
       '34'
     );
-    expect(stats?.querySelector('[data-testid="perfil-stat-oficios"]')?.textContent?.trim()).toBe('2');
+    expect(
+      stats?.querySelector('[data-testid="perfil-stat-habilidades"]')?.textContent?.trim()
+    ).toBe('2');
     expect(stats?.querySelector('[data-testid="perfil-stat-vacantes"]')).toBeNull();
+  });
+
+  it('names the worker skills count "Habilidades", so "Oficio" means only the trade', async () => {
+    const element = await render('worker-1');
+
+    const stat = element.querySelector('[data-testid="perfil-stat-habilidades"]');
+    expect(stat?.textContent?.trim()).toBe('2');
+    expect(stat?.parentElement?.querySelector('dt')?.textContent?.trim()).toBe('Habilidades');
+
+    // The sector line keeps "Oficio" for the trade, and worker-1's FIRST skill
+    // chip is literally "Electricidad": one word must never mean two things on
+    // the same screen.
+    expect(element.querySelector('[data-testid="perfil-sector"]')?.textContent?.trim()).toBe(
+      'Oficio: Electricidad'
+    );
+    expect(element.textContent).not.toContain('Oficios');
   });
 
   it('renders the stats row of a company with its publications, followers and open vacancies', async () => {
@@ -287,7 +306,7 @@ describe('PlatformPerfilPublicoPage', () => {
     expect(stats?.querySelector('[data-testid="perfil-stat-vacantes"]')?.textContent?.trim()).toBe(
       '3'
     );
-    expect(stats?.querySelector('[data-testid="perfil-stat-oficios"]')).toBeNull();
+    expect(stats?.querySelector('[data-testid="perfil-stat-habilidades"]')).toBeNull();
   });
 
   it('renders the identity block of a company', async () => {
@@ -474,6 +493,21 @@ describe('PlatformPerfilPublicoPage', () => {
     expect(open.length).toBe(Number(count));
   });
 
+  it('titles the vacancies with its own heading, with no second card title', async () => {
+    const element = await render('company-1');
+
+    const block = element.querySelector('[data-testid="perfil-vacancies"]');
+    expect(block).not.toBeNull();
+
+    // The page owns the heading...
+    expect(block?.querySelector('h2')?.textContent?.trim()).toBe('Vacantes');
+    // ...and the shared card prints NO title of its own: its default copy
+    // ("Vacantes disponibles") is WRONG here, because the list also carries
+    // the CLOSED vacancies, and a second title would duplicate the heading.
+    expect(block?.querySelector('[data-testid="vacancy-card-title"]')).toBeNull();
+    expect(block?.textContent).not.toContain('Vacantes disponibles');
+  });
+
   it('offers a login link and no follow button to an anonymous visitor', async () => {
     const element = await render('company-1');
 
@@ -552,6 +586,57 @@ describe('PlatformPerfilPublicoPage', () => {
     );
   });
 
+  it('keeps the LAST resolution when the id comes back to a previous one', async () => {
+    const pending: ((profile: WorkerProfile | null) => void)[] = [];
+    TestBed.overrideProvider(PROFILES_GATEWAY, {
+      useValue: {
+        worker: () =>
+          new Promise<WorkerProfile | null>((resolve) => {
+            pending.push(resolve);
+          }),
+        company: async () => null,
+        updateWorker: async () => {
+          throw new Error('not used');
+        },
+        updateCompany: async () => {
+          throw new Error('not used');
+        }
+      }
+    });
+
+    const fixture = TestBed.createComponent(PlatformPerfilPublicoPage);
+    // A → B → A: the id leaves and comes back, so the FIRST resolution of
+    // "worker-1" and the LAST one share the SAME id.
+    fixture.componentRef.setInput('id', 'worker-1');
+    fixture.detectChanges();
+    fixture.componentRef.setInput('id', 'worker-2');
+    fixture.detectChanges();
+    fixture.componentRef.setInput('id', 'worker-1');
+    fixture.detectChanges();
+    await flush(fixture);
+
+    expect(pending.length, 'every id change starts its own resolution').toBe(3);
+
+    // The LAST resolution of "worker-1" lands first.
+    pending[2]?.(WORKER_PROFILES[0]);
+    await flush(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="perfil-name"]')?.textContent?.trim()).toBe(
+      'Lucía Fernández'
+    );
+
+    // The FIRST resolution of the SAME id lands now. It is STALE — it belongs
+    // to an older generation — so it must never overwrite the newer payload,
+    // even though the id matches.
+    pending[0]?.({ ...WORKER_PROFILES[0], fullName: 'Ana Stale' });
+    await flush(fixture);
+
+    expect(element.querySelector('[data-testid="perfil-name"]')?.textContent?.trim()).toBe(
+      'Lucía Fernández'
+    );
+  });
+
   it('toggles the follow of another profile for a signed-in viewer', async () => {
     const toggled: [string, string][] = [];
     TestBed.overrideProvider(ENGAGEMENT_GATEWAY, {
@@ -587,19 +672,25 @@ describe('PlatformPerfilPublicoPage', () => {
   });
 
   /**
-   * The real route table, with the SAME component input binding the app
-   * configures (`withComponentInputBinding`). The specs above drive the id
-   * directly, so only this block proves the `:id` route param actually reaches
-   * the page.
+   * The APP's own providers — the real route table AND the real
+   * `withComponentInputBinding`, not a copy of them. The specs above drive the
+   * id directly, so only this block proves the `:id` route param actually
+   * reaches the page in production.
    */
-  describe('with the real route table', () => {
+  describe('with the app providers', () => {
     let harness: RouterTestingHarness;
 
     beforeEach(async () => {
-      // The real table replaces the empty one of the outer suite.
+      // The app providers replace the empty router of the outer suite.
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        providers: [provideRouter(routes, withComponentInputBinding())]
+        // The app's OWN provider list: the router configuration under test is
+        // the one the app boots with, so this block FAILS if `app.config.ts`
+        // ever drops `withComponentInputBinding()` (the page would stay on
+        // "Cargando el perfil…" forever in production).
+        // The testing backend must come AFTER `provideHttpClient()` (already in
+        // `appConfig.providers`) so it becomes the active backend.
+        providers: [...appConfig.providers, provideHttpClientTesting()]
       });
       harness = await RouterTestingHarness.create();
     });

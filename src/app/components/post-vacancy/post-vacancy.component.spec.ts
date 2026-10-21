@@ -23,11 +23,17 @@ describe('PostVacancyComponent', () => {
     TestBed.configureTestingModule({ imports: [PostVacancyComponent], providers: [provideRouter([])] });
   });
 
-  const render = async (openings: JobOpening[]): Promise<HTMLElement> => {
+  const render = async (
+    openings: JobOpening[],
+    label?: string | null
+  ): Promise<HTMLElement> => {
     const fixture: ComponentFixture<PostVacancyComponent> = TestBed.createComponent(
       PostVacancyComponent
     );
     fixture.componentRef.setInput('openings', openings);
+    if (label !== undefined) {
+      fixture.componentRef.setInput('label', label);
+    }
     fixture.detectChanges();
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
@@ -126,5 +132,34 @@ describe('PostVacancyComponent', () => {
     expect(links[1].getAttribute('aria-label')).toBe(
       'Postularse a Electricista matriculado para locales comerciales'
     );
+  });
+
+  describe('the card title', () => {
+    it('titles the card with the default label', async () => {
+      const element = await render([opening({ id: 'job-1', title: 'Albañil' })]);
+
+      expect(fieldText(element, 'vacancy-card-title')).toBe('Vacantes disponibles');
+    });
+
+    it('titles the card with the label it is given', async () => {
+      const element = await render(
+        [opening({ id: 'job-1', title: 'Albañil' })],
+        'Vacantes de la empresa'
+      );
+
+      expect(fieldText(element, 'vacancy-card-title')).toBe('Vacantes de la empresa');
+      // The default copy is REPLACED, never shown next to it.
+      expect(element.textContent).not.toContain('Vacantes disponibles');
+    });
+
+    it('renders no title when the label is suppressed, keeping the list', async () => {
+      const element = await render([opening({ id: 'job-1', title: 'Albañil' })], null);
+
+      expect(element.querySelector('[data-testid="vacancy-card-title"]')).toBeNull();
+      expect(element.textContent).not.toContain('Vacantes disponibles');
+      // Only the TITLE is gone: the entries still render.
+      expect(element.querySelectorAll('[data-testid="vacancy-entry"]')).toHaveLength(1);
+      expect(fieldText(element, 'vacancy-title')).toBe('Albañil');
+    });
   });
 });

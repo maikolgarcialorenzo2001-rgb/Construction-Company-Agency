@@ -12,6 +12,14 @@
 /** Shared role model. Registration may self-assign only `worker` or `company`. */
 export type Role = 'worker' | 'company' | 'admin';
 
+/**
+ * The roles a PUBLIC profile can have: a worker or a company. An admin has no
+ * public profile page (`/plataforma/perfil/:id` resolves a worker or a
+ * company), so the public view-model never carries that role and the identity
+ * badges never have to guess what an admin should say.
+ */
+export type ProfileRole = Exclude<Role, 'admin'>;
+
 /** The authenticated platform user (session shape, generated from `/auth/me`). */
 export interface User {
   userId: string;
@@ -137,7 +145,7 @@ export interface PostView {
  */
 export interface ProfileView {
   readonly id: string;
-  readonly role: Role;
+  readonly role: ProfileRole;
   readonly displayName: string;
   readonly initials: string;
   readonly avatarColor: string;
