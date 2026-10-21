@@ -5,11 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ENGAGEMENT_STORAGE_KEY } from '../../core/platform/api/mock-engagement.gateway';
 import type { EngagementState } from '../../core/platform/api/ports';
 import { COMMENTS_GATEWAY, FEED_GATEWAY, JOBS_GATEWAY } from '../../core/platform/api/ports';
+import type { CreatePostDraft } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import type { Comment, JobOpening, Page, Post } from '../../core/platform/domain';
 import { COMMENTS, FEED_POSTS, JOBS } from '../../core/platform/mocks/fixtures';
 import { resetJobRequestRegistry } from '../../core/platform/mocks/job-request.registry';
-import { recordVacancy, resetVacancyRegistry } from '../../core/platform/mocks/vacancy.registry';
+import {
+  getVacancy,
+  recordVacancy,
+  resetVacancyRegistry
+} from '../../core/platform/mocks/vacancy.registry';
+import { FeedStore } from '../../core/platform/store/feed.store';
 import { JobsStore } from '../../core/platform/store/jobs.store';
 import { PlatformFeedPage } from './feed.page';
 
@@ -20,6 +26,19 @@ const seedSession = (role: 'worker' | 'company'): void =>
     JSON.stringify({
       token: 'mock-token',
       user: { userId: role === 'company' ? 'company-1' : 'worker-1', email: 'demo@test', role }
+    })
+  );
+
+/**
+ * Seeds a company session for a SPECIFIC company. The picker and the created
+ * post must follow the session author, never a hardcoded id (design D3).
+ */
+const seedCompanySession = (companyId: string): void =>
+  localStorage.setItem(
+    SESSION_STORAGE_KEY,
+    JSON.stringify({
+      token: 'mock-token',
+      user: { userId: companyId, email: 'demo@test', role: 'company' }
     })
   );
 
@@ -903,6 +922,53 @@ describe('PlatformFeedPage', () => {
     ).toHaveLength(2);
   });
 
+  it('loads the jobs board exactly once for a company session (picker + timeline triggers)', async () => {
+    // WU4b: the company session adds a SECOND trigger to the hydration guard
+    // (the picker needs the openings even without a vacancy post). Both
+    // triggers must collapse into ONE load — the idle guard owns that.
+    seedSession('company');
+    const jobs = TestBed.inject(JobsStore);
+    const load = vi.spyOn(jobs, 'load');
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('hydrates the openings for a company session even without vacancy posts', async () => {
+    // A timeline with NO vacancy post: only the picker trigger can hydrate.
+    // The kind lives in the registry, not in the contract `Post`, so the
+    // seeded vacancy ids are the ones to drop.
+    TestBed.overrideProvider(FEED_GATEWAY, {
+      useValue: {
+        timeline: async (): Promise<Page<Post>> => ({
+          items: FEED_POSTS.filter((post) => post.id !== 'post-12' && post.id !== 'post-13'),
+          meta: { page: 1, pageSize: 20, total: FEED_POSTS.length }
+        }),
+        create: async (draft: CreatePostDraft): Promise<Post> => ({
+          id: 'post-new-1',
+          authorId: draft.authorId,
+          content: draft.content,
+          attachments: draft.attachments,
+          createdAt: '2026-01-01T00:00:00Z'
+        })
+      }
+    });
+    seedSession('company');
+    const jobs = TestBed.inject(JobsStore);
+    const load = vi.spyOn(jobs, 'load');
+
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(jobs.openings().length).toBeGreaterThan(0);
+  });
+
   it('renders a job closed after seeding as Cerrada with its link still present (live resolve)', async () => {
     TestBed.overrideProvider(JOBS_GATEWAY, {
       useValue: {
@@ -940,5 +1006,209 @@ describe('PlatformFeedPage', () => {
       'Postularse a Albañil con experiencia para obra en Vicente López'
     );
     expect(links?.[0]?.getAttribute('href')).toBe('/plataforma/trabajos/job-1');
+  });
+
+  // --- Company composer wiring (p16 WU4b) -------------------------------------
+
+  /** Toggles the company composer into the "Buscar trabajadores" mode. */
+  const toggleVacancyMode = (element: HTMLElement): void => {
+    const toggle = Array.from(element.querySelectorAll('button')).find(
+      (button) => button.textContent?.trim() === 'Buscar trabajadores'
+    ) as HTMLButtonElement;
+    toggle.click();
+  };
+
+  /** Picks one vacancy in the scoped picker. */
+  const pickVacancy = (element: HTMLElement, jobId: string): void => {
+    (element.querySelector(`#company-composer-job-${jobId}`) as HTMLInputElement).click();
+  };
+
+  /** Writes the optional promo text of the vacancy mode. */
+  const typeVacancyText = (element: HTMLElement, value: string): void => {
+    const textarea = element.querySelector('#company-composer-vacancy-text') as HTMLTextAreaElement;
+    textarea.value = value;
+    textarea.dispatchEvent(new Event('input'));
+  };
+
+  /** Enters vacancy mode and lets the hydrated picker paint. */
+  const enterVacancyMode = async (fixture: ComponentFixture<PlatformFeedPage>): Promise<HTMLElement> => {
+    const element = fixture.nativeElement as HTMLElement;
+    // The extracted composer must be mounted before its mode toggle exists.
+    expect(element.querySelector('app-company-composer'), 'company composer').not.toBeNull();
+    toggleVacancyMode(element);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return element;
+  };
+
+  it('publishes a company vacancy post with the picked job ids and the session author', async () => {
+    seedSession('company');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    // WU4b: the page hosts the extracted composer, not the inline textarea.
+    expect(element.querySelector('app-company-composer')).not.toBeNull();
+
+    await enterVacancyMode(fixture);
+    pickVacancy(element, 'job-1');
+    typeVacancyText(element, 'Buscamos albañiles para la obra de Vicente López.');
+    fixture.detectChanges();
+
+    (element.querySelector('[data-testid="vacancy-publish"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // The new post is a VACANCY post: the promo card projects its job…
+    const posts = element.querySelectorAll('[data-testid="feed-post"]');
+    expect(posts).toHaveLength(FEED_POSTS.length + 1);
+    const created = posts[0] as HTMLElement;
+    const card = created.querySelector('[data-testid="post-vacancy"]');
+    expect(card).not.toBeNull();
+    expect(card?.textContent).toContain('Albañil con experiencia para obra en Vicente López');
+    // …and the free text rides the body slot.
+    expect(created.querySelector('[data-testid="post-body"]')?.textContent).toContain(
+      'Buscamos albañiles para la obra de Vicente López'
+    );
+
+    // The demo registry holds exactly the picked job ids…
+    const store = TestBed.inject(FeedStore);
+    const post = store.posts()[0];
+    expect(getVacancy(post.id)?.jobIds).toEqual(['job-1']);
+
+    // …and the author is the session company, never a hardcoded id.
+    expect(post.authorId).toBe('company-1');
+    expect(created.textContent).toContain('Constructora Norte SAC');
+  });
+
+  it('scopes the picker to the company own open vacancies in the real feed', async () => {
+    seedSession('company');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = await enterVacancyMode(fixture);
+
+    // Design D8: only own + open jobs reach the picker (job-1, job-2, job-6).
+    const options = Array.from(
+      element.querySelectorAll<HTMLInputElement>('[data-testid="vacancy-option"]')
+    );
+    expect(options.map((option) => option.id)).toEqual([
+      'company-composer-job-job-1',
+      'company-composer-job-job-2',
+      'company-composer-job-job-6'
+    ]);
+    // Scoped to the picker: the TIMELINE may legitimately mention any job.
+    const picker = element.querySelector('[data-testid="vacancy-picker-group"]');
+    const text = picker?.textContent ?? '';
+    expect(text).not.toContain('Director de obra'); // own but closed
+    expect(text).not.toContain('Plomero'); // open but another company
+  });
+
+  it('scopes the picker and the post author to the session company, never a hardcoded one', async () => {
+    seedCompanySession('company-2');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = await enterVacancyMode(fixture);
+
+    // The picker follows the SESSION company (company-2 owns job-4 and job-5).
+    const options = Array.from(
+      element.querySelectorAll<HTMLInputElement>('[data-testid="vacancy-option"]')
+    );
+    expect(options.map((option) => option.id)).toEqual([
+      'company-composer-job-job-4',
+      'company-composer-job-job-5'
+    ]);
+
+    pickVacancy(element, 'job-4');
+    typeVacancyText(element, 'Abrimos dos búsquedas para la planta de Quilmes.');
+    fixture.detectChanges();
+    (element.querySelector('[data-testid="vacancy-publish"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const store = TestBed.inject(FeedStore);
+    const post = store.posts()[0];
+    expect(post.authorId).toBe('company-2');
+    expect(getVacancy(post.id)?.jobIds).toEqual(['job-4']);
+    // The denormalized author is the session company, not the demo default.
+    expect((element.querySelectorAll('[data-testid="feed-post"]')[0] as HTMLElement).textContent).toContain(
+      'Grupo Delta Construcciones'
+    );
+  });
+
+  it('publishes a company normal post without any vacancy payload', async () => {
+    seedSession('company');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('app-company-composer')).not.toBeNull();
+
+    const textarea = element.querySelector('#feed-post-content') as HTMLTextAreaElement;
+    textarea.value = 'Arrancamos la instalación de sanitarias en Palermo.';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    (element.querySelector('[data-testid="feed-publish"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const store = TestBed.inject(FeedStore);
+    const post = store.posts()[0];
+    expect(post.content).toBe('Arrancamos la instalación de sanitarias en Palermo.');
+    expect(post.authorId).toBe('company-1');
+    // A standard post carries NO vacancy payload: the registry has no entry.
+    expect(getVacancy(post.id)).toBeUndefined();
+    // And no vacancy card is projected for it.
+    const created = element.querySelectorAll('[data-testid="feed-post"]')[0] as HTMLElement;
+    expect(created.querySelector('[data-testid="post-vacancy"]')).toBeNull();
+  });
+
+  it('keeps the worker path on the solicitud form and away from the company composer', async () => {
+    seedSession('worker');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="job-request-composer"]')).not.toBeNull();
+    expect(element.querySelector('app-company-composer')).toBeNull();
+    expect(element.querySelector('[data-testid="feed-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="vacancy-composer"]')).toBeNull();
+  });
+
+  it('keeps the admin path free of any composer', async () => {
+    seedSession('worker');
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: 'mock-token',
+        user: { userId: 'admin-1', email: 'admin@demo.test', role: 'admin' }
+      })
+    );
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('app-company-composer')).toBeNull();
+    expect(element.querySelector('[data-testid="feed-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="vacancy-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="job-request-composer"]')).toBeNull();
+  });
+
+  it('renders the company composer without duplicate element ids', async () => {
+    seedSession('company');
+    const fixture = TestBed.createComponent(PlatformFeedPage);
+    await settleVacancyFeed(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('app-company-composer')).not.toBeNull();
+
+    // The inline textarea form is gone: the composer owns `feed-post-content`
+    // exactly once (F5 guard — no duplicate ids across the feed).
+    const ids = Array.from(element.querySelectorAll('[id]')).map((node) => node.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain('feed-post-content');
   });
 });

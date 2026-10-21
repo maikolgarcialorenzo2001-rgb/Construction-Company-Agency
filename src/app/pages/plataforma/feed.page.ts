@@ -5,10 +5,13 @@ import {
   effect,
   inject,
   input,
-  signal,
   untracked
 } from '@angular/core';
 
+import {
+  CompanyComposerComponent,
+  type CompanyPostDraft
+} from '../../components/company-composer/company-composer.component';
 import {
   JobRequestComposerComponent,
   type JobRequestDraft
@@ -19,6 +22,7 @@ import { resolveVacancyOpenings } from '../../components/post-vacancy/vacancy-op
 import { PostTemplateComponent } from '../../components/post-template/post-template.component';
 import { SessionService } from '../../core/platform/auth/session.service';
 import type { JobOpening, Role } from '../../core/platform/domain';
+import { COMPANY_PROFILE } from '../../core/platform/mocks/fixtures';
 import { toPostView, isRenderablePostView } from '../../core/platform/mocks/post-views';
 import { CommentsStore } from '../../core/platform/store/comments.store';
 import { EngagementStore } from '../../core/platform/store/engagement.store';
@@ -55,15 +59,22 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
  *
  * The post composer is role-differentiated (p15 WU3, design D4/D5): `worker`
  * gets the reactive `JobRequestComposerComponent` (Q1=a composite rule),
- * `company` keeps the signal-based textarea, and `admin`/anonymous see no
- * composer at all. The per-post comment composer is gated to any authenticated
- * role (`effectiveRole() !== null`), so a worker or admin can comment while an
- * anonymous visitor sees neither control.
+ * `company` gets the extracted `CompanyComposerComponent` (p16 WU4b) with its
+ * two exclusive modes — a plain post or a vacancy promo — and `admin`/anonymous
+ * see no composer at all. The per-post comment composer is gated to any
+ * authenticated role (`effectiveRole() !== null`), so a worker or admin can
+ * comment while an anonymous visitor sees neither control.
  */
 @Component({
   selector: 'app-platform-feed',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PostTemplateComponent, PostJobRequestComponent, PostVacancyComponent, JobRequestComposerComponent],
+  imports: [
+    PostTemplateComponent,
+    PostJobRequestComponent,
+    PostVacancyComponent,
+    JobRequestComposerComponent,
+    CompanyComposerComponent
+  ],
   template: `
     <section class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 class="text-section font-semibold text-ink-900">Novedades</h1>
@@ -73,30 +84,11 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
       }
 
       @if (effectiveRole() === 'company') {
-        <form
-          data-testid="feed-composer"
-          class="mt-6 rounded-xl border border-ink-900/10 p-4"
-          (submit)="publish($event)"
-        >
-          <label for="feed-post-content" class="block text-sm font-medium text-ink-900"
-            >Publicar novedad</label
-          >
-          <textarea
-            id="feed-post-content"
-            rows="3"
-            [value]="draft()"
-            (input)="onDraftInput($event)"
-            placeholder="Contá el avance de obra, una búsqueda de personal, etc."
-            class="mt-2 w-full rounded-lg border border-ink-900/15 p-3 text-ink-900"
-          ></textarea>
-          <button
-            data-testid="feed-publish"
-            type="submit"
-            class="mt-3 rounded-lg bg-ink-900 px-4 py-2 font-medium text-white"
-          >
-            Publicar
-          </button>
-        </form>
+        <app-company-composer
+          [openings]="jobs.openings()"
+          [authorId]="companyAuthorId()"
+          (publish)="publishCompany($event)"
+        />
       }
 
       @switch (store.status()) {
@@ -201,6 +193,16 @@ export class PlatformFeedPage {
   protected readonly viewerId = computed(() => this.session.currentUser()?.userId ?? null);
 
   /**
+   * The author the company composer publishes under (design D3): the SESSION
+   * user owns the post — never a hardcoded id. The demo company is only the
+   * fallback for a session-less preview, so the picker scope and the created
+   * post always agree on the same author.
+   */
+  protected readonly companyAuthorId = computed(
+    () => this.session.currentUser()?.userId ?? COMPANY_PROFILE.companyId
+  );
+
+  /**
    * Denormalized view-models (design D2): the template never sees a raw
    * `authorId`. The list is filtered by the never-empty invariant (WU5) so a
    * post with neither text nor image can never paint an empty card.
@@ -233,8 +235,6 @@ export class PlatformFeedPage {
     return byId;
   });
 
-  protected readonly draft = signal('');
-
   constructor() {
     void this.store.load();
     // Guarded one-shot engagement hydration (design: "page ctor → store.load()").
@@ -250,8 +250,11 @@ export class PlatformFeedPage {
     // effect and spin.
     effect(() => {
       const hasVacancy = this.views().some((view) => view.kind === 'vacancy');
+      // WU4b: the company composer picker needs the openings even when the
+      // timeline carries no vacancy post yet — a company session always hydrates.
+      const needsPicker = this.effectiveRole() === 'company';
       untracked(() => {
-        if (hasVacancy && this.jobs.listStatus() === 'idle') {
+        if ((hasVacancy || needsPicker) && this.jobs.listStatus() === 'idle') {
           void this.jobs.load();
         }
       });
@@ -272,29 +275,31 @@ export class PlatformFeedPage {
     });
   }
 
-  protected onDraftInput(event: Event): void {
-    this.draft.set((event.target as HTMLTextAreaElement).value);
-  }
-
-  protected async publish(event: Event): Promise<void> {
-    event.preventDefault();
-    const form = event.target as HTMLFormElement;
-    const content = this.draft().trim();
-    // The composer has no image field, so the never-empty invariant (WU5)
-    // reduces here to a non-blank text gate: no text and no images is rejected.
-    if (!content) {
+  /**
+   * Company path (p16 WU4b, design D4/D8): the extracted composer owns the
+   * validation and the mode, so the draft arrives already valid — the page
+   * only maps it to the feed store. `jobIds.length > 0` means the company
+   * promoted specific vacancies (a `vacancy` post carrying the picked job
+   * ids); an empty list means a plain `standard` post with NO vacancy payload.
+   */
+  protected async publishCompany(draft: CompanyPostDraft): Promise<void> {
+    const authorId = this.companyAuthorId();
+    if (draft.jobIds.length > 0) {
+      await this.store.create({
+        authorId,
+        kind: 'vacancy',
+        content: draft.content,
+        attachments: draft.attachments.length > 0 ? draft.attachments : undefined,
+        vacancy: { jobIds: draft.jobIds }
+      });
       return;
     }
-    // Author-aware create (design D3): the session user owns the post; the
-    // company composer falls back to the demo company when no session is
-    // seeded (tests/preview). The worker path lives in `publishJobRequest`.
-    const authorId = this.session.currentUser()?.userId ?? 'company-1';
-    await this.store.create({ authorId, kind: 'standard', content });
-    this.draft.set('');
-    // The textarea is an uncontrolled field typed by the user: clearing the
-    // signal alone would not repaint it (Angular's tracked value never changed),
-    // so reset the form element to leave the composer empty after publishing.
-    form.reset();
+    await this.store.create({
+      authorId,
+      kind: 'standard',
+      content: draft.content,
+      attachments: draft.attachments.length > 0 ? draft.attachments : undefined
+    });
   }
 
   /**
