@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SessionService } from '../../../core/platform/auth/session.service';
 import type { Role } from '../../../core/platform/domain';
 import { platformNavFor } from '../../../core/platform/nav';
+import { UserIconLinkComponent } from '../../../components/user-icon-link/user-icon-link.component';
 
 /**
  * The platform chrome. It is the platform's own header landmark with its own
@@ -13,11 +14,15 @@ import { platformNavFor } from '../../../core/platform/nav';
  * The nav is role-aware: the effective role is the explicit `role` input (a
  * preview/test seam) or, when absent, the live `SessionService` role. Anonymous
  * visitors map to an empty set, so the `<nav>` landmark is not rendered at all.
+ *
+ * The user icon points at the own profile and renders NOTHING for an anonymous
+ * visitor: the platform subtree is client-only, so there is no prerendered DOM to
+ * match. The pill, the nav and the layout stay as they were.
  */
 @Component({
   selector: 'app-platform-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, UserIconLinkComponent],
   template: `
     <header class="border-b border-ink-900/10 bg-ink-900 text-white">
       <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
@@ -42,10 +47,14 @@ import { platformNavFor } from '../../../core/platform/nav';
           </nav>
         }
 
-        <span
-          class="rounded-full border border-white/30 px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-          >Modo demo</span
-        >
+        <div class="flex items-center gap-3">
+          <app-user-icon-link />
+
+          <span
+            class="rounded-full border border-white/30 px-3 py-1 text-xs font-semibold uppercase tracking-wide"
+            >Modo demo</span
+          >
+        </div>
       </div>
     </header>
   `

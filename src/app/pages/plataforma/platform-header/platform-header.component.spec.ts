@@ -146,4 +146,31 @@ describe('PlatformHeaderComponent', () => {
 
     expect(navLabels(fixture)).toEqual(['Inicio', 'Novedades', 'Trabajos', 'Mi perfil']);
   });
+
+  it('links the user icon to the own profile for a signed-in visitor', () => {
+    seedSession('worker');
+    const element = elementOf(create());
+
+    const icon = element.querySelector('app-user-icon-link a');
+    expect(icon, 'the platform header renders the user icon when signed in').not.toBeNull();
+    expect(icon?.getAttribute('href')).toBe('/plataforma/perfil/worker-1');
+    expect(icon?.getAttribute('aria-label')).toBe('Ver mi perfil');
+  });
+
+  it('renders no user icon for an anonymous visitor', () => {
+    const element = elementOf(create());
+
+    // The component host is always there, but it renders NO anchor and NO svg
+    // without a session: there is no icon to see.
+    expect(element.querySelector('app-user-icon-link a')).toBeNull();
+    expect(element.querySelector('app-user-icon-link svg')).toBeNull();
+  });
+
+  it('keeps the demo pill and the role nav untouched by the icon', () => {
+    seedSession('worker');
+    const element = elementOf(create('worker'));
+
+    expect(element.textContent).toContain('Modo demo');
+    expect(navLabels(create('worker'))).toEqual(['Inicio', 'Novedades', 'Trabajos', 'Mi perfil']);
+  });
 });

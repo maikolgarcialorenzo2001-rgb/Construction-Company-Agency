@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { site } from '../../../content/site';
 import { toWaDigits } from '../../core/lead/lead-links';
+import { SESSION_STORAGE_KEY, SessionService } from '../../core/platform/auth/session.service';
 import { HeaderComponent } from './header.component';
 
 @Component({ selector: 'app-page-stub', template: 'stub' })
@@ -37,11 +39,25 @@ const navigateTo = async (
 
 describe('HeaderComponent', () => {
   beforeEach(() => {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
     TestBed.configureTestingModule({
       imports: [HeaderComponent],
       providers: [provideRouter([...routes, { path: '**', component: PageStub }])]
     });
   });
+
+  afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
+
+  /** Seeds a signed-in session so the user icon reads a user. */
+  const seedSession = (userId: string, role: 'worker' | 'company'): void => {
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: `mock-token-${userId}`,
+        user: { userId, email: `${userId}@demo.test`, role }
+      })
+    );
+  };
 
   it('renders one link per navigation item, in content order', async () => {
     const links = navLinks(await render());
@@ -140,5 +156,47 @@ describe('HeaderComponent', () => {
       strip!.querySelectorAll('button'),
       'the promo strip must not offer a dismiss control'
     ).toHaveLength(0);
+  });
+
+  it('links the user icon to the login for an anonymous visitor', async () => {
+    const element = await render();
+
+    const icon = element.querySelector('app-user-icon-link a');
+    expect(icon, 'the marketing header always renders the user icon').not.toBeNull();
+    expect(icon?.getAttribute('href')).toBe('/plataforma/login');
+    expect(icon?.getAttribute('aria-label')).toBe('Iniciar sesión');
+  });
+
+  it('links the user icon to the own profile for a signed-in visitor', async () => {
+    seedSession('worker-1', 'worker');
+
+    const element = await render();
+
+    const icon = element.querySelector('app-user-icon-link a');
+    expect(icon?.getAttribute('href')).toBe('/plataforma/perfil/worker-1');
+    expect(icon?.getAttribute('aria-label')).toBe('Ver mi perfil');
+  });
+
+  it('keeps the single platform entry point next to the user icon', async () => {
+    seedSession('worker-1', 'worker');
+
+    const element = await render();
+
+    expect(element.querySelectorAll('a[href="/plataforma"]')).toHaveLength(1);
+  });
+
+  it('always renders the icon anchor, so the prerendered node count is invariant', async () => {
+    const fixture = TestBed.createComponent(HeaderComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelectorAll('app-user-icon-link a')).toHaveLength(1);
+
+    await TestBed.inject(SessionService).login('lucia@demo.test', 'demo1234');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(element.querySelectorAll('app-user-icon-link a')).toHaveLength(1);
   });
 });
