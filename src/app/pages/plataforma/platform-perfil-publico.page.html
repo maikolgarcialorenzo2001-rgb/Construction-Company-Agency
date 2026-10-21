@@ -146,6 +146,41 @@
             </dd>
           </div>
         </dl>
+
+        <section data-testid="perfil-publicaciones" class="mt-10">
+          <h2 class="text-lg font-semibold text-ink-900">Publicaciones</h2>
+          @if (publications().length) {
+            <ul class="mt-3 grid gap-4 sm:grid-cols-2">
+              @for (publication of publications(); track publication.id) {
+                <li
+                  data-testid="perfil-publicacion"
+                  class="rounded-lg border border-ink-900/10 p-4"
+                >
+                  <p data-testid="perfil-publicacion-kind" class="text-xs font-medium text-brand-800">
+                    {{ kindLabel(publication.kind) }}
+                  </p>
+                  <p data-testid="perfil-publicacion-texto" class="mt-2 text-sm text-ink-600">
+                    {{ excerpt(publication.content) }}
+                  </p>
+                  <p data-testid="perfil-publicacion-fecha" class="mt-2 text-xs text-ink-600">
+                    {{ formatEsDate(publication.createdAt) }}
+                  </p>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p data-testid="perfil-publicaciones-vacio" class="mt-3 text-ink-600">
+              Todavía no publicó nada.
+            </p>
+          }
+        </section>
+
+        @if (view.role === 'company' && vacancies().length) {
+          <section data-testid="perfil-vacancies" class="mt-10">
+            <h2 class="text-lg font-semibold text-ink-900">Vacantes abiertas</h2>
+            <app-post-vacancy class="mt-3 block" [openings]="vacancies()" />
+          </section>
+        }
       }
     }
   }

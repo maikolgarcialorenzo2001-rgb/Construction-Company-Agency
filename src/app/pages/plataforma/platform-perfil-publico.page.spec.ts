@@ -2,7 +2,7 @@ import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { PROFILES_GATEWAY } from '../../core/platform/api/ports';
+import { FEED_GATEWAY, PROFILES_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import { PlatformPerfilPublicoPage } from './platform-perfil-publico.page';
 
@@ -191,5 +191,109 @@ describe('PlatformPerfilPublicoPage', () => {
       '3'
     );
     expect(stats?.querySelector('[data-testid="perfil-stat-oficios"]')).toBeNull();
+  });
+
+  it('lists only the publications authored by the profile', async () => {
+    const element = await render('worker-1');
+
+    const tiles = element.querySelectorAll('[data-testid="perfil-publicacion"]');
+    expect(tiles.length).toBe(2);
+    expect(element.textContent).toContain('Terminé la instalación eléctrica');
+    expect(element.textContent).toContain('Cerramos la remodelación eléctrica');
+    // A worker-2 post never appears on worker-1's page.
+    expect(element.textContent).not.toContain('medí la carga de cada circuito');
+  });
+
+  it('renders the kind badge, the preview and the date of every publication', async () => {
+    const element = await render('worker-1');
+
+    const tile = element.querySelector('[data-testid="perfil-publicacion"]');
+    expect(tile?.querySelector('[data-testid="perfil-publicacion-kind"]')?.textContent?.trim()).toBe(
+      'Publicación'
+    );
+    expect(tile?.querySelector('[data-testid="perfil-publicacion-texto"]')?.textContent).toContain(
+      'Terminé la instalación eléctrica de un local en Avellaneda.'
+    );
+    expect(tile?.querySelector('[data-testid="perfil-publicacion-fecha"]')?.textContent?.trim()).toBe(
+      '5 de octubre de 2026'
+    );
+  });
+
+  it('renders the kind badge of a vacancy publication', async () => {
+    const element = await render('company-1');
+
+    const badges = Array.from(
+      element.querySelectorAll('[data-testid="perfil-publicacion-kind"]')
+    ).map((badge) => badge.textContent?.trim());
+    expect(badges).toContain('Vacante');
+    expect(badges).toContain('Publicación');
+  });
+
+  it('renders no img in the publications grid', async () => {
+    const element = await render('company-1');
+
+    const grid = element.querySelector('[data-testid="perfil-publicaciones"]');
+    expect(grid).not.toBeNull();
+    expect(grid?.querySelectorAll('img').length).toBe(0);
+  });
+
+  it('renders the empty state when the profile has no publications', async () => {
+    TestBed.overrideProvider(FEED_GATEWAY, {
+      useValue: {
+        timeline: async () => ({ items: [], meta: { page: 1, pageSize: 20, total: 0 } }),
+        create: async () => {
+          throw new Error('not used');
+        }
+      }
+    });
+
+    const element = await render('worker-1');
+
+    expect(element.querySelector('[data-testid="perfil-publicaciones-vacio"]')?.textContent).toContain(
+      'Todavía no publicó nada'
+    );
+    expect(element.querySelectorAll('[data-testid="perfil-publicacion"]').length).toBe(0);
+  });
+
+  it('renders no vacancies block for a worker', async () => {
+    const element = await render('worker-1');
+
+    expect(element.querySelector('[data-testid="perfil-vacancies"]')).toBeNull();
+    expect(element.querySelector('[data-testid="vacancy-entry"]')).toBeNull();
+  });
+
+  it('renders the open vacancies of a company with their status and the apply link', async () => {
+    const element = await render('company-1');
+
+    const block = element.querySelector('[data-testid="perfil-vacancies"]');
+    expect(block).not.toBeNull();
+
+    const entries = block?.querySelectorAll('[data-testid="vacancy-entry"]') ?? [];
+    expect(entries.length).toBe(3);
+
+    const first = entries[0];
+    expect(first.querySelector('[data-testid="vacancy-title"]')?.textContent?.trim()).toBe(
+      'Albañil con experiencia para obra en Vicente López'
+    );
+    expect(first.querySelector('[data-testid="vacancy-location"]')?.textContent?.trim()).toBe(
+      'Vicente López, GBA Norte'
+    );
+    expect(first.querySelector('[data-testid="vacancy-budget"]')?.textContent?.trim()).toBe(
+      'ARS 380.000'
+    );
+    expect(first.querySelector('[data-testid="vacancy-status"]')?.textContent).toContain('Abierta');
+    expect(first.querySelector('[data-testid="vacancy-apply"]')?.getAttribute('href')).toBe(
+      '/plataforma/trabajos/job-1'
+    );
+  });
+
+  it('renders the open vacancies count that matches the rendered vacancies', async () => {
+    const element = await render('company-1');
+
+    const count = element
+      .querySelector('[data-testid="perfil-stat-vacantes"]')
+      ?.textContent?.trim();
+    const rendered = element.querySelectorAll('[data-testid="vacancy-entry"]').length;
+    expect(count).toBe(String(rendered));
   });
 });

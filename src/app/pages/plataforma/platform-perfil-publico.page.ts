@@ -10,10 +10,11 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { PostVacancyComponent } from '../../components/post-vacancy/post-vacancy.component';
 import { formatEsDate } from '../../core/format';
 import { buildTelHref, toWaDigits } from '../../core/lead/lead-links';
 import { PROFILES_GATEWAY } from '../../core/platform/api/ports';
-import type { ProfileView } from '../../core/platform/domain';
+import type { PostView, ProfileView } from '../../core/platform/domain';
 import { isRenderablePostView, toPostView } from '../../core/platform/mocks/post-views';
 import { profileViewFor } from '../../core/platform/mocks/profile-views';
 import { roleLabel } from '../../core/platform/preview/preview-fixtures';
@@ -22,6 +23,32 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
 
 /** Profile lifecycle: loading → ready | not-found (unknown ids never throw). */
 type ProfileStatus = 'loading' | 'ready' | 'not-found';
+
+/** The es-AR label of a publication kind: the badge of a grid tile. */
+const KIND_LABELS: Record<PostView['kind'], string> = {
+  'job-request': 'Búsqueda laboral',
+  vacancy: 'Vacante',
+  standard: 'Publicación'
+};
+
+/** How many characters of a publication the grid tile shows. */
+const PREVIEW_LENGTH = 180;
+
+/**
+ * The excerpt of a publication: the leading text, cut at a word boundary so a
+ * tile never ends mid-word. The text is flattened (the seeded posts carry
+ * line breaks) and a truncated excerpt ends with an ellipsis.
+ */
+const excerpt = (content: string): string => {
+  const text = content.trim().replace(/\s+/g, ' ');
+  if (text.length <= PREVIEW_LENGTH) {
+    return text;
+  }
+
+  const cut = text.slice(0, PREVIEW_LENGTH);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+};
 
 /**
  * The public profile at `/plataforma/perfil/:id` (p17, design D5): a read-only
@@ -43,7 +70,7 @@ type ProfileStatus = 'loading' | 'ready' | 'not-found';
 @Component({
   selector: 'app-platform-perfil-publico',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, PostVacancyComponent],
   templateUrl: './platform-perfil-publico.page.html'
 })
 export class PlatformPerfilPublicoPage {
@@ -65,6 +92,12 @@ export class PlatformPerfilPublicoPage {
 
   /** The es-AR long date ("15 de septiembre de 2026"). */
   protected readonly formatEsDate = formatEsDate;
+
+  /** The es-AR label of a publication kind. */
+  protected readonly kindLabel = (kind: PostView['kind']): string => KIND_LABELS[kind];
+
+  /** The excerpt of a publication, for a grid tile. */
+  protected readonly excerpt = excerpt;
 
   /**
    * The publications authored by the profile, projected with the shared feed
