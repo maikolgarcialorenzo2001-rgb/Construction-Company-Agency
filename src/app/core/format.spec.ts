@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { MoneyRange } from '../../content/content.types';
-import { formatArea, formatDuration, formatMoneyRange } from './format';
+import { formatArea, formatDuration, formatEsDate, formatMoneyRange } from './format';
 
 /**
  * Formatting is pure so it is deterministic under test: `Intl` in a template would
@@ -71,5 +71,28 @@ describe('formatDuration', () => {
 
   it('returns an empty string for a blank duration so a template can guard it', () => {
     expect(formatDuration('   ')).toBe('');
+  });
+});
+
+describe('formatEsDate', () => {
+  it('renders an ISO timestamp as an es-AR long date', () => {
+    expect(formatEsDate('2026-09-15T12:00:00.000Z')).toBe('15 de septiembre de 2026');
+  });
+
+  it('crosses a month boundary without shifting the day', () => {
+    expect(formatEsDate('2026-10-01T00:00:00.000Z')).toBe('1 de octubre de 2026');
+    expect(formatEsDate('2026-09-30T23:59:59.000Z')).toBe('30 de septiembre de 2026');
+  });
+
+  it('renders a leap day', () => {
+    expect(formatEsDate('2028-02-29T00:00:00.000Z')).toBe('29 de febrero de 2028');
+  });
+
+  it('returns an empty string for a blank or invalid date instead of "Invalid Date"', () => {
+    expect(formatEsDate('')).toBe('');
+    expect(formatEsDate('   ')).toBe('');
+    expect(formatEsDate('no-es-una-fecha')).toBe('');
+    expect(formatEsDate('2026-13-01T00:00:00.000Z')).toBe('');
+    expect(formatEsDate('2026-02-30T00:00:00.000Z')).toBe('');
   });
 });

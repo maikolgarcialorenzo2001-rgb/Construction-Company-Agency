@@ -124,6 +124,38 @@ export interface PostView {
 }
 
 /**
+ * A denormalized, render-ready public profile (p17, design D5/D6). It merges the
+ * frozen contract profile with the demo-only display extras (avatar initials and
+ * color, sector, verified flag, WhatsApp number, seeded follower/following
+ * counts) so the template never sees a raw `WorkerProfile`/`CompanyProfile`.
+ *
+ * Demo-only: there is NO OpenAPI schema behind it, so it deliberately has NO
+ * `contract-conformance.ts` entry (a `ProfileView` pair there would break
+ * `ng build` — same guard as `PostView`/`Comment`/`DirectoryUser`). The three
+ * derived stats (publications, open vacancies, skills) are NOT in this model:
+ * they depend on live store state, so the page computes them.
+ */
+export interface ProfileView {
+  readonly id: string;
+  readonly role: Role;
+  readonly displayName: string;
+  readonly initials: string;
+  readonly avatarColor: string;
+  readonly sector: string;
+  readonly verified: boolean;
+  readonly bio: string;
+  readonly location: string;
+  readonly createdAt: string;
+  readonly phone: string;
+  readonly whatsapp: string;
+  readonly contactEmail: string;
+  readonly website: string;
+  readonly skills: readonly string[];
+  readonly followerCount: number;
+  readonly followingCount: number;
+}
+
+/**
  * A comment attached to a feed post. Demo-only for now: there is no OpenAPI
  * schema behind it, so it deliberately has no `contract-conformance.ts` entry
  * (a Comment pair there would break `ng build` — see the design guard).
