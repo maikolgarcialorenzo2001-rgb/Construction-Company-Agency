@@ -1,10 +1,14 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { routes } from '../../app.routes';
 import { ENGAGEMENT_GATEWAY, FEED_GATEWAY, PROFILES_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
 import { ENGAGEMENT_STORAGE_KEY } from '../../core/platform/api/mock-engagement.gateway';
+import type { WorkerProfile } from '../../core/platform/domain';
+import { WORKER_PROFILES } from '../../core/platform/mocks/fixtures';
 import { PlatformPerfilPublicoPage } from './platform-perfil-publico.page';
 
 /**
@@ -61,16 +65,30 @@ describe('PlatformPerfilPublicoPage', () => {
     return settle(fixture);
   };
 
+  /**
+   * Drains the microtask queue and repaints WITHOUT waiting for stability: the
+   * stale-id spec keeps a resolution pending, and `whenStable()` would wait for
+   * a promise that only the spec resolves.
+   */
+  const flush = async (fixture: ComponentFixture<PlatformPerfilPublicoPage>): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+  };
+
   it('renders an explicit no-profile state for an id without a profile', async () => {
     const element = await render('admin-1');
 
+    const headings = element.querySelectorAll('h1');
+    expect(headings.length).toBe(1);
+    expect(headings[0].textContent?.trim()).toBe('No encontramos ese perfil');
+    expect(element.textContent).toContain('No encontramos ese perfil');
     expect(element.textContent).toContain('No hay un perfil con ese identificador');
     expect(element.querySelector('[data-testid="perfil-not-found"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="perfil-identity"]')).toBeNull();
     expect(element.querySelector('[data-testid="perfil-bio"]')).toBeNull();
     expect(element.querySelector('[data-testid="perfil-contact"]')).toBeNull();
     expect(element.querySelector('[data-testid="perfil-stats"]')).toBeNull();
-    expect(element.querySelector('[data-testid="perfil-publications"]')).toBeNull();
+    expect(element.querySelector('[data-testid="perfil-publicaciones"]')).toBeNull();
     expect(element.querySelector('[data-testid="perfil-vacancies"]')).toBeNull();
     expect(element.querySelector('[data-testid="perfil-actions"]')).toBeNull();
   });
@@ -102,6 +120,38 @@ describe('PlatformPerfilPublicoPage', () => {
     expect(element.querySelectorAll('img')).toHaveLength(0);
   });
 
+  it('labels the verified badge by role: a company is Verificada, a worker Verificado', async () => {
+    const company = await render('company-1');
+    expect(company.querySelector('[data-testid="perfil-verified"]')?.textContent?.trim()).toBe(
+      'Verificada'
+    );
+
+    const worker = await render('worker-1');
+    expect(worker.querySelector('[data-testid="perfil-verified"]')?.textContent?.trim()).toBe(
+      'Verificado'
+    );
+  });
+
+  it('renders the role as a badge, not as a plain paragraph', async () => {
+    const element = await render('company-1');
+
+    const role = element.querySelector('[data-testid="perfil-role"]');
+    expect(role?.tagName).toBe('SPAN');
+    expect(role?.textContent?.trim()).toBe('Empresa');
+  });
+
+  it('renders the sector line by role: Rubro for a company, Oficio for a worker', async () => {
+    const company = await render('company-1');
+    expect(company.querySelector('[data-testid="perfil-sector"]')?.textContent?.trim()).toBe(
+      'Rubro: Construcción'
+    );
+
+    const worker = await render('worker-1');
+    expect(worker.querySelector('[data-testid="perfil-sector"]')?.textContent?.trim()).toBe(
+      'Oficio: Electricidad'
+    );
+  });
+
   it('shows the loading state while the profile is pending', async () => {
     let resolveWorker!: (profile: unknown) => void;
     TestBed.overrideProvider(PROFILES_GATEWAY, {
@@ -125,12 +175,31 @@ describe('PlatformPerfilPublicoPage', () => {
     fixture.componentRef.setInput('id', 'worker-1');
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Cargando el perfil');
+    const loading = fixture.nativeElement as HTMLElement;
+    // The page always carries exactly one h1, even while the profile is pending.
+    const loadingHeadings = loading.querySelectorAll('h1');
+    expect(loadingHeadings.length).toBe(1);
+    expect(loadingHeadings[0].textContent?.trim()).toBe('Perfil');
+    expect(loading.textContent).toContain('Cargando el perfil');
 
     resolveWorker(null);
     const element = await settle(fixture);
 
     expect(element.textContent).toContain('No encontramos ese perfil');
+  });
+
+  it('renders exactly one h1 for a ready profile and for a missing one', async () => {
+    const worker = await render('worker-1');
+    expect(worker.querySelectorAll('h1').length).toBe(1);
+    expect(worker.querySelector('h1')?.textContent?.trim()).toBe('Lucía Fernández');
+
+    const company = await render('company-1');
+    expect(company.querySelectorAll('h1').length).toBe(1);
+    expect(company.querySelector('h1')?.textContent?.trim()).toBe('Constructora Norte SAC');
+
+    const missing = await render('admin-1');
+    expect(missing.querySelectorAll('h1').length).toBe(1);
+    expect(missing.querySelector('h1')?.textContent?.trim()).toBe('No encontramos ese perfil');
   });
 
   it('renders the bio and the skill chips of a worker', async () => {
@@ -201,14 +270,55 @@ describe('PlatformPerfilPublicoPage', () => {
     expect(stats?.querySelector('[data-testid="perfil-stat-vacantes"]')).toBeNull();
   });
 
-  it('renders the stats row of a company with its open vacancies', async () => {
+  it('renders the stats row of a company with its publications, followers and open vacancies', async () => {
     const element = await render('company-1');
 
     const stats = element.querySelector('[data-testid="perfil-stats"]');
+    expect(stats).not.toBeNull();
+    expect(stats?.querySelector('[data-testid="perfil-stat-publicaciones"]')?.textContent?.trim()).toBe(
+      '5'
+    );
+    expect(stats?.querySelector('[data-testid="perfil-stat-seguidores"]')?.textContent?.trim()).toBe(
+      '310'
+    );
+    expect(stats?.querySelector('[data-testid="perfil-stat-seguidos"]')?.textContent?.trim()).toBe(
+      '12'
+    );
     expect(stats?.querySelector('[data-testid="perfil-stat-vacantes"]')?.textContent?.trim()).toBe(
       '3'
     );
     expect(stats?.querySelector('[data-testid="perfil-stat-oficios"]')).toBeNull();
+  });
+
+  it('renders the identity block of a company', async () => {
+    const element = await render('company-1');
+
+    const headings = element.querySelectorAll('h1');
+    expect(headings.length).toBe(1);
+    expect(headings[0].textContent?.trim()).toBe('Constructora Norte SAC');
+
+    // The initials are a demo-only view field: the contract profile has no
+    // avatar, so the page renders the demo view and never the raw contract.
+    const avatar = element.querySelector('[data-testid="perfil-avatar"]');
+    expect(avatar?.tagName).toBe('SPAN');
+    expect(avatar?.textContent?.trim()).toBe('CN');
+
+    expect(element.querySelector('[data-testid="perfil-role"]')?.textContent?.trim()).toBe('Empresa');
+    expect(element.querySelector('[data-testid="perfil-verified"]')?.textContent?.trim()).toBe(
+      'Verificada'
+    );
+    expect(element.querySelector('[data-testid="perfil-location"]')?.textContent?.trim()).toBe(
+      'San Isidro, GBA Norte'
+    );
+    expect(element.querySelector('[data-testid="perfil-member-since"]')?.textContent).toContain(
+      'Miembro desde'
+    );
+  });
+
+  it('renders the company profile without a single image', async () => {
+    const element = await render('company-1');
+
+    expect(element.querySelectorAll('img')).toHaveLength(0);
   });
 
   it('lists only the publications authored by the profile', async () => {
@@ -280,14 +390,15 @@ describe('PlatformPerfilPublicoPage', () => {
     expect(element.querySelector('[data-testid="vacancy-entry"]')).toBeNull();
   });
 
-  it('renders the open vacancies of a company with their status and the apply link', async () => {
+  it('renders the vacancies of a company with their status and the apply link', async () => {
     const element = await render('company-1');
 
     const block = element.querySelector('[data-testid="perfil-vacancies"]');
     expect(block).not.toBeNull();
 
     const entries = block?.querySelectorAll('[data-testid="vacancy-entry"]') ?? [];
-    expect(entries.length).toBe(3);
+    // company-1 owns FIVE openings: three open and two closed.
+    expect(entries.length).toBe(5);
 
     const first = entries[0];
     expect(first.querySelector('[data-testid="vacancy-title"]')?.textContent?.trim()).toBe(
@@ -305,20 +416,69 @@ describe('PlatformPerfilPublicoPage', () => {
     );
   });
 
-  it('renders the open vacancies count that matches the rendered vacancies', async () => {
+  it('lists every vacancy of the company with its live status, open or closed', async () => {
+    const element = await render('company-1');
+
+    const block = element.querySelector('[data-testid="perfil-vacancies"]');
+    expect(block).not.toBeNull();
+
+    const entries = Array.from(block?.querySelectorAll('[data-testid="vacancy-entry"]') ?? []);
+    expect(entries.length).toBe(5);
+
+    const statusOf = (entry: Element): string =>
+      entry.querySelector('[data-testid="vacancy-status"]')?.textContent?.trim() ?? '';
+
+    const open = entries.filter((entry) => statusOf(entry).includes('Abierta'));
+    const closed = entries.filter((entry) => statusOf(entry).includes('Cerrada'));
+
+    expect(open.length).toBe(3);
+    expect(closed.length).toBe(2);
+
+    const closedTitles = closed.map((entry) =>
+      entry.querySelector('[data-testid="vacancy-title"]')?.textContent?.trim()
+    );
+    expect(closedTitles).toEqual([
+      'Director de obra para multifamiliar en Rosario',
+      'Dirección de obra para desarrollo en Córdoba'
+    ]);
+  });
+
+  it('keeps the apply link on a closed vacancy', async () => {
+    const element = await render('company-1');
+
+    const closed = Array.from(element.querySelectorAll('[data-testid="vacancy-entry"]')).filter(
+      (entry) =>
+        entry.querySelector('[data-testid="vacancy-status"]')?.textContent?.includes('Cerrada')
+    );
+    expect(closed.length).toBe(2);
+
+    const apply = closed[0].querySelector('[data-testid="vacancy-apply"]');
+    expect(apply?.getAttribute('href')).toBe('/plataforma/trabajos/job-3');
+    expect(apply?.getAttribute('aria-label')).toBe(
+      'Postularse a Director de obra para multifamiliar en Rosario'
+    );
+  });
+
+  it('counts only the OPEN vacancies of the company', async () => {
     const element = await render('company-1');
 
     const count = element
       .querySelector('[data-testid="perfil-stat-vacantes"]')
       ?.textContent?.trim();
-    const rendered = element.querySelectorAll('[data-testid="vacancy-entry"]').length;
-    expect(count).toBe(String(rendered));
+    const open = Array.from(element.querySelectorAll('[data-testid="vacancy-entry"]')).filter(
+      (entry) =>
+        entry.querySelector('[data-testid="vacancy-status"]')?.textContent?.includes('Abierta')
+    );
+
+    expect(count).toBe('3');
+    expect(open.length).toBe(Number(count));
   });
 
   it('offers a login link and no follow button to an anonymous visitor', async () => {
     const element = await render('company-1');
 
     expect(element.querySelector('[data-testid="perfil-seguir"]')).toBeNull();
+    expect(element.querySelector('[data-testid="perfil-editar"]')).toBeNull();
     const login = element.querySelector('[data-testid="perfil-login"]');
     expect(login?.textContent).toContain('Iniciar sesión');
     expect(login?.getAttribute('href')).toBe('/plataforma/login');
@@ -333,6 +493,63 @@ describe('PlatformPerfilPublicoPage', () => {
     const edit = element.querySelector('[data-testid="perfil-editar"]');
     expect(edit?.textContent).toContain('Editar perfil');
     expect(edit?.getAttribute('href')).toBe('/plataforma/perfil');
+  });
+
+  it('hides the edit link from a viewer that is not the owner', async () => {
+    seedSession('worker-1', 'worker');
+
+    const element = await render('company-1');
+
+    expect(element.querySelector('[data-testid="perfil-editar"]')).toBeNull();
+    // The non-owner gets the follow action instead.
+    expect(element.querySelector('[data-testid="perfil-seguir"]')).not.toBeNull();
+  });
+
+  it('drops a stale resolution when the id changes before it settles', async () => {
+    const pending = new Map<string, (profile: WorkerProfile | null) => void>();
+    TestBed.overrideProvider(PROFILES_GATEWAY, {
+      useValue: {
+        worker: (id: string) =>
+          new Promise<WorkerProfile | null>((resolve) => {
+            pending.set(id, resolve);
+          }),
+        company: async () => null,
+        updateWorker: async () => {
+          throw new Error('not used');
+        },
+        updateCompany: async () => {
+          throw new Error('not used');
+        }
+      }
+    });
+
+    const fixture = TestBed.createComponent(PlatformPerfilPublicoPage);
+    fixture.componentRef.setInput('id', 'worker-1');
+    fixture.detectChanges();
+
+    // The id changes while the FIRST resolution is still pending: the second id
+    // starts its own resolution.
+    fixture.componentRef.setInput('id', 'worker-2');
+    fixture.detectChanges();
+    await flush(fixture);
+
+    expect(pending.has('worker-2'), 'the second id must start its own resolution').toBe(true);
+
+    // The STALE resolution settles first: its result must never reach the page.
+    pending.get('worker-1')?.(WORKER_PROFILES[0]);
+    await flush(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="perfil-name"]')).toBeNull();
+    expect(element.querySelector('[data-testid="perfil-loading"]')).not.toBeNull();
+
+    // The current resolution lands: ITS profile is the one on screen.
+    pending.get('worker-2')?.(WORKER_PROFILES[1]);
+    await flush(fixture);
+
+    expect(element.querySelector('[data-testid="perfil-name"]')?.textContent?.trim()).toBe(
+      'Martín Gómez'
+    );
   });
 
   it('toggles the follow of another profile for a signed-in viewer', async () => {
@@ -367,5 +584,40 @@ describe('PlatformPerfilPublicoPage', () => {
     const flipped = element.querySelector<HTMLButtonElement>('[data-testid="perfil-seguir"]');
     expect(flipped?.textContent?.trim()).toBe('Siguiendo');
     expect(flipped?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  /**
+   * The real route table, with the SAME component input binding the app
+   * configures (`withComponentInputBinding`). The specs above drive the id
+   * directly, so only this block proves the `:id` route param actually reaches
+   * the page.
+   */
+  describe('with the real route table', () => {
+    let harness: RouterTestingHarness;
+
+    beforeEach(async () => {
+      // The real table replaces the empty one of the outer suite.
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [provideRouter(routes, withComponentInputBinding())]
+      });
+      harness = await RouterTestingHarness.create();
+    });
+
+    it('resolves the profile from the :id route param', async () => {
+      await harness.navigateByUrl('/plataforma/perfil/worker-1');
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      harness.detectChanges();
+
+      const element = harness.fixture.nativeElement as HTMLElement;
+      expect(element.querySelector('app-platform-perfil-publico')).not.toBeNull();
+      // The name comes from the URL param: without the binding the page would
+      // stay in its loading state with no profile at all.
+      expect(element.querySelector('[data-testid="perfil-name"]')?.textContent?.trim()).toBe(
+        'Lucía Fernández'
+      );
+    });
   });
 });

@@ -17,7 +17,7 @@ import { PROFILES_GATEWAY } from '../../core/platform/api/ports';
 import { SessionService } from '../../core/platform/auth/session.service';
 import type { PostView, ProfileView } from '../../core/platform/domain';
 import { isRenderablePostView, toPostView } from '../../core/platform/mocks/post-views';
-import { profileViewFor } from '../../core/platform/mocks/profile-views';
+import { profileViewFor, sectorLabel, verifiedLabel } from '../../core/platform/mocks/profile-views';
 import { roleLabel } from '../../core/platform/preview/preview-fixtures';
 import { EngagementStore } from '../../core/platform/store/engagement.store';
 import { FeedStore } from '../../core/platform/store/feed.store';
@@ -64,7 +64,9 @@ const excerpt = (content: string): string => {
  * The template never sees a raw `WorkerProfile`/`CompanyProfile`: it reads the
  * demo-only `ProfileView` built by `profileViewFor`, which merges the frozen
  * contract profile with the seeded display extras (initials, color, sector,
- * verified flag, WhatsApp, follower/following counts).
+ * verified flag, WhatsApp, follower/following counts). The badge copy follows
+ * the role: a company is "Verificada" and states its "Rubro", a worker is
+ * "Verificado" and states their "Oficio".
  *
  * Zoneless: the resolution writes its own signals through `.set()`, so the view
  * paints without a `detectChanges()` call in the component.
@@ -93,6 +95,12 @@ export class PlatformPerfilPublicoPage {
 
   /** The es-AR role label ("Trabajador" / "Empresa"). */
   protected readonly roleLabel = roleLabel;
+
+  /** The es-AR label of the verified badge ("Verificada" / "Verificado"). */
+  protected readonly verifiedLabel = verifiedLabel;
+
+  /** The es-AR line that names the sector ("Rubro: …" / "Oficio: …"). */
+  protected readonly sectorLabel = sectorLabel;
 
   /** The es-AR long date ("15 de septiembre de 2026"). */
   protected readonly formatEsDate = formatEsDate;
@@ -128,21 +136,23 @@ export class PlatformPerfilPublicoPage {
   );
 
   /**
-   * The open vacancies of the company, filtered client-side by `companyId`:
-   * the jobs contract has no per-company query, so the board is filtered here
-   * (design D3).
+   * The vacancies of the company, filtered client-side by `companyId`: the jobs
+   * contract has no per-company query, so the board is filtered here (design D3).
+   *
+   * EVERY opening is listed, open or closed: the card renders the live status of
+   * each one, so a closed vacancy is never hidden from the company profile.
    */
   protected readonly vacancies = computed(() =>
-    this.jobs
-      .openings()
-      .filter((opening) => opening.companyId === this.id() && opening.status === 'open')
+    this.jobs.openings().filter((opening) => opening.companyId === this.id())
   );
 
   /** How many publications the profile authored. */
   protected readonly publicationCount = computed(() => this.publications().length);
 
-  /** How many vacancies the company has open. */
-  protected readonly openVacanciesCount = computed(() => this.vacancies().length);
+  /** How many vacancies the company has OPEN (the "Vacantes abiertas" stat). */
+  protected readonly openVacanciesCount = computed(
+    () => this.vacancies().filter((opening) => opening.status === 'open').length
+  );
 
   /** How many trades the worker lists. */
   protected readonly skillsCount = computed(() => this.profile()?.skills.length ?? 0);
@@ -191,12 +201,25 @@ export class PlatformPerfilPublicoPage {
     }
   }
 
+  /**
+   * Resolves the profile of an id: `worker(id)` first, then `company(id)`.
+   *
+   * The resolution is ASYNCHRONOUS and the id can change while it awaits, so
+   * the result is dropped when the id moved on: a slow resolution must never
+   * overwrite the profile of a newer id (the effect re-resolves on every change).
+   */
   private async resolveProfile(id: string): Promise<void> {
     this.status.set('loading');
     this.profile.set(null);
 
     const worker = await this.profiles.worker(id);
     const profile = worker ?? (await this.profiles.company(id));
+
+    // The id may have changed while this resolution awaited: a newer id owns the
+    // page now, so the stale result is dropped instead of overwriting it.
+    if (this.id() !== id) {
+      return;
+    }
 
     this.profile.set(profile ? profileViewFor(profile) : null);
     this.status.set(profile ? 'ready' : 'not-found');

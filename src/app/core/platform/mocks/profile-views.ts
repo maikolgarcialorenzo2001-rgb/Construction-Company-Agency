@@ -10,7 +10,7 @@
  * and never created at runtime. No Angular imports, no side effects, so it stays
  * trivially testable and usable from a `computed()`.
  */
-import type { CompanyProfile, ProfileView, WorkerProfile } from '../domain';
+import type { CompanyProfile, ProfileView, Role, WorkerProfile } from '../domain';
 
 /** The demo-only display extras of a profile, keyed by its id. */
 export interface ProfileExtras {
@@ -34,6 +34,21 @@ export const AVATAR_COLOR_CLASSES = [
   'bg-brand-50 text-ink-900',
   'bg-accent-400 text-ink-900'
 ] as const;
+
+/**
+ * The es-AR label of the verified badge, by role: a company is "Verificada" and
+ * a worker "Verificado". The badge copy follows the grammatical gender of the
+ * role, so the SAME badge never says "Verificado" to a company.
+ */
+export const verifiedLabel = (role: Role): string =>
+  role === 'company' ? 'Verificada' : 'Verificado';
+
+/**
+ * The es-AR line that names the sector of a profile: a company states its
+ * "Rubro" and a worker their "Oficio". The seeded sector follows the label.
+ */
+export const sectorLabel = (role: Role, sector: string): string =>
+  `${role === 'company' ? 'Rubro' : 'Oficio'}: ${sector}`;
 
 /**
  * The seeded demo extras. These are placeholder numbers (D7): the follow EDGES

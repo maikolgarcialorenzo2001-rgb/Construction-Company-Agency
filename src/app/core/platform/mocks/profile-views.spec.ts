@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { CompanyProfile, WorkerProfile } from '../domain';
 import { COMPANY_PROFILES, WORKER_PROFILES } from './fixtures';
-import { AVATAR_COLOR_CLASSES, PROFILE_EXTRAS, profileViewFor } from './profile-views';
+import {
+  AVATAR_COLOR_CLASSES,
+  PROFILE_EXTRAS,
+  profileViewFor,
+  sectorLabel,
+  verifiedLabel
+} from './profile-views';
 
 /**
  * The demo profile view-model mapper (p17, design D5/D6). It merges the frozen
@@ -120,5 +126,66 @@ describe('profileViewFor', () => {
     expect(company.website).toBe(COMPANY_PROFILES[0].website);
     expect(company.phone).toBe('');
     expect(company.skills).toEqual([]);
+  });
+
+  it('does not extend the contract profile with the demo-only fields', () => {
+    const contract = WORKER_PROFILES[0];
+    const keysBefore = Object.keys(contract);
+
+    const view = profileViewFor(contract);
+
+    // The demo-only display fields live in the VIEW...
+    expect(Object.keys(view)).toContain('initials');
+    expect(Object.keys(view)).toContain('avatarColor');
+    expect(Object.keys(view)).toContain('sector');
+    expect(Object.keys(view)).toContain('verified');
+    expect(Object.keys(view)).toContain('followerCount');
+
+    // ...and never leak INTO the contract profile.
+    expect(Object.keys(contract)).toEqual(keysBefore);
+    expect(Object.keys(contract)).not.toContain('initials');
+    expect(Object.keys(contract)).not.toContain('verified');
+
+    // The view is a DISTINCT demo-only type: it renames the contract fields
+    // instead of extending the contract profile with them.
+    expect(Object.keys(view)).not.toContain('fullName');
+    expect(Object.keys(view)).not.toContain('userId');
+    expect(Object.keys(view)).not.toContain('updatedAt');
+    expect(Object.keys(view)).not.toContain('isPlaceholder');
+  });
+
+  it('reads only the contract fields: a forged demo field on the input is ignored', () => {
+    const forged = {
+      ...WORKER_PROFILES[1],
+      sector: 'Forjado',
+      verified: true,
+      initials: 'XX'
+    } as WorkerProfile;
+
+    const view = profileViewFor(forged);
+
+    // The demo extras come from the seeded registry, never from the input.
+    expect(view.sector).toBe('Pintura');
+    expect(view.verified).toBe(false);
+    expect(view.initials).toBe('MG');
+  });
+});
+
+/**
+ * The es-AR labels of the identity badges. They are role-aware: the badge copy
+ * follows the grammatical gender of the role, so a company is never labelled
+ * with a worker's wording.
+ */
+describe('verifiedLabel', () => {
+  it('labels a verified company Verificada and a verified worker Verificado', () => {
+    expect(verifiedLabel('company')).toBe('Verificada');
+    expect(verifiedLabel('worker')).toBe('Verificado');
+  });
+});
+
+describe('sectorLabel', () => {
+  it('names the sector Rubro for a company and Oficio for a worker', () => {
+    expect(sectorLabel('company', 'Construcción')).toBe('Rubro: Construcción');
+    expect(sectorLabel('worker', 'Electricidad')).toBe('Oficio: Electricidad');
   });
 });
