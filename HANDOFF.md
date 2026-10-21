@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-21** — **`p16-vacante` COMPLETO y archivado** ✅ en la rama `feature/p16-vacante` (HEAD `8806b3d`, base `main@a711e5f`). **Sin merge a `main` y sin push** (decisión de integración pendiente). Último gate local: **795/795 tests** (82 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff.
+> Última actualización: **2026-10-21** — **`p16-vacante` COMPLETO, mergeado a `main` y pusheado** ✅ · `main` @ `10df9b9` (base `a711e5f`). Ramas de trabajo eliminadas; queda **una sola rama en blanco** para simular la página: `feature/p15-solicitud-empleo` (0 archivos, sin trabajo nuestro). Último gate local: **795/795 tests** (82 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff.
 > El historial de cambios p0–p16 y sus notas quedaron en `git log -- HANDOFF.md` (este archivo se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -9,7 +9,7 @@
 
 **Qué entra**: la empresa publica una promo de 1..n vacantes propias. Payload demo-only **reference-only** (`VacancyPayload { jobIds[] }`, nunca copia campos del job) · registro determinista `postId → payload` · derivación de `kind:'vacancy'` en `toPostView` · card multi-vacante con estado `Abierta`/`Cerrada` y link "Postularse" a `/plataforma/trabajos/:id` (siempre presente, incluso cerrada) · proyección **solo** en `[postExtra]` · compositor propio de empresa con toggle **normal / "Buscar trabajadores"** (modos excluyentes), picker acotado a sus vacantes abiertas y regla compuesta (≥1 vacante Y (texto O foto)).
 
-**Commits** (rama `feature/p16-vacante`, base `main@a711e5f`):
+**Commits** (todos ya están en `main`, base `a711e5f`):
 
 | WU | Commit | Alcance |
 |---|---|---|
@@ -25,13 +25,23 @@
 
 **Decisiones de diseño relevantes** (para quien retome): payload = referencia, nunca copia (lock de conformance) · "Postularse" = link, sin apply inline (v1) · picker = `status==='open' && companyId===session authorId` · ≥1 vacante Y (texto O foto) · contrato READ-ONLY (`openapi.yaml` + `contract-conformance.ts` en zero-diff) · admin sigue sin composer (deuda de p15).
 
-**Entrega**: la rama vive SOLA en `feature/p16-vacante` — **NO mergeada a `main`, NO pusheada**, sin PR ni issue. Merge/push es decisión del maintainer.
+**Entrega**: `feature/p16-vacante` se integró a `main` por **fast-forward** (`a711e5f` → `10df9b9`) y `main` está **pusheado** a `origin/main`. Sin PR ni issue. La rama de trabajo `feature/p16-vacante` se **eliminó** (solo local; nunca estuvo en el remoto).
 
 ---
 
-## Pendiente — integración
+## Estado del repo
 
-- [ ] **Merge a `main` + push** de `feature/p16-vacante` (`8806b3d` + este commit de handoff). Hasta entonces la planta 3 no está en `main`.
+| Rama | Estado | Contenido |
+|---|---|---|
+| `main` | **activa, pusheada** @ `10df9b9` | todo el trabajo (p0 → p16) |
+| `feature/p15-solicitud-empleo` | **en blanco** (`5a58d0a`, commit huérfano) | 0 archivos — lienzo limpio para simular la página |
+
+La p15 quedó como rama huérfana a propósito: su trabajo ya estaba **dentro de `main`** (verificado con `git merge-base --is-ancestor`), así que resetearla a un árbol vacío no pierde ni un commit. Todas las ramas de trabajo quedaron borradas; no queda trabajo fuera de `main`.
+
+---
+
+## Pendiente
+
 - [ ] **Deuda W-3 antes de cualquier demo pública**: las fotos de las fixtures apuntan a `images.example.com` → **404 en un navegador real** (jsdom no lo detecta).
 
 ## Pendientes — Plantillas
