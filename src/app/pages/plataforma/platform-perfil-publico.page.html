@@ -181,6 +181,35 @@
             <app-post-vacancy class="mt-3 block" [openings]="vacancies()" />
           </section>
         }
+
+        <section data-testid="perfil-actions" class="mt-10">
+          @if (isOwner()) {
+            <a
+              data-testid="perfil-editar"
+              routerLink="/plataforma/perfil"
+              class="inline-block font-medium text-brand-800 underline-offset-4 hover:underline"
+              >Editar perfil</a
+            >
+          } @else if (viewer()) {
+            <button
+              type="button"
+              data-testid="perfil-seguir"
+              class="rounded-lg border border-ink-900/20 px-3 py-1.5 text-sm font-medium text-ink-900"
+              [attr.aria-pressed]="following()"
+              [attr.aria-label]="(following() ? 'Siguiendo a ' : 'Seguir a ') + view.displayName"
+              (click)="onFollow()"
+            >
+              {{ following() ? 'Siguiendo' : 'Seguir' }}
+            </button>
+          } @else {
+            <a
+              data-testid="perfil-login"
+              routerLink="/plataforma/login"
+              class="inline-block font-medium text-brand-800 underline-offset-4 hover:underline"
+              >Iniciar sesión para seguir a {{ view.displayName }}</a
+            >
+          }
+        </section>
       }
     }
   }

@@ -2,8 +2,9 @@ import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { FEED_GATEWAY, PROFILES_GATEWAY } from '../../core/platform/api/ports';
+import { ENGAGEMENT_GATEWAY, FEED_GATEWAY, PROFILES_GATEWAY } from '../../core/platform/api/ports';
 import { SESSION_STORAGE_KEY } from '../../core/platform/auth/session.service';
+import { ENGAGEMENT_STORAGE_KEY } from '../../core/platform/api/mock-engagement.gateway';
 import { PlatformPerfilPublicoPage } from './platform-perfil-publico.page';
 
 /**
@@ -14,10 +15,27 @@ import { PlatformPerfilPublicoPage } from './platform-perfil-publico.page';
 describe('PlatformPerfilPublicoPage', () => {
   beforeEach(() => {
     localStorage.removeItem(SESSION_STORAGE_KEY);
+    // The follow state is persisted: without this the engagement leaks between
+    // specs and a "not following" assertion can pass for the wrong reason.
+    localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
-  afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
+  afterEach(() => {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(ENGAGEMENT_STORAGE_KEY);
+  });
+
+  /** Seeds a signed-in session so the page can read the viewer. */
+  const seedSession = (userId: string, role: 'worker' | 'company'): void => {
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: `mock-token-${userId}`,
+        user: { userId, email: `${userId}@demo.test`, role }
+      })
+    );
+  };
 
   /**
    * Lets every pending promise chain settle, then repaints.
@@ -295,5 +313,59 @@ describe('PlatformPerfilPublicoPage', () => {
       ?.textContent?.trim();
     const rendered = element.querySelectorAll('[data-testid="vacancy-entry"]').length;
     expect(count).toBe(String(rendered));
+  });
+
+  it('offers a login link and no follow button to an anonymous visitor', async () => {
+    const element = await render('company-1');
+
+    expect(element.querySelector('[data-testid="perfil-seguir"]')).toBeNull();
+    const login = element.querySelector('[data-testid="perfil-login"]');
+    expect(login?.textContent).toContain('Iniciar sesión');
+    expect(login?.getAttribute('href')).toBe('/plataforma/login');
+  });
+
+  it('offers the edit link and no follow button to the owner', async () => {
+    seedSession('worker-1', 'worker');
+
+    const element = await render('worker-1');
+
+    expect(element.querySelector('[data-testid="perfil-seguir"]')).toBeNull();
+    const edit = element.querySelector('[data-testid="perfil-editar"]');
+    expect(edit?.textContent).toContain('Editar perfil');
+    expect(edit?.getAttribute('href')).toBe('/plataforma/perfil');
+  });
+
+  it('toggles the follow of another profile for a signed-in viewer', async () => {
+    const toggled: [string, string][] = [];
+    TestBed.overrideProvider(ENGAGEMENT_GATEWAY, {
+      useValue: {
+        load: async () => ({}),
+        toggleFollow: async (viewerId: string, authorId: string) => {
+          toggled.push([viewerId, authorId]);
+          return { [viewerId]: { following: [authorId], liked: [], saved: [] } };
+        },
+        toggleLike: async () => ({}),
+        toggleSave: async () => ({})
+      }
+    });
+    seedSession('worker-1', 'worker');
+
+    const fixture = TestBed.createComponent(PlatformPerfilPublicoPage);
+    fixture.componentRef.setInput('id', 'company-1');
+    fixture.detectChanges();
+    const element = await settle(fixture);
+
+    const button = element.querySelector<HTMLButtonElement>('[data-testid="perfil-seguir"]');
+    expect(button).not.toBeNull();
+    expect(button?.textContent?.trim()).toBe('Seguir');
+    expect(button?.getAttribute('aria-pressed')).toBe('false');
+
+    button?.click();
+    await settle(fixture);
+
+    expect(toggled).toEqual([['worker-1', 'company-1']]);
+    const flipped = element.querySelector<HTMLButtonElement>('[data-testid="perfil-seguir"]');
+    expect(flipped?.textContent?.trim()).toBe('Siguiendo');
+    expect(flipped?.getAttribute('aria-pressed')).toBe('true');
   });
 });

@@ -14,10 +14,12 @@ import { PostVacancyComponent } from '../../components/post-vacancy/post-vacancy
 import { formatEsDate } from '../../core/format';
 import { buildTelHref, toWaDigits } from '../../core/lead/lead-links';
 import { PROFILES_GATEWAY } from '../../core/platform/api/ports';
+import { SessionService } from '../../core/platform/auth/session.service';
 import type { PostView, ProfileView } from '../../core/platform/domain';
 import { isRenderablePostView, toPostView } from '../../core/platform/mocks/post-views';
 import { profileViewFor } from '../../core/platform/mocks/profile-views';
 import { roleLabel } from '../../core/platform/preview/preview-fixtures';
+import { EngagementStore } from '../../core/platform/store/engagement.store';
 import { FeedStore } from '../../core/platform/store/feed.store';
 import { JobsStore } from '../../core/platform/store/jobs.store';
 
@@ -77,6 +79,8 @@ export class PlatformPerfilPublicoPage {
   private readonly profiles = inject(PROFILES_GATEWAY);
   private readonly feed = inject(FeedStore);
   private readonly jobs = inject(JobsStore);
+  private readonly session = inject(SessionService);
+  private readonly engagement = inject(EngagementStore);
 
   /** Bound from the `:id` route param by `withComponentInputBinding`. */
   readonly id = input<string>('');
@@ -98,6 +102,17 @@ export class PlatformPerfilPublicoPage {
 
   /** The excerpt of a publication, for a grid tile. */
   protected readonly excerpt = excerpt;
+
+  /** The signed-in viewer, or `null` for an anonymous visitor. */
+  protected readonly viewer = computed(() => this.session.currentUser());
+
+  /** True when the viewer IS the profile: nobody follows themselves. */
+  protected readonly isOwner = computed(() => this.viewer()?.userId === this.id());
+
+  /** Whether the viewer already follows the profile. */
+  protected readonly following = computed(() =>
+    this.engagement.isFollowing(this.viewer()?.userId ?? null, this.id())
+  );
 
   /**
    * The publications authored by the profile, projected with the shared feed
@@ -162,8 +177,18 @@ export class PlatformPerfilPublicoPage {
         // same projections the feed and the jobs board read.
         void this.feed.load();
         void this.jobs.load();
+        // The persisted follow state decides the label of the follow button.
+        void this.engagement.load();
       });
     });
+  }
+
+  /** Toggles the follow of the profile. An anonymous visitor never reaches it. */
+  protected onFollow(): void {
+    const viewerId = this.viewer()?.userId;
+    if (viewerId) {
+      void this.engagement.toggleFollow(viewerId, this.id());
+    }
   }
 
   private async resolveProfile(id: string): Promise<void> {
