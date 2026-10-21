@@ -54,3 +54,55 @@ export const formatDuration = (duration: string): string =>
     .trim()
     .replace(/\s+/g, ' ')
     .replace(/^(\d+)\s*[-–—]\s*(\d+)/, '$1 a $2');
+
+/** The es-AR month names, in order. A fixed table keeps the output host-independent. */
+const ES_MONTHS = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre'
+] as const;
+
+/** The leading `YYYY-MM-DD` of an ISO timestamp. */
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/**
+ * A calendar date as an es-AR long date: `15 de septiembre de 2026`.
+ *
+ * The ISO calendar day is read as-is (never converted through the host time
+ * zone) so the result is identical on every machine. A blank or invalid input
+ * returns `''` — never `Invalid Date` — so a template can guard it.
+ */
+export const formatEsDate = (iso: string): string => {
+  const match = ISO_DATE.exec(iso.trim());
+  if (!match) {
+    return '';
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1) {
+    return '';
+  }
+
+  // Round-trip through UTC to reject a day the calendar does not have (e.g. 30/02).
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return '';
+  }
+
+  return `${day} de ${ES_MONTHS[month - 1]} de ${year}`;
+};

@@ -180,6 +180,21 @@ export const routes: Routes = [
         ),
         loadComponent: () =>
           import('./pages/plataforma/perfil.page').then((m) => m.PlatformPerfilPage)
+      },
+      {
+        // The PUBLIC profile: the one platform child WITHOUT a guard, so a
+        // profile is reachable without a session. It stays inside the
+        // client-only platform subtree (no prerender, no hydration risk) and
+        // NOINDEX like every other platform route.
+        path: 'perfil/:id',
+        data: NOINDEX(
+          'Perfil público | Plataforma | Constructora Ejemplo',
+          'Perfil público de trabajador o empresa en la plataforma de Constructora Ejemplo. Contenido de demostración.'
+        ),
+        loadComponent: () =>
+          import('./pages/plataforma/platform-perfil-publico.page').then(
+            (m) => m.PlatformPerfilPublicoPage
+          )
       }
     ]
   },

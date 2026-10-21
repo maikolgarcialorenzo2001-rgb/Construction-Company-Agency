@@ -12,6 +12,14 @@
 /** Shared role model. Registration may self-assign only `worker` or `company`. */
 export type Role = 'worker' | 'company' | 'admin';
 
+/**
+ * The roles a PUBLIC profile can have: a worker or a company. An admin has no
+ * public profile page (`/plataforma/perfil/:id` resolves a worker or a
+ * company), so the public view-model never carries that role and the identity
+ * badges never have to guess what an admin should say.
+ */
+export type ProfileRole = Exclude<Role, 'admin'>;
+
 /** The authenticated platform user (session shape, generated from `/auth/me`). */
 export interface User {
   userId: string;
@@ -121,6 +129,38 @@ export interface PostView {
   createdAt: string;
   jobRequest?: JobRequestPayload;
   vacancy?: VacancyPayload;
+}
+
+/**
+ * A denormalized, render-ready public profile (p17, design D5/D6). It merges the
+ * frozen contract profile with the demo-only display extras (avatar initials and
+ * color, sector, verified flag, WhatsApp number, seeded follower/following
+ * counts) so the template never sees a raw `WorkerProfile`/`CompanyProfile`.
+ *
+ * Demo-only: there is NO OpenAPI schema behind it, so it deliberately has NO
+ * `contract-conformance.ts` entry (a `ProfileView` pair there would break
+ * `ng build` — same guard as `PostView`/`Comment`/`DirectoryUser`). The three
+ * derived stats (publications, open vacancies, skills) are NOT in this model:
+ * they depend on live store state, so the page computes them.
+ */
+export interface ProfileView {
+  readonly id: string;
+  readonly role: ProfileRole;
+  readonly displayName: string;
+  readonly initials: string;
+  readonly avatarColor: string;
+  readonly sector: string;
+  readonly verified: boolean;
+  readonly bio: string;
+  readonly location: string;
+  readonly createdAt: string;
+  readonly phone: string;
+  readonly whatsapp: string;
+  readonly contactEmail: string;
+  readonly website: string;
+  readonly skills: readonly string[];
+  readonly followerCount: number;
+  readonly followingCount: number;
 }
 
 /**

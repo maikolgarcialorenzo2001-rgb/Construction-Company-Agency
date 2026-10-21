@@ -835,6 +835,12 @@ describe('PlatformFeedPage', () => {
     expect(card?.textContent).toContain('Electricista matriculado para locales comerciales');
     expect(card?.querySelectorAll('[data-testid="vacancy-entry"]')).toHaveLength(2);
 
+    // The feed keeps the card's DEFAULT title: it promotes open openings only,
+    // so "Vacantes disponibles" is true here.
+    expect(card?.querySelector('[data-testid="vacancy-card-title"]')?.textContent?.trim()).toBe(
+      'Vacantes disponibles'
+    );
+
     // …and the body slot keeps only the free text (never vacancy fields).
     const body = vacancyPost.querySelector('[data-testid="post-body"]');
     expect(body?.textContent).toContain('Buscamos albañil para obra en Vicente López');

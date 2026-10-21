@@ -36,9 +36,14 @@ export const resolvePreviewRole = (raw: string | null | undefined): PreviewRole 
 export const previewRoleParams = (): readonly Record<string, string>[] =>
   PREVIEW_ROLES.map((role) => ({ role }));
 
-/** es-AR label for a role, shared by the preview directory and the client switcher. */
-export const roleLabel = (role: Role): string =>
-  role === 'worker' ? 'Trabajador' : role === 'company' ? 'Empresa' : 'Administración';
+/**
+ * es-AR label for a role, shared by the preview directory and the client switcher.
+ *
+ * Re-exported from the shared label module (`labels/profile-labels.ts`), where
+ * every identity label now lives: this seam stays a valid import path, but
+ * there is only ONE implementation of the copy.
+ */
+export { roleLabel } from '../labels/profile-labels';
 
 /** A demo account directory row: the account WITHOUT its credential (design D7). */
 export interface DirectoryRow {

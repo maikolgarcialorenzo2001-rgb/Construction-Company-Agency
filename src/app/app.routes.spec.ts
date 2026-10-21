@@ -30,7 +30,7 @@ const MARKETING_ROUTE_TABLE = [
   { path: 'presupuesto', kind: 'static' }
 ] as const;
 
-/** The eight children of the single `plataforma` grouping route, in registration order. */
+/** The nine children of the single `plataforma` grouping route, in registration order. */
 const PLATFORM_CHILD_PATHS = [
   '',
   'inicio',
@@ -39,7 +39,8 @@ const PLATFORM_CHILD_PATHS = [
   'trabajos/:id',
   'login',
   'registro',
-  'perfil'
+  'perfil',
+  'perfil/:id'
 ] as const;
 
 /** The es-AR route table, in registration order. `plataforma` and `previa` sit before `**`. */
@@ -86,7 +87,7 @@ describe('app routes', () => {
       expect(noindex.map((r) => r.path)).toEqual(['plataforma', 'previa', '**']);
     });
 
-    it('registers the eight platform children, each lazy and noindex', () => {
+    it('registers the nine platform children, each lazy and noindex', () => {
       const platform = routes.find((r) => r.path === 'plataforma');
 
       expect(platform, 'plataforma must be a top-level grouping route').toBeDefined();
@@ -102,6 +103,35 @@ describe('app routes', () => {
         expect(child.data?.['seo']?.indexable, `${child.path} must be noindex`).toBe(false);
         expect(typeof child.loadComponent, `${child.path} must be lazy`).toBe('function');
       }
+    });
+
+    it('registers the public profile right after the own-profile editor, unguarded', () => {
+      const children = routes.find((r) => r.path === 'plataforma')?.children ?? [];
+      const publicProfile = children.find((child) => child.path === 'perfil/:id');
+
+      expect(publicProfile, 'the public profile child must exist').toBeDefined();
+      // The public profile is the ONE unguarded platform child: it is reachable
+      // without a session, so a guard here would lock the public out.
+      expect(publicProfile?.canActivate, 'perfil/:id must stay unguarded').toBeUndefined();
+      expect(publicProfile?.canActivateChild).toBeUndefined();
+      expect(publicProfile?.resolve).toBeUndefined();
+      expect(typeof publicProfile?.loadComponent, 'perfil/:id must be lazy').toBe('function');
+    });
+
+    it('gives the public profile a noindex title that no other route carries', () => {
+      const children = routes.find((r) => r.path === 'plataforma')?.children ?? [];
+      const publicProfile = children.find((child) => child.path === 'perfil/:id');
+
+      expect(publicProfile?.data?.['seo']?.indexable).toBe(false);
+
+      const title = publicProfile?.data?.['seo']?.title;
+      expect(title).toBeTruthy();
+
+      const allTitles = [
+        ...routes,
+        ...routes.flatMap((route) => route.children ?? [])
+      ].map((route) => route.data?.['seo']?.title);
+      expect(allTitles.filter((candidate) => candidate === title).length).toBe(1);
     });
 
     it('registers the preview grouping with lazy, noindex, unguarded default and :role children', () => {
@@ -192,7 +222,8 @@ describe('app routes', () => {
       ['/plataforma/trabajos/7', 'app-platform-job-detail'],
       ['/plataforma/login', 'app-platform-login'],
       ['/plataforma/registro', 'app-platform-registro'],
-      ['/plataforma/perfil', 'app-platform-perfil']
+      ['/plataforma/perfil', 'app-platform-perfil'],
+      ['/plataforma/perfil/worker-1', 'app-platform-perfil-publico']
     ])('resolves %s to its lazy page component', async (url, selector) => {
       const element = await goto(url);
       expect(element.querySelector(selector), `${url} must render ${selector}`).toBeTruthy();
@@ -227,6 +258,35 @@ describe('app routes', () => {
 
       const element = await goto('/proceso');
       expect(element.querySelector('app-process')).toBeTruthy();
+    });
+  });
+
+  describe('public profile navigation', () => {
+    let harness: RouterTestingHarness;
+
+    const goto = async (url: string): Promise<HTMLElement> => {
+      await harness.navigateByUrl(url);
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+      return harness.fixture.nativeElement as HTMLElement;
+    };
+
+    beforeEach(async () => {
+      // NO session: the public profile is the one platform route that must
+      // resolve without one.
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+      harness = await RouterTestingHarness.create();
+    });
+
+    afterEach(() => localStorage.removeItem(SESSION_STORAGE_KEY));
+
+    it('renders the public profile without a session and never redirects to the login', async () => {
+      const element = await goto('/plataforma/perfil/worker-1');
+
+      expect(TestBed.inject(Router).url).toBe('/plataforma/perfil/worker-1');
+      expect(element.querySelector('app-platform-perfil-publico')).toBeTruthy();
+      expect(element.querySelector('app-platform-login')).toBeNull();
     });
   });
 
