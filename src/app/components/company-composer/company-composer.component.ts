@@ -36,6 +36,12 @@ const MAX_PHOTOS = 10;
  * (≥1 vacancy AND (text OR photo)) rejects structured-only submits with an
  * es-AR `role="alert"` and parks focus on the first invalid control (p15
  * pattern, signal-mode adaptation: touched flags + composite alert).
+ *
+ * The two modes are EXCLUSIVE (WU4a polish): the toggle switches the publish
+ * form instead of stacking both, so the DOM never shows two composers at once.
+ * A company that owns no open vacancy gets an informative empty state in the
+ * picker — never the unsatisfiable "elegí una vacante" error — and the focus
+ * fallback lands on that empty state instead of nowhere.
  */
 @Component({
   selector: 'app-company-composer',
@@ -63,12 +69,25 @@ export class CompanyComposerComponent {
   /** Flips after a rejected vacancy submit; drives the composite `role="alert"`. */
   protected readonly compositeRejected = signal(false);
   protected readonly pickerTouched = signal(false);
-  protected readonly textTouched = signal(false);
+  /** The text-or-photos side of the composite rule is the one missing. */
+  protected readonly mediaTouched = signal(false);
 
   /** Design D8 picker scope: the company's own openings that are still open. */
   protected readonly selectableJobs = computed(() =>
     this.openings().filter((job) => job.status === 'open' && job.companyId === this.authorId())
   );
+
+  /**
+   * The composite rejection message. When the company owns no open vacancy the
+   * rule is unsatisfiable, so the picker carries the informative empty state
+   * instead of an error the user cannot act on (the alert stays silent).
+   */
+  protected readonly compositeErrorText = computed(() => {
+    if (!this.compositeRejected() || this.selectableJobs().length === 0) {
+      return '';
+    }
+    return 'Elegí al menos una vacante y sumá un texto o al menos una foto para publicar.';
+  });
 
   protected toggleMode(): void {
     this.mode.update((current) => (current === 'normal' ? 'vacancy' : 'normal'));
@@ -81,6 +100,7 @@ export class CompanyComposerComponent {
 
   protected onVacancyTextInput(event: Event): void {
     this.vacancyText.set((event.target as HTMLTextAreaElement).value);
+    this.clearRejection();
   }
 
   protected isSelected(jobId: string): boolean {
@@ -91,6 +111,7 @@ export class CompanyComposerComponent {
     this.selectedIds.update((ids) =>
       ids.includes(jobId) ? ids.filter((id) => id !== jobId) : [...ids, jobId]
     );
+    this.clearRejection();
   }
 
   protected onPhotoInput(event: Event): void {
@@ -99,6 +120,7 @@ export class CompanyComposerComponent {
       .slice(0, MAX_PHOTOS)
       .map((file) => URL.createObjectURL(file));
     this.photos.set(urls);
+    this.clearRejection();
   }
 
   protected submitNormal(event: Event): void {
@@ -123,7 +145,7 @@ export class CompanyComposerComponent {
     // Composite rule (design D8): structured-only submissions never publish.
     if (jobIds.length === 0 || (!content && attachments.length === 0)) {
       this.pickerTouched.set(jobIds.length === 0);
-      this.textTouched.set(jobIds.length > 0 && !content && attachments.length === 0);
+      this.mediaTouched.set(jobIds.length > 0 && !content && attachments.length === 0);
       this.compositeRejected.set(true);
       this.focusFirstInvalid(jobIds.length);
       return;
@@ -131,7 +153,7 @@ export class CompanyComposerComponent {
 
     this.compositeRejected.set(false);
     this.pickerTouched.set(false);
-    this.textTouched.set(false);
+    this.mediaTouched.set(false);
     this.publish.emit({ jobIds, content, attachments });
     this.vacancyText.set('');
     this.photos.set([]);
@@ -142,9 +164,22 @@ export class CompanyComposerComponent {
   /** Park the keyboard on the first thing to fix (p15 quote.page precedent). */
   private focusFirstInvalid(selectedCount: number): void {
     if (selectedCount === 0) {
-      this.host.nativeElement.querySelector<HTMLElement>('.company-composer-job')?.focus();
+      // No vacancy selected: focus the first option, or — when the company owns
+      // no open vacancy at all — the informative empty state (never nowhere).
+      const option = this.host.nativeElement.querySelector<HTMLElement>('.company-composer-job');
+      const emptyState = this.host.nativeElement.querySelector<HTMLElement>(
+        '[data-testid="company-composer-empty-state"]'
+      );
+      (option ?? emptyState)?.focus();
       return;
     }
     this.host.nativeElement.querySelector<HTMLElement>('#company-composer-vacancy-text')?.focus();
+  }
+
+  /** A stale rejection must not survive an edit: the user is already fixing it. */
+  private clearRejection(): void {
+    this.compositeRejected.set(false);
+    this.pickerTouched.set(false);
+    this.mediaTouched.set(false);
   }
 }

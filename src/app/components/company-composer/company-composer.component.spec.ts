@@ -228,6 +228,103 @@ describe('CompanyComposerComponent', () => {
     );
   });
 
+  // --- WU4a polish (post-verify fix-up slice) ---------------------------------
+
+  it('shows an informative empty state when the company owns no open vacancy', async () => {
+    // A company whose openings are all closed (or belong to somebody else).
+    fixture.componentRef.setInput('openings', OPENINGS);
+    fixture.componentRef.setInput('authorId', 'company-3');
+    toggleToVacancy();
+
+    const element = elementOf();
+    const emptyState = element.querySelector('[data-testid="company-composer-empty-state"]');
+    expect(emptyState?.textContent?.trim()).toBe('No tenés vacantes abiertas para promocionar.');
+    expect(element.querySelectorAll('[data-testid="vacancy-option"]')).toHaveLength(0);
+
+    // The composite rule is unsatisfiable here, so it must NOT show the
+    // "elegí una vacante" error: there is nothing to pick.
+    await submitForm('[data-testid="vacancy-composer"]');
+    expect(emitted).toHaveLength(0);
+    expect(element.textContent).not.toContain('Elegí al menos una vacante');
+    expect(
+      element.querySelector('[data-testid="company-composer-composite-error"]')?.textContent?.trim()
+    ).toBe('');
+
+    // The focus fallback lands on a real element instead of nowhere.
+    expect(document.activeElement).toBe(emptyState);
+  });
+
+  it('marks the photos input invalid exactly like the textarea when the media is missing', async () => {
+    givenVacancyMode();
+    checkVacancy('job-2');
+
+    // Nothing is invalid before the rule rejects the submission.
+    expect(controlOf('company-composer-photos').getAttribute('aria-invalid')).toBeNull();
+    expect(controlOf('company-composer-vacancy-text').getAttribute('aria-invalid')).toBeNull();
+
+    await submitForm('[data-testid="vacancy-composer"]');
+
+    // "No photos" is a rejection cause, so the file input carries the same
+    // invalid state as the textarea.
+    expect(controlOf('company-composer-photos').getAttribute('aria-invalid')).toBe('true');
+    expect(controlOf('company-composer-vacancy-text').getAttribute('aria-invalid')).toBe('true');
+    // The picker side is fine — only the media side is missing.
+    expect(controlOf('company-composer-job-job-2').getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('wires the checkbox group to the composite error region', () => {
+    givenVacancyMode();
+
+    const group = elementOf().querySelector('[data-testid="vacancy-picker-group"]');
+    expect(group?.getAttribute('role')).toBe('group');
+    expect(group?.getAttribute('aria-label')).toBe('Vacantes a promocionar');
+
+    const describedBy = group?.getAttribute('aria-describedby');
+    expect(describedBy).toBe('company-composer-composite-error');
+    const error = elementOf().querySelector(`#${describedBy ?? ''}`);
+    expect(error?.getAttribute('role')).toBe('alert');
+    expect(error?.getAttribute('data-testid')).toBe('company-composer-composite-error');
+  });
+
+  it('clears the composite error as soon as the user picks a vacancy', async () => {
+    givenVacancyMode();
+    await submitForm('[data-testid="vacancy-composer"]');
+    const errorText = (): string | undefined =>
+      elementOf().querySelector('[data-testid="company-composer-composite-error"]')?.textContent?.trim();
+    expect(errorText()).toBeTruthy();
+
+    checkVacancy('job-1');
+
+    expect(errorText()).toBe('');
+  });
+
+  it('clears the composite error as soon as the user writes the missing text', async () => {
+    givenVacancyMode();
+    checkVacancy('job-2');
+    await submitForm('[data-testid="vacancy-composer"]');
+    const errorText = (): string | undefined =>
+      elementOf().querySelector('[data-testid="company-composer-composite-error"]')?.textContent?.trim();
+    expect(errorText()).toBeTruthy();
+
+    typeInto('company-composer-vacancy-text', 'Busco albañiles.');
+
+    expect(errorText()).toBe('');
+  });
+
+  it('switches between the two publish forms instead of stacking both', () => {
+    const element = elementOf();
+    expect(element.querySelector('[data-testid="feed-composer"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="feed-publish"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="vacancy-composer"]')).toBeNull();
+
+    toggleToVacancy();
+
+    expect(element.querySelector('[data-testid="feed-composer"]')).toBeNull();
+    expect(element.querySelector('[data-testid="feed-publish"]')).toBeNull();
+    expect(element.querySelector('[data-testid="vacancy-composer"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="vacancy-publish"]')).not.toBeNull();
+  });
+
   it('publishes with photos only, capping the selection at ten', async () => {
     givenVacancyMode();
     checkVacancy('job-1');
