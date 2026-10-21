@@ -20,7 +20,7 @@ const searchableLists = [FEED_POSTS, JOBS, APPLICATIONS, COMMENTS];
 
 describe('core fixture datasets', () => {
   it('seeds the expanded demo dataset sizes', () => {
-    expect(FEED_POSTS).toHaveLength(13);
+    expect(FEED_POSTS).toHaveLength(16);
     expect(JOBS).toHaveLength(7);
     expect(APPLICATIONS).toHaveLength(7);
     expect(COMMENTS).toHaveLength(12);
