@@ -114,4 +114,82 @@ describe('PlatformPerfilPublicoPage', () => {
 
     expect(element.textContent).toContain('No encontramos ese perfil');
   });
+
+  it('renders the bio and the skill chips of a worker', async () => {
+    const element = await render('worker-1');
+
+    expect(element.querySelector('[data-testid="perfil-bio"]')?.textContent).toContain(
+      'Electricista matriculada'
+    );
+
+    const chips = element.querySelectorAll('[data-testid="perfil-skill"]');
+    expect(chips.length).toBe(2);
+    expect(chips[0].textContent?.trim()).toBe('Electricidad');
+    expect(chips[1].textContent?.trim()).toBe('Sanitarias');
+  });
+
+  it('renders the description and the contact links of a company', async () => {
+    const element = await render('company-1');
+
+    expect(element.querySelector('[data-testid="perfil-bio"]')?.textContent).toContain(
+      'Obra residencial y comercial'
+    );
+    expect(element.querySelector('[data-testid="perfil-website"]')?.getAttribute('href')).toBe(
+      'https://constructora-norte.test'
+    );
+    expect(element.querySelector('[data-testid="perfil-email"]')?.getAttribute('href')).toBe(
+      'mailto:obras@norte.test'
+    );
+    expect(element.querySelector('[data-testid="perfil-whatsapp"]')?.getAttribute('href')).toBe(
+      'https://wa.me/5491144400001'
+    );
+  });
+
+  it('renders the contact links of a worker', async () => {
+    const element = await render('worker-1');
+
+    expect(element.querySelector('[data-testid="perfil-phone"]')?.getAttribute('href')).toBe(
+      'tel:+5491144440000'
+    );
+    expect(element.querySelector('[data-testid="perfil-whatsapp"]')?.getAttribute('href')).toBe(
+      'https://wa.me/5491144440000'
+    );
+    expect(element.querySelector('[data-testid="perfil-email"]')).toBeNull();
+    expect(element.querySelector('[data-testid="perfil-website"]')).toBeNull();
+  });
+
+  it('renders the contact links as plain anchors, not as the site NAP components', async () => {
+    const element = await render('worker-1');
+
+    expect(element.querySelector('app-phone-link')).toBeNull();
+    expect(element.querySelector('app-whatsapp-link')).toBeNull();
+  });
+
+  it('renders the stats row of a worker', async () => {
+    const element = await render('worker-1');
+
+    const stats = element.querySelector('[data-testid="perfil-stats"]');
+    expect(stats).not.toBeNull();
+    expect(stats?.querySelector('[data-testid="perfil-stat-publicaciones"]')?.textContent?.trim()).toBe(
+      '2'
+    );
+    expect(stats?.querySelector('[data-testid="perfil-stat-seguidores"]')?.textContent?.trim()).toBe(
+      '128'
+    );
+    expect(stats?.querySelector('[data-testid="perfil-stat-seguidos"]')?.textContent?.trim()).toBe(
+      '34'
+    );
+    expect(stats?.querySelector('[data-testid="perfil-stat-oficios"]')?.textContent?.trim()).toBe('2');
+    expect(stats?.querySelector('[data-testid="perfil-stat-vacantes"]')).toBeNull();
+  });
+
+  it('renders the stats row of a company with its open vacancies', async () => {
+    const element = await render('company-1');
+
+    const stats = element.querySelector('[data-testid="perfil-stats"]');
+    expect(stats?.querySelector('[data-testid="perfil-stat-vacantes"]')?.textContent?.trim()).toBe(
+      '3'
+    );
+    expect(stats?.querySelector('[data-testid="perfil-stat-oficios"]')).toBeNull();
+  });
 });

@@ -45,6 +45,107 @@
             </p>
           </div>
         </div>
+
+        <section data-testid="perfil-bio" class="mt-8">
+          <h2 class="text-lg font-semibold text-ink-900">{{ bioHeading() }}</h2>
+          <p class="mt-2 text-ink-600">{{ view.bio }}</p>
+          @if (view.skills.length) {
+            <ul class="mt-3 flex flex-wrap gap-2">
+              @for (skill of view.skills; track skill) {
+                <li
+                  data-testid="perfil-skill"
+                  class="rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-800"
+                >
+                  {{ skill }}
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section data-testid="perfil-contact" class="mt-8">
+          <h2 class="text-lg font-semibold text-ink-900">Contacto</h2>
+          <ul class="mt-3 space-y-2 text-ink-600">
+            @if (view.phone) {
+              <li>
+                <a
+                  data-testid="perfil-phone"
+                  [href]="telHref(view.phone)"
+                  class="text-brand-800 underline-offset-4 hover:underline"
+                  >Teléfono: {{ view.phone }}</a
+                >
+              </li>
+            }
+            @if (view.whatsapp) {
+              <li>
+                <a
+                  data-testid="perfil-whatsapp"
+                  [href]="whatsappHref(view.whatsapp)"
+                  class="text-brand-800 underline-offset-4 hover:underline"
+                  >WhatsApp: {{ view.whatsapp }}</a
+                >
+              </li>
+            }
+            @if (view.contactEmail) {
+              <li>
+                <a
+                  data-testid="perfil-email"
+                  [href]="'mailto:' + view.contactEmail"
+                  class="text-brand-800 underline-offset-4 hover:underline"
+                  >{{ view.contactEmail }}</a
+                >
+              </li>
+            }
+            @if (view.website) {
+              <li>
+                <a
+                  data-testid="perfil-website"
+                  [href]="view.website"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="text-brand-800 underline-offset-4 hover:underline"
+                  >{{ view.website }}</a
+                >
+              </li>
+            }
+          </ul>
+        </section>
+
+        <dl data-testid="perfil-stats" class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div>
+            <dt class="text-sm text-ink-600">Publicaciones</dt>
+            <dd data-testid="perfil-stat-publicaciones" class="text-2xl font-semibold text-ink-900">
+              {{ publicationCount() }}
+            </dd>
+          </div>
+          @if (view.role === 'company') {
+            <div>
+              <dt class="text-sm text-ink-600">Vacantes abiertas</dt>
+              <dd data-testid="perfil-stat-vacantes" class="text-2xl font-semibold text-ink-900">
+                {{ openVacanciesCount() }}
+              </dd>
+            </div>
+          } @else {
+            <div>
+              <dt class="text-sm text-ink-600">Oficios</dt>
+              <dd data-testid="perfil-stat-oficios" class="text-2xl font-semibold text-ink-900">
+                {{ skillsCount() }}
+              </dd>
+            </div>
+          }
+          <div>
+            <dt class="text-sm text-ink-600">Seguidores</dt>
+            <dd data-testid="perfil-stat-seguidores" class="text-2xl font-semibold text-ink-900">
+              {{ view.followerCount }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-sm text-ink-600">Seguidos</dt>
+            <dd data-testid="perfil-stat-seguidos" class="text-2xl font-semibold text-ink-900">
+              {{ view.followingCount }}
+            </dd>
+          </div>
+        </dl>
       }
     }
   }
