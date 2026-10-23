@@ -15,7 +15,8 @@ import { formatEsDate } from '../../core/format';
 import { buildTelHref, toWaDigits } from '../../core/lead/lead-links';
 import { PROFILES_GATEWAY } from '../../core/platform/api/ports';
 import { SessionService } from '../../core/platform/auth/session.service';
-import type { PostView, ProfileView } from '../../core/platform/domain';
+import type { ProfileView } from '../../core/platform/domain';
+import { postKindLabel } from '../../core/platform/labels/post-kind-labels';
 import { roleLabel, sectorLabel, verifiedLabel } from '../../core/platform/labels/profile-labels';
 import { isRenderablePostView, toPostView } from '../../core/platform/mocks/post-views';
 import { profileViewFor } from '../../core/platform/mocks/profile-views';
@@ -25,13 +26,6 @@ import { JobsStore } from '../../core/platform/store/jobs.store';
 
 /** Profile lifecycle: loading → ready | not-found (unknown ids never throw). */
 type ProfileStatus = 'loading' | 'ready' | 'not-found';
-
-/** The es-AR label of a publication kind: the badge of a grid tile. */
-const KIND_LABELS: Record<PostView['kind'], string> = {
-  'job-request': 'Búsqueda laboral',
-  vacancy: 'Vacante',
-  standard: 'Publicación'
-};
 
 /** How many characters of a publication the grid tile shows. */
 const PREVIEW_LENGTH = 180;
@@ -105,8 +99,8 @@ export class PlatformPerfilPublicoPage {
   /** The es-AR long date ("15 de septiembre de 2026"). */
   protected readonly formatEsDate = formatEsDate;
 
-  /** The es-AR label of a publication kind. */
-  protected readonly kindLabel = (kind: PostView['kind']): string => KIND_LABELS[kind];
+  /** The es-AR label of a publication kind, shared with the home teasers. */
+  protected readonly postKindLabel = postKindLabel;
 
   /** The excerpt of a publication, for a grid tile. */
   protected readonly excerpt = excerpt;
