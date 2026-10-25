@@ -1,7 +1,61 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-21** — **`p16-vacante` COMPLETO, mergeado a `main` y pusheado** ✅ · `main` @ `10df9b9` (base `a711e5f`). Ramas de trabajo eliminadas; queda **una sola rama en blanco** para simular la página: `feature/p15-solicitud-empleo` (0 archivos, sin trabajo nuestro). Último gate local: **795/795 tests** (82 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff.
-> El historial de cambios p0–p16 y sus notas quedaron en `git log -- HANDOFF.md` (este archivo se sobrescribe a propósito para no arrastrar estado viejo).
+> Última actualización: **2026-10-25** — **`p17-home-perfil` COMPLETO**: slice 2 (perfil público + icono) y slice 3 (sección "Publicaciones" en la home) están en `main`; la slice 1 (3 publicaciones simuladas) sigue **aislada sin mergear** a propósito. Último gate local: **892/892 tests** (89 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff · proof de prerender OK. `main` está **mergeado localmente, SIN pushear**.
+> El historial de cambios p0–p17 y sus notas quedaron en `git log -- HANDOFF.md` (este archivo se sobrescribe a propósito para no arrastrar estado viejo).
+
+---
+
+## CERRADO — `p17-home-perfil` (perfil público + home de publicaciones)
+
+**Qué pidió el maintainer**: (1) la `home` —que ya es la página principal— que muestre publicaciones; (2) una página de perfil pública estilo Instagram/LinkedIn, con todo lo necesario de cada empresa o trabajador, entrar por un icono de usuario; (3) 3 publicaciones falsas sin imagen (una de cada tipo) en una **rama de simulación nueva**. Modo `auto`, artifact store `engram`, delivery `ask-on-risk` → el maintainer delegó las decisiones ⇒ se procedió con slices encadenados (`feature-branch-chain`).
+
+### Estado por slice
+
+| Slice | Rama | Estado | Contenido |
+|---|---|---|---|
+| 1 — simulación | `feature/simulacion-publicaciones` @ `529a412` | **PUSHEADA, SIN MERGEAR** (a propósito) | 3 posts demo sin imagen: `post-14` standard (worker-3), `post-15` vacancy (company-1), `post-16` job-request (worker-1). Es el "lienzo" para simular la página. |
+| 2 — perfil + icono | (eliminada) | **MERGEADA a `main` @ `46648c9`** | perfil público `/plataforma/perfil/:id` + `app-user-icon-link` en ambos headers. 10 commits, +2203/−16. |
+| 3 — home | `feature/p17-home-publicaciones` | **COMPLETA y mergeada a `main`** | sección "Publicaciones" en la home (3 teasers de texto, 0 media), gated por `afterNextRender`. 4 commits. |
+
+
+### Commits de la slice 2 (ya en `main`)
+
+| WU | Commit | Alcance |
+|---|---|---|
+| WU-2.1 | `434c259` | `ProfileView` demo-only + registry `profile-views.ts` + `formatEsDate` |
+| WU-2.2a | `445c9b5` | página + bloque de identidad (avatar de iniciales, sin `<img>`) |
+| WU-2.2b | `cbdbe56` | bio / contacto / stats |
+| WU-2.2c | `c32541e` | grid de publicaciones + vacantes de la empresa |
+| WU-2.2d | `e8a31c6` | Seguir / Editar perfil / anónimo |
+| WU-2.4 | `6a9e72c` | ruta `perfil/:id` (sin guard, NOINDEX, lazy) |
+| WU-2.3a | `5c8706f` | componente `app-user-icon-link` (el primer SVG del repo) |
+| WU-2.3b | `658e389` | integración en el header de marketing y en el de plataforma |
+| review fix 1 | `960497b` | hallazgos F1–F6 (vacantes cerradas visibles, copy "Verificada"/"Oficio", `<h1>` en loading, guard de id obsoleto, caracterización, prueba de binding) |
+| review fix 2 | `36927fb` | hallazgos D1–D6 (la spec usa los providers REALES de `app.config.ts`, `label` en `post-vacancy`, tipos de rol estrechos, token de generación, "Oficios"→"Habilidades", labels a `core/platform/labels/`) |
+
+### Decisiones que mandan (no reabrir sin el maintainer)
+
+- **La `home` NO puede ser un feed puro**: el gate congelado `app.release-matrix.spec.ts` fija `/` → 7 imágenes, 1 prioritaria, `cta: true` y el `<app-cta-block>` como **último** nodo de `<main>`. La `home` gana la sección "Publicaciones" **después del hero y antes del CTA**.
+- La sección muestra **la publicación más reciente de cada kind** (`standard`, `job-request`, `vacancy`) como teaser de texto, sin media, con link al perfil del autor.
+- El perfil público es **demo-only**: `ProfileView` + registry sembrado (patrón `vacancy.registry.ts`); el contrato OpenAPI **no** se extiende. `WorkerProfile`/`CompanyProfile` intactos.
+- Ruta `/plataforma/perfil/:id`: hija de `plataforma`, **sin `authGuard`**, NOINDEX, client-only. La página existente `/plataforma/perfil` (editor propio) no se toca.
+- En el **marketing header** el anchor del icono se renderiza **siempre** (con o sin sesión) para que el conteo de nodos del HTML prerenderizado sea invariante → hidratación limpia. En el **platform header** (client-only) el anchor solo aparece con sesión.
+- Contenido async en ruta prerenderizada ⇒ gate `afterNextRender` sobre el **componente entero** (D-4): el HTML prerenderizado de la home NO lleva la sección.
+
+### Commits de la slice 3 (ya en `main`)
+
+| WU | Commit | Alcance |
+|---|---|---|
+| WU-3.0 | `d4d869a` | `KIND_LABELS` extraídos a `src/app/core/platform/labels/post-kind-labels.ts` (`postKindLabel(kind)`), usados por el perfil y por la home |
+| WU-3.1a | `67eb049` | `mostRecentByKind(views)` — proyección pura: 1 por kind, la más nueva por `createdAt`, empate por `id`, orden newest-first, kind vacío ⇒ sin entrada |
+| WU-3.1b | `61d0c67` | componente `app-home-publications`: badge con `postKindLabel`, autor + rol, texto, link a `/plataforma/perfil/:id`, `<h2 id>` propio + `aria-labelledby`, link "Ver todas" a `/plataforma`, **0 `<img>`** |
+| WU-3.2/3.3 | `3f42ebb` | integración en `home.page.*`: sección entre el hero y el CTA, gate `afterNextRender`, se oculta con timeline vacío, 1 `<h1>`, 7 imágenes / 1 prioritaria, caso "falta un kind" y proof de prerender en la suite |
+
+### Artefactos SDD (engram)
+
+`sdd/p17-home-perfil/` → `explore` #1064 · `decision-lock` #1065 (D1–D12) · `proposal` #1066 · `spec` #1070 · `design` #1074 · `tasks` #1077 · `apply-progress` #1068 (+ #1083–#1090).
+
+**Verificación de la slice 3**: `892/892 tests` (89 files) · `bunx ng build` (25 rutas prerenderizadas) · `bunx ng lint` OK · zero-diff de `contracts/`, `contract-conformance.ts`, `app.release-matrix.spec.ts`, `app.a11y.spec.ts`, `angular.json` · proof de prerender: el `index.html` de la home **no** contiene `app-home-publications` · `contract:lint` / `contract:check` / `verify:prerender` / `verify:previa` OK.
 
 ---
 
@@ -33,16 +87,20 @@
 
 | Rama | Estado | Contenido |
 |---|---|---|
-| `main` | **activa, pusheada** @ `10df9b9` | todo el trabajo (p0 → p16) |
+| `main` | **activa, local @ HEAD (p17 completo), SIN pushear** | todo el trabajo (p0 → p17) |
+| `feature/p17-home-publicaciones` | **mergeada a `main`** (misma punta) | slice 3: la sección "Publicaciones" de la home |
+| `feature/simulacion-publicaciones` | **pusheada, sin mergear** @ `529a412` | los 3 posts demo sin imagen (slice 1 de p17) — **aislada a propósito** |
 | `feature/p15-solicitud-empleo` | **en blanco** (`5a58d0a`, commit huérfano) | 0 archivos — lienzo limpio para simular la página |
 
-La p15 quedó como rama huérfana a propósito: su trabajo ya estaba **dentro de `main`** (verificado con `git merge-base --is-ancestor`), así que resetearla a un árbol vacío no pierde ni un commit. Todas las ramas de trabajo quedaron borradas; no queda trabajo fuera de `main`.
+La p15 quedó como rama huérfana a propósito: su trabajo ya estaba **dentro de `main`** (verificado con `git merge-base --is-ancestor`), así que resetearla a un árbol vacío no pierde ni un commit. La slice 1 de p17 vive en su propia rama **sin mergear**: es el sandbox para simular publicaciones falsas; mergearla es decisión del maintainer.
 
 ---
 
 ## Pendiente
 
-- [ ] **Deuda W-3 antes de cualquier demo pública**: las fotos de las fixtures apuntan a `images.example.com` → **404 en un navegador real** (jsdom no lo detecta).
+- [ ] **Pushear `main`**: el merge de la slice 3 quedó **local** (sin `origin`).
+- [ ] **Deuda W-3 antes de cualquier demo pública**: las fotos de contenido y fixtures apuntan a `images.example.com` → **404 en un navegador real** (jsdom no lo detecta). No se tocó: requiere assets reales.
+
 
 ## Pendientes — Plantillas
 
