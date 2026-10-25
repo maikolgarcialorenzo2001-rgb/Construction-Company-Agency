@@ -142,15 +142,17 @@ describe('HomePage', () => {
 
     expect(cards).toHaveLength(3);
     expect(cards[0].textContent).toContain('Búsqueda laboral');
-    expect(cards[0].textContent).toContain('Sofía Ruiz');
+    expect(cards[0].textContent).toContain('Lucía Fernández');
     expect(cards[0].textContent).toContain('Trabajador');
-    expect(cards[0].textContent).toContain('Ofrezco servicios de herrería');
+    expect(cards[0].textContent).toContain('Busco trabajo como electricista');
     expect(cards[1].textContent).toContain('Vacante');
-    expect(cards[1].textContent).toContain('Grupo Delta Construcciones');
+    expect(cards[1].textContent).toContain('Constructora Norte SAC');
     expect(cards[1].textContent).toContain('Empresa');
+    expect(cards[1].textContent).toContain('Buscamos herrero');
     expect(cards[2].textContent).toContain('Publicación');
-    expect(cards[2].textContent).toContain('Constructora Norte SAC');
-    expect(cards[2].textContent).toContain('Arrancamos el cimado');
+    expect(cards[2].textContent).toContain('Sofía Ruiz');
+    expect(cards[2].textContent).toContain('Trabajador');
+    expect(cards[2].textContent).toContain('Terminé la estructura de una escalera');
   });
 
   it('adds no image to the home page: the teasers are text-only', async () => {

@@ -259,7 +259,7 @@ describe('PlatformPerfilPublicoPage', () => {
     const stats = element.querySelector('[data-testid="perfil-stats"]');
     expect(stats).not.toBeNull();
     expect(stats?.querySelector('[data-testid="perfil-stat-publicaciones"]')?.textContent?.trim()).toBe(
-      '2'
+      '3'
     );
     expect(stats?.querySelector('[data-testid="perfil-stat-seguidores"]')?.textContent?.trim()).toBe(
       '128'
@@ -295,7 +295,7 @@ describe('PlatformPerfilPublicoPage', () => {
     const stats = element.querySelector('[data-testid="perfil-stats"]');
     expect(stats).not.toBeNull();
     expect(stats?.querySelector('[data-testid="perfil-stat-publicaciones"]')?.textContent?.trim()).toBe(
-      '5'
+      '6'
     );
     expect(stats?.querySelector('[data-testid="perfil-stat-seguidores"]')?.textContent?.trim()).toBe(
       '310'
@@ -344,9 +344,10 @@ describe('PlatformPerfilPublicoPage', () => {
     const element = await render('worker-1');
 
     const tiles = element.querySelectorAll('[data-testid="perfil-publicacion"]');
-    expect(tiles.length).toBe(2);
+    expect(tiles.length).toBe(3);
     expect(element.textContent).toContain('Terminé la instalación eléctrica');
     expect(element.textContent).toContain('Cerramos la remodelación eléctrica');
+    expect(element.textContent).toContain('Busco trabajo como electricista matriculada');
     // A worker-2 post never appears on worker-1's page.
     expect(element.textContent).not.toContain('medí la carga de cada circuito');
   });
