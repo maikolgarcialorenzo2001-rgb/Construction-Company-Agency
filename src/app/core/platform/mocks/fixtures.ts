@@ -110,6 +110,14 @@ const seededPosts = [
     isPlaceholder: true
   },
   {
+    id: 'post-14',
+    authorId: 'worker-3',
+    content:
+      'Terminé la estructura de una escalera metálica para un galpón en Tigre. Soldadura vista, terminación con antióxido y montaje sin ajustes en obra.',
+    createdAt: '2026-10-19T14:30:00.000Z',
+    isPlaceholder: true
+  },
+  {
     id: 'post-12',
     authorId: 'company-1',
     content:
@@ -126,6 +134,14 @@ const seededPosts = [
     isPlaceholder: true
   },
   {
+    id: 'post-15',
+    authorId: 'company-1',
+    content:
+      'Buscamos herrero para estructura metálica en Tigre y director de obra para un multifamiliar en Rosario. La búsqueda de dirección ya está cerrada; la de herrería sigue abierta.',
+    createdAt: '2026-10-20T11:00:00.000Z',
+    isPlaceholder: true
+  },
+  {
     id: 'post-10',
     authorId: 'worker-2',
     content:
@@ -139,6 +155,14 @@ const seededPosts = [
     content:
       'Ofrezco servicios de herrería y montaje de estructuras metálicas. Presupuesto sin cargo.',
     createdAt: '2026-10-12T10:05:00.000Z',
+    isPlaceholder: true
+  },
+  {
+    id: 'post-16',
+    authorId: 'worker-1',
+    content:
+      'Busco trabajo como electricista matriculada en obras residenciales y comerciales. Tengo disponibilidad inmediata para CABA y GBA Sur.',
+    createdAt: '2026-10-21T09:15:00.000Z',
     isPlaceholder: true
   }
 ] satisfies readonly Placeholder<Post>[];
@@ -158,8 +182,9 @@ export interface JobRequestSeed {
  * Structured payloads for the text-only worker job-request posts appended at the
  * `FEED_POSTS` tail (design D9). Appending keeps the `/plataforma` image budget
  * at 11 (no attachments) and keeps the index-based feed specs stable. The demo
- * registry (`job-request.registry.ts`) is seeded from this list, so `post-10`
- * and `post-11` resolve to `kind: 'job-request'` in `toPostView`.
+ * registry (`job-request.registry.ts`) is seeded from this list, so `post-10`,
+ * `post-11` and the simulated `post-16` resolve to `kind: 'job-request'` in
+ * `toPostView`.
  */
 export const JOB_REQUEST_SEEDS: readonly JobRequestSeed[] = [
   {
@@ -179,6 +204,15 @@ export const JOB_REQUEST_SEEDS: readonly JobRequestSeed[] = [
       modality: 'Presencial',
       experience: 'Más de 5 años'
     }
+  },
+  {
+    id: 'post-16',
+    payload: {
+      position: 'Electricista matriculada',
+      availability: 'Tiempo completo',
+      modality: 'Presencial',
+      experience: 'Más de 5 años'
+    }
   }
 ];
 
@@ -195,7 +229,9 @@ export interface VacancySeed {
  * before `post-10` (design D9). Insertion (not appending) keeps the
  * job-request tail invariant and the `/plataforma` image budget at 11. Every
  * `jobIds` entry references a real `JOBS` id owned by the seed post's author
- * company, so the card can resolve each entry live.
+ * company, so the card can resolve each entry live. The simulated `post-15`
+ * mixes one open (`job-6`) and one closed (`job-3`) opening on purpose, so the
+ * card renders both status labels.
  */
 export const VACANCY_SEEDS: readonly VacancySeed[] = [
   {
@@ -205,6 +241,10 @@ export const VACANCY_SEEDS: readonly VacancySeed[] = [
   {
     id: 'post-13',
     payload: { jobIds: ['job-4', 'job-5'] }
+  },
+  {
+    id: 'post-15',
+    payload: { jobIds: ['job-6', 'job-3'] }
   }
 ];
 

@@ -49,6 +49,21 @@ const persistedEngagement = (): EngagementState => {
 };
 
 /**
+ * The rendered `feed-post` element for a seeded post id. The timeline paints in
+ * gateway order (= `FEED_POSTS` order, no client sort), so resolving the
+ * position from the fixture keeps these lookups by id instead of by a
+ * hand-counted index that shifts whenever a seed is inserted.
+ */
+const renderedPost = (posts: HTMLElement[], id: string): HTMLElement => {
+  const index = FEED_POSTS.findIndex((post) => post.id === id);
+  const element = posts[index];
+  if (!element) {
+    throw new Error(`missing rendered post ${id}`);
+  }
+  return element;
+};
+
+/**
  * Zoneless page tests: every scenario drives `detectChanges` + `whenStable`
  * exactly like the store harness, because the page fires `load()` on creation
  * and only a `.set()` in the store can paint the view.
@@ -585,11 +600,12 @@ describe('PlatformFeedPage', () => {
       element.querySelectorAll('[data-testid="feed-post"]')
     ) as HTMLElement[];
 
-    // Both seeded job-request posts (post-10, post-11 tail) render a card.
+    // Every seeded job-request post (post-10, post-11 and the simulated
+    // post-16) renders a card.
     const cards = element.querySelectorAll('[data-testid="post-job-request"]');
-    expect(cards).toHaveLength(2);
+    expect(cards).toHaveLength(3);
 
-    const jobRequestPost = posts[posts.length - 1]; // post-11
+    const jobRequestPost = renderedPost(posts, 'post-11');
     const card = jobRequestPost.querySelector('[data-testid="post-job-request"]');
     const extra = jobRequestPost.querySelector('[data-testid="post-extra"]');
     expect(card).not.toBeNull();
@@ -821,10 +837,11 @@ describe('PlatformFeedPage', () => {
       element.querySelectorAll('[data-testid="feed-post"]')
     ) as HTMLElement[];
 
-    // Both seeded vacancy posts (post-12, post-13) resolve their jobIds live.
-    expect(element.querySelectorAll('[data-testid="post-vacancy"]')).toHaveLength(2);
+    // Every seeded vacancy post (post-12, post-13 and the simulated post-15)
+    // resolves its jobIds live.
+    expect(element.querySelectorAll('[data-testid="post-vacancy"]')).toHaveLength(3);
 
-    const vacancyPost = posts[9]; // post-12
+    const vacancyPost = renderedPost(posts, 'post-12');
     const card = vacancyPost.querySelector('[data-testid="post-vacancy"]');
     const extra = vacancyPost.querySelector('[data-testid="post-extra"]');
     expect(card).not.toBeNull();
@@ -850,9 +867,9 @@ describe('PlatformFeedPage', () => {
     expect(vacancyPost.querySelector('[data-testid="post-header"]')).not.toBeNull();
     expect(vacancyPost.querySelector('[data-testid="post-actions"]')).not.toBeNull();
 
-    // Neighbors unaffected: standard posts carry no card, job-request cards stay at 2.
+    // Neighbors unaffected: standard posts carry no card, job-request cards stay at 3.
     expect(posts[0].querySelector('[data-testid="post-vacancy"]')).toBeNull();
-    expect(element.querySelectorAll('[data-testid="post-job-request"]')).toHaveLength(2);
+    expect(element.querySelectorAll('[data-testid="post-job-request"]')).toHaveLength(3);
 
     // D11 a11y: the projected card is a labelled group with one distinctly
     // named apply link per entry (same contract WU2 locked for the card).
@@ -921,11 +938,11 @@ describe('PlatformFeedPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // The default timeline carries 2 vacancy posts: a single load serves both.
+    // The default timeline carries 3 vacancy posts: a single load serves all.
     expect(load).toHaveBeenCalledTimes(1);
     expect(
       (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="post-vacancy"]')
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 
   it('loads the jobs board exactly once for a company session (picker + timeline triggers)', async () => {
@@ -952,7 +969,9 @@ describe('PlatformFeedPage', () => {
     TestBed.overrideProvider(FEED_GATEWAY, {
       useValue: {
         timeline: async (): Promise<Page<Post>> => ({
-          items: FEED_POSTS.filter((post) => post.id !== 'post-12' && post.id !== 'post-13'),
+          items: FEED_POSTS.filter(
+            (post) => post.id !== 'post-12' && post.id !== 'post-13' && post.id !== 'post-15'
+          ),
           meta: { page: 1, pageSize: 20, total: FEED_POSTS.length }
         }),
         create: async (draft: CreatePostDraft): Promise<Post> => ({
@@ -995,7 +1014,9 @@ describe('PlatformFeedPage', () => {
     const posts = (fixture.nativeElement as HTMLElement).querySelectorAll(
       '[data-testid="feed-post"]'
     );
-    const card = (posts[9] as HTMLElement).querySelector('[data-testid="post-vacancy"]'); // post-12
+    const card = renderedPost(Array.from(posts) as HTMLElement[], 'post-12').querySelector(
+      '[data-testid="post-vacancy"]'
+    );
 
     // The card shows LIVE data: job-1 flipped to closed after seeding renders
     // "Cerrada" while job-2 stays "Abierta" — nothing was copied at seed time.
