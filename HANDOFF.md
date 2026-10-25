@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-25** — **`p17-home-perfil` COMPLETO**: slice 2 (perfil público + icono) y slice 3 (sección "Publicaciones" en la home) están en `main`; la slice 1 (3 publicaciones simuladas) sigue **aislada sin mergear** a propósito. Último gate local: **892/892 tests** (89 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff · proof de prerender OK. `main` está **mergeado localmente, SIN pushear**.
+> Última actualización: **2026-10-25** — **`p17-home-perfil` COMPLETO**: slice 2 (perfil público + icono) y slice 3 (sección "Publicaciones" en la home) están en `main`; la slice 1 (3 publicaciones simuladas) sigue **aislada sin mergear** a propósito. Último gate local: **893/893 tests** (89 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff · proof de prerender OK. `main` está **mergeado localmente, SIN pushear**.
 > El historial de cambios p0–p17 y sus notas quedaron en `git log -- HANDOFF.md` (este archivo se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -55,7 +55,7 @@
 
 `sdd/p17-home-perfil/` → `explore` #1064 · `decision-lock` #1065 (D1–D12) · `proposal` #1066 · `spec` #1070 · `design` #1074 · `tasks` #1077 · `apply-progress` #1068 (+ #1083–#1090).
 
-**Verificación de la slice 3**: `892/892 tests` (89 files) · `bunx ng build` (25 rutas prerenderizadas) · `bunx ng lint` OK · zero-diff de `contracts/`, `contract-conformance.ts`, `app.release-matrix.spec.ts`, `app.a11y.spec.ts`, `angular.json` · proof de prerender: el `index.html` de la home **no** contiene `app-home-publications` · `contract:lint` / `contract:check` / `verify:prerender` / `verify:previa` OK.
+**Verificación de la slice 3**: `893/893 tests` (89 files) · `bunx ng build` (25 rutas prerenderizadas) · `bunx ng lint` OK · zero-diff de `contracts/`, `contract-conformance.ts`, `app.release-matrix.spec.ts`, `app.a11y.spec.ts`, `angular.json` · proof de prerender: el `index.html` de la home **no** contiene `app-home-publications` · `contract:lint` / `contract:check` / `verify:prerender` / `verify:previa` OK.
 
 ---
 
