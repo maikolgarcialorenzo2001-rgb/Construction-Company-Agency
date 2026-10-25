@@ -14,6 +14,10 @@
     />
   </div>
 
+  @if (browserReady() && teasers().length > 0) {
+    <app-home-publications class="mt-16 block" [publications]="teasers()" />
+  }
+
   <div class="mt-16">
     <app-section-heading title="Por qué eleginos" lead="Lo que marcamos desde el primer día" />
     <ul class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
