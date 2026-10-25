@@ -1,6 +1,6 @@
 # HANDOFF — Construction-Company-Agency
 
-> Última actualización: **2026-10-25** — **`p17-home-perfil` COMPLETO**: slice 2 (perfil público + icono) y slice 3 (sección "Publicaciones" en la home) están en `main`; la slice 1 (3 publicaciones simuladas) sigue **aislada sin mergear** a propósito. Último gate local: **893/893 tests** (89 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff · proof de prerender OK. `main` está **mergeado localmente, SIN pushear**.
+> Última actualización: **2026-10-25** — **`p17-home-perfil` COMPLETO y PUSHEADO**: slices 1, 2 y 3 están en `main` y en `origin/main`; ya no queda trabajo de p17 fuera. Último gate local: **902/902 tests** (90 files) · build (25 rutas prerenderizadas) + lint OK · contrato y gates en zero-diff · proof de prerender OK.
 > El historial de cambios p0–p17 y sus notas quedaron en `git log -- HANDOFF.md` (este archivo se sobrescribe a propósito para no arrastrar estado viejo).
 
 ---
@@ -13,9 +13,9 @@
 
 | Slice | Rama | Estado | Contenido |
 |---|---|---|---|
-| 1 — simulación | `feature/simulacion-publicaciones` @ `529a412` | **PUSHEADA, SIN MERGEAR** (a propósito) | 3 posts demo sin imagen: `post-14` standard (worker-3), `post-15` vacancy (company-1), `post-16` job-request (worker-1). Es el "lienzo" para simular la página. |
+| 1 — simulación | `feature/simulacion-publicaciones` @ `529a412` | **MERGEADA a `main` @ `dfa8bb6`** | 3 posts demo sin imagen: `post-14` standard (worker-3), `post-15` vacancy (company-1), `post-16` job-request (worker-1). La home ya los muestra como teasers más recientes. |
 | 2 — perfil + icono | (eliminada) | **MERGEADA a `main` @ `46648c9`** | perfil público `/plataforma/perfil/:id` + `app-user-icon-link` en ambos headers. 10 commits, +2203/−16. |
-| 3 — home | `feature/p17-home-publicaciones` | **COMPLETA y mergeada a `main`** | sección "Publicaciones" en la home (3 teasers de texto, 0 media), gated por `afterNextRender`. 4 commits. |
+| 3 — home | `feature/p17-home-publicaciones` | **COMPLETA, mergeada y pusheada** | sección "Publicaciones" en la home (3 teasers de texto, 0 media), gated por `afterNextRender`. 4 commits + el merge de la slice 1. |
 
 
 ### Commits de la slice 2 (ya en `main`)
@@ -55,7 +55,7 @@
 
 `sdd/p17-home-perfil/` → `explore` #1064 · `decision-lock` #1065 (D1–D12) · `proposal` #1066 · `spec` #1070 · `design` #1074 · `tasks` #1077 · `apply-progress` #1068 (+ #1083–#1090).
 
-**Verificación de la slice 3**: `893/893 tests` (89 files) · `bunx ng build` (25 rutas prerenderizadas) · `bunx ng lint` OK · zero-diff de `contracts/`, `contract-conformance.ts`, `app.release-matrix.spec.ts`, `app.a11y.spec.ts`, `angular.json` · proof de prerender: el `index.html` de la home **no** contiene `app-home-publications` · `contract:lint` / `contract:check` / `verify:prerender` / `verify:previa` OK.
+**Verificación de la slice 3**: `902/902 tests` (90 files) · `bunx ng build` (25 rutas prerenderizadas) · `bunx ng lint` OK · zero-diff de `contracts/`, `contract-conformance.ts`, `app.release-matrix.spec.ts`, `app.a11y.spec.ts`, `angular.json` · proof de prerender: el `index.html` de la home **no** contiene `app-home-publications` · `contract:lint` / `contract:check` / `verify:prerender` / `verify:previa` OK.
 
 ---
 
@@ -87,19 +87,18 @@
 
 | Rama | Estado | Contenido |
 |---|---|---|
-| `main` | **activa, local @ HEAD (p17 completo), SIN pushear** | todo el trabajo (p0 → p17) |
+| `main` | **activa, pusheada @ `origin/main`** | todo el trabajo (p0 → p17 completo) |
 | `feature/p17-home-publicaciones` | **mergeada a `main`** (misma punta) | slice 3: la sección "Publicaciones" de la home |
-| `feature/simulacion-publicaciones` | **pusheada, sin mergear** @ `529a412` | los 3 posts demo sin imagen (slice 1 de p17) — **aislada a propósito** |
-| `feature/p15-solicitud-empleo` | **en blanco** (`5a58d0a`, commit huérfano) | 0 archivos — lienzo limpio para simular la página |
+| `feature/simulacion-publicaciones` | **mergeada a `main`** @ `dfa8bb6` | los 3 posts demo sin imagen (slice 1 de p17) |
+| `feature/p15-solicitud-empleo` | **en blanco** (`5a58d0a`, commit huérfano) | 0 archivos — no hay trabajo que mergear |
 
-La p15 quedó como rama huérfana a propósito: su trabajo ya estaba **dentro de `main`** (verificado con `git merge-base --is-ancestor`), así que resetearla a un árbol vacío no pierde ni un commit. La slice 1 de p17 vive en su propia rama **sin mergear**: es el sandbox para simular publicaciones falsas; mergearla es decisión del maintainer.
+La p15 quedó como rama huérfana a propósito: su trabajo ya estaba **dentro de `main`** (verificado con `git merge-base --is-ancestor`), así que resetearla a un árbol vacío no pierde ni un commit. No se mergea porque su árbol está vacío: hacerlo borraría el repo. La slice 1 de p17 se mergeó con `--no-ff` (`dfa8bb6`) y sus fixtures obligaron a recalibrar los conteos de la home y del perfil (`8e5a2f5`).
 
 ---
 
 ## Pendiente
 
-- [ ] **Pushear `main`**: el merge de la slice 3 quedó **local** (sin `origin`).
-- [ ] **Deuda W-3 antes de cualquier demo pública**: las fotos de contenido y fixtures apuntan a `images.example.com` → **404 en un navegador real** (jsdom no lo detecta). No se tocó: requiere assets reales.
+- [ ] **Deuda W-3 antes de cualquier demo pública**: las fotos de contenido y fixtures apuntan a `images.example.com` → **404 en un navegador real** (jsdom no lo detecta). No se tocó: requiere assets reales. El resto de la deuda W-1…W-8 sigue registrada abajo.
 
 
 ## Pendientes — Plantillas
